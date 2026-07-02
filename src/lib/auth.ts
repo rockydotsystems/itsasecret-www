@@ -1,7 +1,15 @@
+import { eq, and, isNull, gt } from 'drizzle-orm'
 import { db } from './db'
+import { users, sessions } from './schema'
+import type { User, Session } from './schema'
 import { base64Encode, base64Decode } from './crypto/base64'
 import { decrypt } from './crypto/envelope'
-import type { UserRow, SessionRow, AuthContext } from './types'
+
+export interface AuthContext {
+  user: User
+  session: Session
+  orgId?: string
+}
 
 export async function requireAuth(request: Request): Promise<AuthContext> {
   const authHeader = request.headers.get('Authorization')
@@ -18,15 +26,23 @@ export async function requireAuth(request: Request): Promise<AuthContext> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes)
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
 
-  const session = await db.prepare(
-    `SELECT * FROM sessions WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > datetime('now')`
-  ).bind(tokenHash).first<SessionRow>()
+  const sessionRows = await db
+    .select()
+    .from(sessions)
+    .where(and(
+      eq(sessions.token_hash, tokenHash),
+      isNull(sessions.revoked_at),
+      gt(sessions.expires_at, new Date())
+    ))
+    .limit(1)
+  const session = sessionRows[0] ?? null
 
   if (!session) {
     throw jsonError('Invalid or expired session', 401)
   }
 
-  const user = await db.prepare('SELECT * FROM users WHERE id = ?').bind(session.user_id).first<UserRow>()
+  const userRows = await db.select().from(users).where(eq(users.id, session.user_id)).limit(1)
+  const user = userRows[0] ?? null
   if (!user) {
     throw jsonError('User not found', 401)
   }
@@ -40,7 +56,7 @@ export function getSessionKey(headerValue: string | null): Uint8Array {
 }
 
 export async function getOrgKey(
-  session: SessionRow,
+  session: Session,
   sessionKey: Uint8Array,
   orgId: string
 ): Promise<Uint8Array> {
@@ -60,7 +76,7 @@ export class HttpError extends Error {
   }
 }
 
-function jsonError(message: string, status: number): HttpError {
+export function jsonError(message: string, status: number): HttpError {
   return new HttpError(status, { error: message })
 }
 
