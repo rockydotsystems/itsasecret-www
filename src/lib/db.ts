@@ -18,7 +18,12 @@ function applyMigrations(db: Database.Database): void {
     )
   `)
 
-  const migrationsDir = join(__dirname, '..', 'migrations')
+  const candidates = [
+    join(process.cwd(), 'migrations'),
+    join(process.cwd(), 'src', 'migrations'),
+  ]
+  const migrationsDir = candidates.find(d => existsSync(d))
+  if (!migrationsDir) return
   let files: string[]
   try {
     files = readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort()

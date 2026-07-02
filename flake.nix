@@ -1,5 +1,5 @@
 {
-  description = "itsasecret — Cloudflare Worker API + website (Hono + D1)";
+  description = "itsasecret — TanStack Start API + website";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -19,10 +19,10 @@
               echo ""
               echo "itsasecret-www dev shell"
               echo "  npm install        # first-time setup"
-              echo "  npm run dev        # wrangler dev (local)"
+              echo "  npm run dev        # vite dev (local)"
               echo "  npm run test       # vitest"
-              echo "  npm run typecheck  # wrangler types + tsc --noEmit"
-              echo "  npm run db:apply   # apply D1 migrations (local)"
+              echo "  npm run typecheck  # tsc --noEmit"
+              echo "  npm run db:apply   # apply migrations"
               echo ""
             '';
           };
@@ -42,10 +42,10 @@
             '');
           };
         in {
-          dev = app "dev" ''npx wrangler dev "$@"'';
+          dev = app "dev" ''npx vite dev "$@"'';
           test = app "test" ''npx vitest run "$@"'';
           typecheck = app "typecheck" ''npx tsc --noEmit'';
-          db-apply = app "db-apply" ''npx wrangler d1 migrations apply itsasecret --local'';
+          db-apply = app "db-apply" ''npx tsx src/lib/migrate.ts "$@"'';
         });
     };
 }
