@@ -28,7 +28,7 @@ const FEATURES = [
 
 export const LandingPage = () => (
   <Layout title="itsasecret — Secrets, synced.">
-    <section class="hero redaction-bg">
+    <section class="hero">
       <div style="position:relative;max-width:720px;margin:0 auto">
         <div class="hero-badge">
           <LogoMark size={14} />
