@@ -1,11 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { requireAuthBeforeLoad } from '~/lib/route-guards'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
+import { Select } from '~/components/select'
 import { performLogout } from '~/lib/auth-form'
 
 const SECRETS = [
@@ -17,6 +18,37 @@ const SECRETS = [
 
 const ENVIRONMENTS = ['production', 'staging', 'preview-pr-42']
 
+const ORGS = [
+  { value: 'personal', label: 'hackr (personal)' },
+  { value: 'acme', label: 'Acme Corp' },
+  { value: 'stark', label: 'Stark Industries' },
+]
+
+const PROJECTS_BY_ORG: Record<string, Array<{ value: string; label: string }>> = {
+  personal: [
+    { value: 'acme-api', label: 'acme-api' },
+    { value: 'acme-web', label: 'acme-web' },
+  ],
+  acme: [
+    { value: 'acme-api', label: 'acme-api' },
+    { value: 'acme-web', label: 'acme-web' },
+    { value: 'acme-billing', label: 'acme-billing' },
+  ],
+  stark: [
+    { value: 'arc-reactor', label: 'arc-reactor' },
+    { value: 'jarvis', label: 'jarvis' },
+  ],
+}
+
+const NAV_ITEMS = [
+  { to: '/dashboard', label: 'Secrets' },
+  { to: '/dashboard/projects', label: 'Projects' },
+  { to: '/dashboard/environments', label: 'Environments' },
+  { to: '/dashboard/activity', label: 'Activity' },
+  { to: '/dashboard/members', label: 'Members' },
+  { to: '/dashboard/settings', label: 'Settings' },
+]
+
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: requireAuthBeforeLoad,
   component: DashboardPage,
@@ -24,6 +56,18 @@ export const Route = createFileRoute('/dashboard')({
 
 function DashboardPage() {
   const [loggingOut, setLoggingOut] = useState(false)
+  const [orgId, setOrgId] = useState('personal')
+  const [projectId, setProjectId] = useState('acme-api')
+
+  const projectOptions = useMemo(() => PROJECTS_BY_ORG[orgId] || [], [orgId])
+  const selectedProject = projectOptions.find((p) => p.value === projectId)
+  const projectName = selectedProject?.label || projectOptions[0]?.label || 'Select project'
+
+  function handleOrgChange(nextOrgId: string) {
+    setOrgId(nextOrgId)
+    const projects = PROJECTS_BY_ORG[nextOrgId] || []
+    setProjectId(projects[0]?.value || '')
+  }
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -32,57 +76,28 @@ function DashboardPage() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <LogoMark size={24} />
-          <span style={{ font: '600 var(--text-md)/var(--leading-snug) var(--font-family-display)', color: 'var(--text-primary)' }}>
-            itsasecret
-          </span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <a href="/dashboard" className="sidebar-link active">Secrets</a>
-          <a href="/dashboard/projects" className="sidebar-link">Projects</a>
-          <a href="/dashboard/environments" className="sidebar-link">Environments</a>
-          <a href="/dashboard/activity" className="sidebar-link">Activity</a>
-          <div className="sidebar-section-label">Org</div>
-          <a href="/dashboard/members" className="sidebar-link">Members</a>
-          <a href="/dashboard/settings" className="sidebar-link">Settings</a>
-        </nav>
-
-        <div className="sidebar-footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px' }}>
-            <Avatar name="Hack R" size="sm" />
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>hackr</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>personal org</span>
-            </div>
-          </div>
-          <Button
-            id="logout-button"
-            variant="ghost"
-            size="sm"
-            className="sidebar-logout"
-            disabled={loggingOut}
-            onClick={handleLogout}
-            style={{ width: '100%' }}
-          >
-            {loggingOut ? '...' : 'Log out'}
-          </Button>
-        </div>
-      </aside>
-
       <main className="app-main">
         <div className="app-header">
-          <div>
-            <h1 style={{ font: '600 var(--text-3xl)/var(--leading-snug) var(--font-family-display)', color: 'var(--text-primary)', marginBottom: '4px' }}>
-              acme-api
-            </h1>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-              12 secrets · synced to 3 machines · 3 environments
-            </span>
+          <div className="app-header-context">
+            <Select
+              label="Organization"
+              value={orgId}
+              options={ORGS}
+              onChange={handleOrgChange}
+            />
+            <Select
+              label="Project"
+              value={projectId}
+              options={projectOptions}
+              onChange={setProjectId}
+            />
           </div>
           <Button variant="primary" size="md">Add secret</Button>
+        </div>
+
+        <div className="app-meta">
+          <h1 className="app-title">{projectName}</h1>
+          <span className="app-subtitle">12 secrets · synced to 3 machines · 3 environments</span>
         </div>
 
         <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
@@ -97,15 +112,40 @@ function DashboardPage() {
           ))}
         </div>
       </main>
-      <script
-        type="module"
-        dangerouslySetInnerHTML={{
-          __html: `
-            import { attachLogoutButtonNativeListener } from '/src/lib/auth-form.ts';
-            attachLogoutButtonNativeListener('logout-button');
-          `,
-        }}
-      />
+
+      <nav className="bottom-bar" aria-label="Dashboard">
+        <div className="bottom-bar-inner">
+          <Link to="/" className="bottom-bar-brand" aria-label="itsasecret home">
+            <LogoMark size={20} />
+          </Link>
+
+          <div className="bottom-bar-links">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="bottom-bar-link"
+                activeProps={{ className: 'bottom-bar-link active' }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="bottom-bar-user">
+            <Avatar name="Hack R" size="sm" />
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={loggingOut}
+              onClick={handleLogout}
+              style={{ padding: '0 8px' }}
+            >
+              {loggingOut ? '...' : 'Log out'}
+            </Button>
+          </div>
+        </div>
+      </nav>
     </div>
   )
 }
