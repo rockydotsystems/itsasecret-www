@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { projects } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
-import type { ProjectRow } from '~/lib/types'
 
 const createProjectSchema = z.object({
   name: z.string().min(1),
@@ -18,10 +19,9 @@ export const Route = createFileRoute('/api/orgs/$orgId/projects')({
           const { user } = await requireAuth(request)
           await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
           const orgId = params.orgId!
-          const result = await db.prepare(
-            'SELECT * FROM projects WHERE org_id = ? AND deleted_at IS NULL'
-          ).bind(orgId).all<ProjectRow>()
-          return Response.json(result.results, { status: 200 })
+          const rows = await db.select().from(projects)
+            .where(and(eq(projects.org_id, orgId), isNull(projects.deleted_at)))
+          return Response.json(rows, { status: 200 })
         } catch (err) {
           return errorResponse(err)
         }
@@ -30,24 +30,25 @@ export const Route = createFileRoute('/api/orgs/$orgId/projects')({
       POST: async ({ request, params }) => {
         try {
           const { user } = await requireAuth(request)
-          await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
-          const orgId = params.orgId!
+          const orgId = await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
           const { name } = createProjectSchema.parse(await request.json())
 
-          const existing = await db.prepare(
-            'SELECT id FROM projects WHERE org_id = ? AND name = ? AND deleted_at IS NULL'
-          ).bind(orgId, name).first()
-          if (existing) return Response.json({ error: 'Project name already exists' }, { status: 409 })
+          const existingRows = await db.select({ id: projects.id }).from(projects)
+            .where(and(eq(projects.org_id, orgId), eq(projects.name, name), isNull(projects.deleted_at)))
+            .limit(1)
+          if (existingRows[0]) return Response.json({ error: 'Project name already exists' }, { status: 409 })
 
           const projectId = generateId()
-          await db.prepare(
-            'INSERT INTO projects (id, org_id, name) VALUES (?, ?, ?)'
-          ).bind(projectId, orgId, name).run()
+          await db.insert(projects).values({
+            id: projectId,
+            org_id: orgId,
+            name,
+          })
 
           await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })
 
-          const project = await db.prepare('SELECT * FROM projects WHERE id = ?').bind(projectId).first<ProjectRow>()
-          return Response.json(project, { status: 201 })
+          const projectRows = await db.select().from(projects).where(eq(projects.id, projectId)).limit(1)
+          return Response.json(projectRows[0], { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }
