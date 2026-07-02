@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
+import { performLogout } from '~/lib/auth-form'
 
 const SECRETS = [
   { name: 'STRIPE_SECRET_KEY', value: 'sk_live_••••••••••••••••', lastSynced: '2m ago' },
@@ -19,6 +21,13 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardPage() {
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    await performLogout()
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -42,11 +51,22 @@ function DashboardPage() {
         <div className="sidebar-footer">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px' }}>
             <Avatar name="Hack R" size="sm" />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>hackr</span>
               <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>personal org</span>
             </div>
           </div>
+          <Button
+            id="logout-button"
+            variant="ghost"
+            size="sm"
+            className="sidebar-logout"
+            disabled={loggingOut}
+            onClick={handleLogout}
+            style={{ width: '100%' }}
+          >
+            {loggingOut ? '...' : 'Log out'}
+          </Button>
         </div>
       </aside>
 
@@ -75,6 +95,15 @@ function DashboardPage() {
           ))}
         </div>
       </main>
+      <script
+        type="module"
+        dangerouslySetInnerHTML={{
+          __html: `
+            import { attachLogoutButtonNativeListener } from '/src/lib/auth-form.ts';
+            attachLogoutButtonNativeListener('logout-button');
+          `,
+        }}
+      />
     </div>
   )
 }

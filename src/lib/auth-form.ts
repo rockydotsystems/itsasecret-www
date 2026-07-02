@@ -73,7 +73,37 @@ export function storeAuthFormNativeListener(
   })
 }
 
+export async function performLogout(): Promise<void> {
+  const token = localStorage.getItem('sessionToken')
+  if (token) {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch {
+      // Ignore network errors; still clear local storage and redirect
+    }
+  }
+  localStorage.removeItem('ecdhPrivKey')
+  localStorage.removeItem('sessionToken')
+  localStorage.removeItem('serverPubkey')
+  localStorage.removeItem('orgKeys')
+  window.location.href = '/login'
+}
+
+export function attachLogoutButtonNativeListener(buttonId: string): void {
+  if (typeof document === 'undefined') return
+  const button = document.getElementById(buttonId)
+  if (!button || !(button instanceof HTMLButtonElement)) return
+
+  button.addEventListener('click', () => {
+    void performLogout()
+  })
+}
+
 // Global function for inline script fallback
 if (typeof window !== 'undefined') {
-  (window as any).__registerAuthFormNative = storeAuthFormNativeListener
+  ;(window as any).__registerAuthFormNative = storeAuthFormNativeListener
+  ;(window as any).__attachLogoutButtonNative = attachLogoutButtonNativeListener
 }
