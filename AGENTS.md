@@ -24,7 +24,7 @@ nix run .#dev                  # vite dev (local)
 nix run .#test                 # vitest run
 nix run .#typecheck            # tsc --noEmit
 nix run .#db-apply             # apply migrations
-npm install                    # first-time dep install (inside dev shell)
+pnpm install                   # first-time dep install (inside dev shell)
 ```
 
 ## Key decisions (from docs/)

@@ -14,15 +14,15 @@
           node = pkgs.nodejs_22;
         in {
           default = pkgs.mkShell {
-            packages = [ node pkgs.git ];
+            packages = [ node pkgs.pnpm pkgs.git ];
             shellHook = ''
               echo ""
               echo "itsasecret-www dev shell"
-              echo "  npm install        # first-time setup"
-              echo "  npm run dev        # vite dev (local)"
-              echo "  npm run test       # vitest"
-              echo "  npm run typecheck  # tsc --noEmit"
-              echo "  npm run db:apply   # apply migrations"
+              echo "  pnpm install        # first-time setup"
+              echo "  pnpm dev            # vite dev (local)"
+              echo "  pnpm test           # vitest"
+              echo "  pnpm typecheck      # tsc --noEmit"
+              echo "  pnpm db:apply       # apply migrations"
               echo ""
             '';
           };
@@ -32,20 +32,20 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           node = pkgs.nodejs_22;
-          nodeBin = pkgs.lib.makeBinPath [ node ];
+          bin = pkgs.lib.makeBinPath [ node pkgs.pnpm ];
           app = name: cmd: {
             type = "app";
             program = toString (pkgs.writeShellScript name ''
-              export PATH="${nodeBin}:$PATH"
-              [ -d node_modules ] || npm install
+              export PATH="${bin}:$PATH"
+              [ -d node_modules ] || pnpm install
               exec ${cmd}
             '');
           };
         in {
-          dev = app "dev" ''npx vite dev "$@"'';
-          test = app "test" ''npx vitest run "$@"'';
-          typecheck = app "typecheck" ''npx tsc --noEmit'';
-          db-apply = app "db-apply" ''npx tsx src/lib/migrate.ts "$@"'';
+          dev = app "dev" ''pnpm exec vite dev "$@"'';
+          test = app "test" ''pnpm exec vitest run "$@"'';
+          typecheck = app "typecheck" ''pnpm exec tsc --noEmit'';
+          db-apply = app "db-apply" ''pnpm exec tsx src/lib/migrate.ts "$@"'';
         });
     };
 }

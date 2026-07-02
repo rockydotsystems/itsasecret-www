@@ -9,7 +9,7 @@
     "build": "vite build",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
-    "db:apply": "node --loader tsx/esm src/lib/migrate.ts",
+    "db:apply": "tsx src/lib/migrate.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
