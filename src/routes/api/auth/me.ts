@@ -7,7 +7,14 @@ export const Route = createFileRoute('/api/auth/me')({
       GET: async ({ request }) => {
         try {
           const { user } = await requireAuth(request)
-          return Response.json({ user: { id: user.id, email: user.email } }, { status: 200 })
+          return Response.json({
+            user: {
+              id: user.id,
+              email: user.email,
+              kdf_salt: user.kdf_salt,
+              kdf_params: user.kdf_params,
+            },
+          }, { status: 200 })
         } catch (err) {
           return errorResponse(err)
         }

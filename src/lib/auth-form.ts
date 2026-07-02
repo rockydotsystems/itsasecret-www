@@ -110,6 +110,8 @@ export async function performLogout(): Promise<void> {
 export interface CurrentUser {
   id: string
   email: string
+  kdf_salt: string
+  kdf_params: string
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {

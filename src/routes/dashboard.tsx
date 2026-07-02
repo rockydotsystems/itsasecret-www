@@ -99,6 +99,11 @@ function DashboardPage() {
                 onChange={handleOrgChange}
                 variant="crumb"
                 disabled={orgOptions.length === 0}
+                action={
+                  <Link to="/orgs/new" aria-label="Create new organization">
+                    + New org
+                  </Link>
+                }
               />
               <span className="dashboard-navbar-crumb-separator" aria-hidden="true">/</span>
               <Select

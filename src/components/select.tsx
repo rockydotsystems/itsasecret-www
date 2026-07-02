@@ -10,6 +10,7 @@ export type SelectProps = {
   placeholder?: string
   disabled?: boolean
   variant?: 'default' | 'crumb'
+  action?: React.ReactNode
   className?: string
   style?: React.CSSProperties
 }
@@ -22,6 +23,7 @@ export function Select({
   placeholder,
   disabled = false,
   variant = 'default',
+  action,
   className,
   style,
 }: SelectProps) {
@@ -73,6 +75,7 @@ export function Select({
               {option.label}
             </li>
           ))}
+          {action && <li className="select-action">{action}</li>}
         </ul>
       )}
     </div>

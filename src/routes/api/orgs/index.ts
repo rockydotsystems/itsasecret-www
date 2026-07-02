@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgs, orgMembers, sessions } from '~/lib/schema'
+import { orgs, orgMembers, projects, sessions } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
@@ -56,6 +56,13 @@ export const Route = createFileRoute('/api/orgs/')({
             wrapped_org_key: wrappedOrgKey,
           })
 
+          const projectId = generateId()
+          await db.insert(projects).values({
+            id: projectId,
+            org_id: orgId,
+            name: 'default',
+          })
+
           const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
           encryptedOrgKeys[orgId] = encryptedOrgKey
           await db.update(sessions)
@@ -63,6 +70,7 @@ export const Route = createFileRoute('/api/orgs/')({
             .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
+          await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })
 
           const orgRows = await db.select().from(orgs).where(eq(orgs.id, orgId)).limit(1)
           return Response.json(orgRows[0], { status: 201 })

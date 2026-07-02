@@ -298,6 +298,25 @@ a:hover { text-decoration: underline; }
 }
 .select-option:hover { background: var(--accent-subtle); color: var(--text-primary); }
 .select-option.selected { color: var(--text-brand); }
+.select-action {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-default);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+.select-action a, .select-action button {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.select-action a:hover, .select-action button:hover {
+  color: var(--text-brand);
+  text-decoration: none;
+}
 
 .select-crumb .select-trigger {
   border-color: transparent; background: transparent;

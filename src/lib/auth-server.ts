@@ -15,5 +15,10 @@ export const getCurrentUserFn = createServerFn({ method: 'GET' })
     const user = await getCurrentUserFromRequest(request)
     if (!user) return null
 
-    return { id: user.id, email: user.email }
+    return {
+      id: user.id,
+      email: user.email,
+      kdf_salt: user.kdf_salt,
+      kdf_params: user.kdf_params,
+    }
   })
