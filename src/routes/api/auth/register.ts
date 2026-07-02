@@ -1,26 +1,19 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { users, orgs, orgMembers, sessions } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
-import { deriveKey, hashPassword, verifyPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
-import type { KdfParams } from '~/lib/crypto/kdf'
-import { generateKey, wrapKey, unwrapKey, encrypt } from '~/lib/crypto/envelope'
+import { deriveKey, hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
+import { generateKey, wrapKey, encrypt } from '~/lib/crypto/envelope'
 import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
-import { base64Encode, base64Decode } from '~/lib/crypto/base64'
-import { requireAuth, errorResponse } from '~/lib/auth'
-import { revokeSession } from '~/lib/sessions'
-import type { UserRow, OrgMemberRow } from '~/lib/types'
+import { base64Encode } from '~/lib/crypto/base64'
+import { errorResponse } from '~/lib/auth'
 
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12),
-  clientPubkey: z.string(),
-})
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
   clientPubkey: z.string(),
 })
 
@@ -32,8 +25,8 @@ export const Route = createFileRoute('/api/auth/register')({
           const body = registerSchema.parse(await request.json())
           const { email, password, clientPubkey } = body
 
-          const existing = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
-          if (existing) {
+          const existingRows = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
+          if (existingRows[0]) {
             return Response.json({ error: 'Email already registered' }, { status: 409 })
           }
 
@@ -47,18 +40,28 @@ export const Route = createFileRoute('/api/auth/register')({
           const wrappedOrgKey = await wrapKey(derivedKey, orgKey)
 
           const userId = generateId()
-          await db.prepare(
-            'INSERT INTO users (id, email, password_hash, kdf_salt, kdf_params) VALUES (?, ?, ?, ?, ?)'
-          ).bind(userId, email, passwordHash, saltB64, JSON.stringify(DEFAULT_KDF_PARAMS)).run()
+          await db.insert(users).values({
+            id: userId,
+            email,
+            password_hash: passwordHash,
+            kdf_salt: saltB64,
+            kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
+          })
 
           const orgId = generateId()
-          await db.prepare(
-            'INSERT INTO orgs (id, name, kind, owner_user_id) VALUES (?, ?, ?, ?)'
-          ).bind(orgId, `${email}'s org`, 'personal', userId).run()
+          await db.insert(orgs).values({
+            id: orgId,
+            name: `${email}'s org`,
+            kind: 'personal',
+            owner_user_id: userId,
+          })
 
-          await db.prepare(
-            'INSERT INTO org_members (org_id, user_id, role, wrapped_org_key) VALUES (?, ?, ?, ?)'
-          ).bind(orgId, userId, 'owner', wrappedOrgKey).run()
+          await db.insert(orgMembers).values({
+            org_id: orgId,
+            user_id: userId,
+            role: 'owner',
+            wrapped_org_key: wrappedOrgKey,
+          })
 
           const { publicKey: serverPubkey, privateKey } = await generateKeyPair()
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
