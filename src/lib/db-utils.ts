@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm'
 import { db } from './db'
 import * as schema from './schema'
 
@@ -43,5 +44,3 @@ export async function auditLog(entry: {
     metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
   })
 }
-
-import { eq } from 'drizzle-orm'

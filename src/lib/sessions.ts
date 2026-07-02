@@ -1,4 +1,6 @@
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from './db'
+import { sessions } from './schema'
 import { base64Encode } from './crypto/base64'
 import { generateId } from './db-utils'
 
@@ -13,28 +15,25 @@ export async function createSession(
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
   const sessionId = generateId()
 
-  await db.prepare(
-    `INSERT INTO sessions (id, user_id, token_hash, session_pubkey, encrypted_org_keys, created_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now', '+30 days'))`
-  ).bind(
-    sessionId,
-    userId,
-    tokenHash,
-    serverPubkey,
-    JSON.stringify(encryptedOrgKeys)
-  ).run()
+  await db.insert(sessions).values({
+    id: sessionId,
+    user_id: userId,
+    token_hash: tokenHash,
+    session_pubkey: serverPubkey,
+    encrypted_org_keys: JSON.stringify(encryptedOrgKeys),
+    created_at: new Date(),
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  })
 
   return { token, sessionId }
 }
 
 export async function revokeSession(sessionId: string): Promise<void> {
-  await db.prepare(
-    `UPDATE sessions SET revoked_at = datetime('now') WHERE id = ?`
-  ).bind(sessionId).run()
+  await db.update(sessions).set({ revoked_at: new Date() }).where(eq(sessions.id, sessionId))
 }
 
 export async function revokeAllUserSessions(userId: string): Promise<void> {
-  await db.prepare(
-    `UPDATE sessions SET revoked_at = datetime('now') WHERE user_id = ? AND revoked_at IS NULL`
-  ).bind(userId).run()
+  await db.update(sessions)
+    .set({ revoked_at: new Date() })
+    .where(and(eq(sessions.user_id, userId), isNull(sessions.revoked_at)))
 }
