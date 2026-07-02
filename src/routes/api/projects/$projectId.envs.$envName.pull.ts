@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { projects, environments, orgMembers, envPermissions, envVars, secrets } from '~/lib/schema'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { decrypt, encrypt } from '~/lib/crypto/envelope'
-import type { EnvRow, EnvVarRow, SecretRow, ProjectRow, OrgMemberRow, EnvPermissionRow } from '~/lib/types'
 
 export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pull')({
   server: {
@@ -15,45 +16,55 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pul
           const projectId = params.projectId!
           const envName = params.envName!
 
-          const project = await db.prepare('SELECT * FROM projects WHERE id = ? AND deleted_at IS NULL').bind(projectId).first<ProjectRow>()
+          const projectRows = await db.select().from(projects)
+            .where(and(eq(projects.id, projectId), isNull(projects.deleted_at)))
+            .limit(1)
+          const project = projectRows[0] ?? null
           if (!project) return Response.json({ error: 'Project not found' }, { status: 404 })
 
-          const env = await db.prepare(
-            'SELECT * FROM environments WHERE project_id = ? AND name = ? AND deleted_at IS NULL'
-          ).bind(projectId, envName).first<EnvRow>()
+          const envRows = await db.select().from(environments)
+            .where(and(eq(environments.project_id, projectId), eq(environments.name, envName), isNull(environments.deleted_at)))
+            .limit(1)
+          const env = envRows[0] ?? null
           if (!env) return Response.json({ error: 'Environment not found' }, { status: 404 })
 
-          const member = await db.prepare(
-            'SELECT * FROM org_members WHERE org_id = ? AND user_id = ?'
-          ).bind(orgId, user.id).first<OrgMemberRow>()
+          const memberRows = await db.select().from(orgMembers)
+            .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, user.id)))
+            .limit(1)
+          const member = memberRows[0] ?? null
 
           if (!member || (member.role !== ORG_ROLE_OWNER && member.role !== ORG_ROLE_ADMIN)) {
-            const perm = await db.prepare(
-              'SELECT * FROM env_permissions WHERE env_id = ? AND user_id = ?'
-            ).bind(env.id, user.id).first<EnvPermissionRow>()
+            const permRows = await db.select().from(envPermissions)
+              .where(and(eq(envPermissions.env_id, env.id), eq(envPermissions.user_id, user.id)))
+              .limit(1)
+            const perm = permRows[0] ?? null
             if (!perm) return Response.json({ error: 'No access to this environment' }, { status: 403 })
           }
 
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const orgKey = await getOrgKey(session, sessionKey, orgId)
 
-          const varResult = await db.prepare(
-            'SELECT key, value FROM env_vars WHERE env_id = ? AND deleted_at IS NULL'
-          ).bind(env.id).all<EnvVarRow>()
+          const varRows = await db.select({
+            key: envVars.key,
+            value: envVars.value,
+          }).from(envVars)
+            .where(and(eq(envVars.env_id, env.id), isNull(envVars.deleted_at)))
 
-          const secretResult = await db.prepare(
-            'SELECT key, encrypted_value FROM secrets WHERE env_id = ? AND deleted_at IS NULL'
-          ).bind(env.id).all<SecretRow>()
+          const secretRows = await db.select({
+            key: secrets.key,
+            encrypted_value: secrets.encrypted_value,
+          }).from(secrets)
+            .where(and(eq(secrets.env_id, env.id), isNull(secrets.deleted_at)))
 
-          const secrets: Record<string, string> = {}
-          for (const s of secretResult.results) {
+          const secretsMap: Record<string, string> = {}
+          for (const s of secretRows) {
             const plaintext = await decrypt(orgKey, s.encrypted_value)
-            secrets[s.key] = await encrypt(sessionKey, plaintext)
+            secretsMap[s.key] = await encrypt(sessionKey, plaintext)
           }
 
           return Response.json({
-            vars: varResult.results.map((v) => ({ key: v.key, value: v.value })),
-            secrets,
+            vars: varRows.map((v) => ({ key: v.key, value: v.value })),
+            secrets: secretsMap,
           }, { status: 200 })
         } catch (err) {
           return errorResponse(err)

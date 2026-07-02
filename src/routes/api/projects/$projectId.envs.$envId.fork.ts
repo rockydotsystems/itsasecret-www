@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { environments, envPermissions, envVars, secrets } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
-import type { EnvRow, EnvVarRow, SecretRow } from '~/lib/types'
 
 const forkSchema = z.object({
   name: z.string().min(1),
@@ -21,42 +22,60 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envId/fork'
           const parentEnvId = params.envId!
           const { name } = forkSchema.parse(await request.json())
 
-          const existing = await db.prepare(
-            'SELECT id FROM environments WHERE project_id = ? AND name = ? AND deleted_at IS NULL'
-          ).bind(projectId, name).first()
-          if (existing) return Response.json({ error: 'Environment name already exists' }, { status: 409 })
+          const existingRows = await db.select({ id: environments.id }).from(environments)
+            .where(and(eq(environments.project_id, projectId), eq(environments.name, name), isNull(environments.deleted_at)))
+            .limit(1)
+          if (existingRows[0]) return Response.json({ error: 'Environment name already exists' }, { status: 409 })
 
           const newEnvId = generateId()
-          await db.prepare(
-            'INSERT INTO environments (id, project_id, name, parent_env_id, created_by) VALUES (?, ?, ?, ?, ?)'
-          ).bind(newEnvId, projectId, name, parentEnvId, user.id).run()
+          await db.insert(environments).values({
+            id: newEnvId,
+            project_id: projectId,
+            name,
+            parent_env_id: parentEnvId,
+            created_by: user.id,
+          })
 
-          await db.prepare(
-            'INSERT INTO env_permissions (env_id, user_id, role) VALUES (?, ?, ?)'
-          ).bind(newEnvId, user.id, ROLE_ADMIN).run()
+          await db.insert(envPermissions).values({
+            env_id: newEnvId,
+            user_id: user.id,
+            role: ROLE_ADMIN,
+          })
 
-          const parentVars = await db.prepare(
-            'SELECT key, value FROM env_vars WHERE env_id = ? AND deleted_at IS NULL'
-          ).bind(parentEnvId).all<EnvVarRow>()
-          for (const v of parentVars.results) {
-            await db.prepare(
-              'INSERT INTO env_vars (id, env_id, key, value, created_by) VALUES (?, ?, ?, ?, ?)'
-            ).bind(generateId(), newEnvId, v.key, v.value, user.id).run()
+          const parentVars = await db.select({
+            key: envVars.key,
+            value: envVars.value,
+          }).from(envVars)
+            .where(and(eq(envVars.env_id, parentEnvId), isNull(envVars.deleted_at)))
+          for (const v of parentVars) {
+            await db.insert(envVars).values({
+              id: generateId(),
+              env_id: newEnvId,
+              key: v.key,
+              value: v.value,
+              created_by: user.id,
+            })
           }
 
-          const parentSecrets = await db.prepare(
-            'SELECT key, encrypted_value FROM secrets WHERE env_id = ? AND deleted_at IS NULL'
-          ).bind(parentEnvId).all<SecretRow>()
-          for (const s of parentSecrets.results) {
-            await db.prepare(
-              'INSERT INTO secrets (id, env_id, key, encrypted_value, created_by) VALUES (?, ?, ?, ?, ?)'
-            ).bind(generateId(), newEnvId, s.key, s.encrypted_value, user.id).run()
+          const parentSecrets = await db.select({
+            key: secrets.key,
+            encrypted_value: secrets.encrypted_value,
+          }).from(secrets)
+            .where(and(eq(secrets.env_id, parentEnvId), isNull(secrets.deleted_at)))
+          for (const s of parentSecrets) {
+            await db.insert(secrets).values({
+              id: generateId(),
+              env_id: newEnvId,
+              key: s.key,
+              encrypted_value: s.encrypted_value,
+              created_by: user.id,
+            })
           }
 
           await auditLog({ orgId, actorUserId: user.id, action: 'env.fork', targetType: 'env', targetId: newEnvId, metadata: { parentEnvId } })
 
-          const env = await db.prepare('SELECT * FROM environments WHERE id = ?').bind(newEnvId).first<EnvRow>()
-          return Response.json(env, { status: 201 })
+          const envRows = await db.select().from(environments).where(eq(environments.id, newEnvId)).limit(1)
+          return Response.json(envRows[0], { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }
