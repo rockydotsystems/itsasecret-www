@@ -2,6 +2,7 @@ import { Layout } from '../layout';
 import { Button } from '../components/button';
 import { Badge } from '../components/badge';
 import { LogoMark } from '../components/logo';
+import { Navbar } from '../components/navbar';
 
 const FEATURES = [
   {
@@ -28,6 +29,7 @@ const FEATURES = [
 
 export const LandingPage = () => (
   <Layout title="itsasecret — Secrets, synced.">
+    <Navbar />
     <section class="hero">
       <div style="position:relative;max-width:720px;margin:0 auto">
         <div class="hero-badge">

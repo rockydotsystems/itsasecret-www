@@ -331,6 +331,28 @@ a:hover { text-decoration: underline; }
 .auth-footer { text-align: center; margin-top: var(--space-6); font-size: var(--text-sm); color: var(--text-secondary); }
 
 /* ─── Marketing ─────────────────────────────────── */
+.navbar {
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky; top: 0; z-index: 100;
+}
+.navbar-inner {
+  max-width: 1040px; margin: 0 auto; padding: 0 40px;
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+}
+.navbar-brand {
+  display: flex; align-items: center; gap: 8px; text-decoration: none;
+  font: 600 var(--text-md)/var(--leading-snug) var(--font-family-display);
+  color: var(--text-primary);
+}
+.navbar-brand:hover { text-decoration: none; }
+.navbar-links { display: flex; gap: 24px; }
+.navbar-links a {
+  font-size: var(--text-sm); font-weight: 500; color: var(--text-secondary); text-decoration: none;
+}
+.navbar-links a:hover { color: var(--text-primary); text-decoration: none; }
+.navbar-actions { display: flex; align-items: center; gap: 8px; }
+
 .hero { position: relative; padding: 120px 40px 100px; text-align: center; overflow: hidden; background: var(--bg-base); }
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;
