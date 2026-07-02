@@ -10,8 +10,8 @@ forks). Full product/architecture docs live in `../docs/`.
 
 - **Runtime**: Node.js (custom infra; Cloudflare DNS only)
 - **Framework**: TanStack Start (React + TanStack Router + Vite + Nitro)
-- **Database**: SQLite via better-sqlite3 (single shared database, not per-org sharded)
-- **Auth**: master-password-derived key (Argon2id KDF) + ECDH per-session transport key + server-side sessions in SQLite
+- **Database**: Postgres 17 (local Docker via `docker-compose.yml`) with Drizzle ORM
+- **Auth**: master-password-derived key (Argon2id KDF) + ECDH per-session transport key + server-side sessions in Postgres
 - **Crypto**: envelope encryption — user password unwraps org shared key, shared key unwraps secret value, server re-encrypts with ephemeral session key for transport
 - **Web UI**: React (SSR + hydration via TanStack Start)
 - **API**: TanStack Start server routes (file-based, under `src/routes/api/`)
@@ -23,15 +23,18 @@ nix develop                    # enter dev shell (node)
 nix run .#dev                  # vite dev (local)
 nix run .#test                 # vitest run
 nix run .#typecheck            # tsc --noEmit
-nix run .#db-apply             # apply migrations
+nix run .#db-push              # push schema to Postgres
+nix run .#db-migrate           # run drizzle-kit migrations
+nix run .#db-generate          # generate drizzle-kit migrations
 pnpm install                   # first-time dep install (inside dev shell)
+docker compose up -d           # start Postgres 17
 ```
 
 ## Key decisions (from docs/)
 
-- **Single SQLite database** for all orgs — relational domain (users ↔ orgs ↔ projects ↔ environments ↔ RBAC) favors joins/FKs over per-tenant sharding.
+- **Single Postgres database** for all orgs — relational domain (users ↔ orgs ↔ projects ↔ environments ↔ RBAC) favors joins/FKs over per-tenant sharding.
 - **Soft deletes, no ON DELETE CASCADE** — `deleted_at` column on retention-sensitive tables (`env_vars`, `secrets`, `environments`, `projects`). Daily setInterval purges rows older than 90 days.
-- **Server-side sessions in SQLite** (not JWT) — need revocation for kicked users, password resets, org ownership transfer.
+- **Server-side sessions in Postgres** (not JWT) — need revocation for kicked users, password resets, org ownership transfer.
 - **RBAC roles at environment level**: `read`, `write`, `admin`. Forking an environment grants full (admin) to the forker on the fork only, not the parent.
 - **Personal orgs stay single-member** — sharing only via explicitly-created shared orgs.
 - **No MFA in v1** — master-password auth first; TOTP/passkeys later.
@@ -42,9 +45,10 @@ pnpm install                   # first-time dep install (inside dev shell)
 ```
 www/
   flake.nix              # nix dev shell + apps
+  docker-compose.yml     # Postgres 17 container
   vite.config.ts         # Vite + TanStack Start + Nitro config
   tsconfig.json          # TypeScript config (React, Node, path aliases)
-  migrations/            # SQLite SQL migrations
+  drizzle.config.ts      # Drizzle Kit config
   src/
     router.tsx           # TanStack Router instance
     start.ts             # TanStack Start config (global middleware, cron purge)
@@ -56,14 +60,13 @@ www/
       dashboard.tsx      # Dashboard page
       api/               # API server routes (HTTP endpoints for CLI + web)
     lib/
-      db.ts              # better-sqlite3 connection + D1-compatible wrapper
-      db-utils.ts        # generateId, softDelete, auditLog
-      types.ts           # Row types
+      db.ts              # Drizzle + postgres-js connection
+      schema.ts          # Drizzle pgTable definitions for all 10 tables
+      db-utils.ts        # generateId, per-table softDelete, auditLog
       auth.ts            # requireAuth helper, session key utils, error handling
       rbac.ts            # requireOrgRole, requireEnvRole helpers
       sessions.ts        # createSession, revokeSession
       crypto/            # envelope encryption (encrypt/decrypt/wrap/unwrap)
-      migrate.ts         # standalone migration runner
     components/          # React UI components
     styles.css           # Global styles (design system)
 ```

@@ -22,7 +22,9 @@
               echo "  pnpm dev            # vite dev (local)"
               echo "  pnpm test           # vitest"
               echo "  pnpm typecheck      # tsc --noEmit"
-              echo "  pnpm db:apply       # apply migrations"
+              echo "  pnpm db:push        # push schema to Postgres"
+              echo "  pnpm db:migrate     # run drizzle-kit migrations"
+              echo "  pnpm db:generate    # generate drizzle-kit migrations"
               echo ""
             '';
           };
@@ -45,7 +47,9 @@
           dev = app "dev" ''pnpm exec vite dev "$@"'';
           test = app "test" ''pnpm exec vitest run "$@"'';
           typecheck = app "typecheck" ''pnpm exec tsc --noEmit'';
-          db-apply = app "db-apply" ''pnpm exec tsx src/lib/migrate.ts "$@"'';
+          db-push = app "db-push" ''pnpm exec drizzle-kit push "$@"'';
+          db-migrate = app "db-migrate" ''pnpm exec drizzle-kit migrate "$@"'';
+          db-generate = app "db-generate" ''pnpm exec drizzle-kit generate "$@"'';
         });
     };
 }
