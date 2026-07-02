@@ -1,4 +1,5 @@
 import { eq, and, isNull, gt } from 'drizzle-orm'
+import { ZodError } from 'zod'
 import { db } from './db'
 import { users, sessions } from './schema'
 import type { User, Session } from './schema'
@@ -83,6 +84,10 @@ export function jsonError(message: string, status: number): HttpError {
 export function errorResponse(err: unknown): Response {
   if (err instanceof HttpError) {
     return Response.json(err.body, { status: err.status })
+  }
+  if (err instanceof ZodError) {
+    const issue = err.issues[0]
+    return Response.json({ error: issue?.message ?? 'Invalid input' }, { status: 400 })
   }
   console.error('Unhandled error:', err)
   return Response.json({ error: 'Internal server error' }, { status: 500 })
