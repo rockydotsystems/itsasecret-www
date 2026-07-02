@@ -2,6 +2,7 @@ import { Layout } from '../layout';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import { LogoMark } from '../components/logo';
+import { AUTH_SCRIPT } from '../scripts/auth';
 
 export const RegisterPage = () => (
   <Layout title="itsasecret — Create account">
@@ -14,14 +15,14 @@ export const RegisterPage = () => (
         <h1 class="auth-title">Create your account</h1>
         <p class="auth-subtitle">Your master password encrypts your secrets. We can't recover it for you.</p>
 
-        <form method="post" action="/api/auth/register" style="display:flex;flex-direction:column;gap:20px">
+        <form id="auth-form" data-auth-action="/api/auth/register" style="display:flex;flex-direction:column;gap:20px">
           <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
           <Input
             name="password"
             type="password"
             label="Master password"
             placeholder="At least 12 characters"
-            helperText="This password decrypts your encryption key. Choose carefully."
+            helperText="This password encrypts your encryption key. Choose carefully."
             required
           />
           <Button type="submit" size="lg">Create account</Button>
@@ -32,5 +33,6 @@ export const RegisterPage = () => (
         </p>
       </div>
     </div>
+    <script dangerouslySetInnerHTML={{ __html: AUTH_SCRIPT }} />
   </Layout>
 );

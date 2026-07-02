@@ -2,6 +2,7 @@ import { Layout } from '../layout';
 import { Button } from '../components/button';
 import { Input } from '../components/input';
 import { LogoMark } from '../components/logo';
+import { AUTH_SCRIPT } from '../scripts/auth';
 
 export const LoginPage = () => (
   <Layout title="itsasecret — Login">
@@ -14,7 +15,7 @@ export const LoginPage = () => (
         <h1 class="auth-title">Welcome back</h1>
         <p class="auth-subtitle">Enter your master password to decrypt your vault.</p>
 
-        <form method="post" action="/api/auth/login" style="display:flex;flex-direction:column;gap:20px">
+        <form id="auth-form" data-auth-action="/api/auth/login" style="display:flex;flex-direction:column;gap:20px">
           <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
           <Input name="password" type="password" label="Master password" placeholder="••••••••••••" required />
           <Button type="submit" size="lg">Log in</Button>
@@ -25,5 +26,6 @@ export const LoginPage = () => (
         </p>
       </div>
     </div>
+    <script dangerouslySetInnerHTML={{ __html: AUTH_SCRIPT }} />
   </Layout>
 );
