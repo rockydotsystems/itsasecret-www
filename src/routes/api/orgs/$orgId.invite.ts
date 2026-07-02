@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq, and } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { users, orgMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
-import type { UserRow, OrgMemberRow } from '~/lib/types'
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -23,24 +24,35 @@ export const Route = createFileRoute('/api/orgs/$orgId/invite')({
           const body = inviteSchema.parse(await request.json())
           const { email, role, wrappedOrgKey } = body
 
-          const invitee = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<UserRow>()
+          const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1)
+          const invitee = userRows[0] ?? null
           if (!invitee) return Response.json({ error: 'User not found' }, { status: 404 })
 
-          const existing = await db.prepare(
-            'SELECT * FROM org_members WHERE org_id = ? AND user_id = ?'
-          ).bind(orgId, invitee.id).first<OrgMemberRow>()
-          if (existing) return Response.json({ error: 'User is already a member' }, { status: 409 })
+          const existingRows = await db.select().from(orgMembers)
+            .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, invitee.id)))
+            .limit(1)
+          if (existingRows[0]) return Response.json({ error: 'User is already a member' }, { status: 409 })
 
-          await db.prepare(
-            'INSERT INTO org_members (org_id, user_id, role, wrapped_org_key, invited_by) VALUES (?, ?, ?, ?, ?)'
-          ).bind(orgId, invitee.id, role, wrappedOrgKey, user.id).run()
+          await db.insert(orgMembers).values({
+            org_id: orgId,
+            user_id: invitee.id,
+            role,
+            wrapped_org_key: wrappedOrgKey,
+            invited_by: user.id,
+          })
 
           await auditLog({ orgId, actorUserId: user.id, action: 'member.invite', targetType: 'user', targetId: invitee.id, metadata: { role } })
 
-          const member = await db.prepare(
-            'SELECT org_id, user_id, role, invited_by, created_at FROM org_members WHERE org_id = ? AND user_id = ?'
-          ).bind(orgId, invitee.id).first<OrgMemberRow>()
-          return Response.json(member, { status: 201 })
+          const memberRows = await db.select({
+            org_id: orgMembers.org_id,
+            user_id: orgMembers.user_id,
+            role: orgMembers.role,
+            invited_by: orgMembers.invited_by,
+            created_at: orgMembers.created_at,
+          }).from(orgMembers)
+            .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, invitee.id)))
+            .limit(1)
+          return Response.json(memberRows[0], { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }

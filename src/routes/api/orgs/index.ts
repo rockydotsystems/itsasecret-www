@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { orgs, orgMembers, sessions } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
-import type { OrgRow, OrgMemberRow } from '~/lib/types'
 
 const createOrgSchema = z.object({
   name: z.string().min(1),
@@ -18,10 +19,17 @@ export const Route = createFileRoute('/api/orgs/')({
       GET: async ({ request }) => {
         try {
           const { user } = await requireAuth(request)
-          const result = await db.prepare(
-            `SELECT o.* FROM orgs o JOIN org_members m ON o.id = m.org_id WHERE m.user_id = ? AND o.deleted_at IS NULL`
-          ).bind(user.id).all<OrgRow>()
-          return Response.json(result.results, { status: 200 })
+          const rows = await db.select({
+            id: orgs.id,
+            name: orgs.name,
+            kind: orgs.kind,
+            owner_user_id: orgs.owner_user_id,
+            created_at: orgs.created_at,
+            deleted_at: orgs.deleted_at,
+          }).from(orgs)
+            .innerJoin(orgMembers, and(eq(orgMembers.org_id, orgs.id), eq(orgMembers.user_id, user.id)))
+            .where(isNull(orgs.deleted_at))
+          return Response.json(rows, { status: 200 })
         } catch (err) {
           return errorResponse(err)
         }
@@ -34,23 +42,30 @@ export const Route = createFileRoute('/api/orgs/')({
           const { name, wrappedOrgKey, encryptedOrgKey } = body
 
           const orgId = generateId()
-          await db.prepare(
-            'INSERT INTO orgs (id, name, kind, owner_user_id) VALUES (?, ?, ?, ?)'
-          ).bind(orgId, name, 'shared', user.id).run()
+          await db.insert(orgs).values({
+            id: orgId,
+            name,
+            kind: 'shared',
+            owner_user_id: user.id,
+          })
 
-          await db.prepare(
-            'INSERT INTO org_members (org_id, user_id, role, wrapped_org_key) VALUES (?, ?, ?, ?)'
-          ).bind(orgId, user.id, ORG_ROLE_OWNER, wrappedOrgKey).run()
+          await db.insert(orgMembers).values({
+            org_id: orgId,
+            user_id: user.id,
+            role: ORG_ROLE_OWNER,
+            wrapped_org_key: wrappedOrgKey,
+          })
 
           const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
           encryptedOrgKeys[orgId] = encryptedOrgKey
-          await db.prepare('UPDATE sessions SET encrypted_org_keys = ? WHERE id = ?')
-            .bind(JSON.stringify(encryptedOrgKeys), session.id).run()
+          await db.update(sessions)
+            .set({ encrypted_org_keys: JSON.stringify(encryptedOrgKeys) })
+            .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
 
-          const org = await db.prepare('SELECT * FROM orgs WHERE id = ?').bind(orgId).first<OrgRow>()
-          return Response.json(org, { status: 201 })
+          const orgRows = await db.select().from(orgs).where(eq(orgs.id, orgId)).limit(1)
+          return Response.json(orgRows[0], { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }
