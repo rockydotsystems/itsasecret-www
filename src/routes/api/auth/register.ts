@@ -10,6 +10,8 @@ import { generateKey, wrapKey, encrypt } from '~/lib/crypto/envelope'
 import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
 import { base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
+import { createSessionCookieHeader } from '~/lib/session-cookie'
+import { getClientIP, isRateLimited } from '~/lib/rate-limit'
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -17,11 +19,27 @@ const registerSchema = z.object({
   clientPubkey: z.string(),
 })
 
+function isSecureRequest(request: Request): boolean {
+  const url = new URL(request.url)
+  const forwardedProto = request.headers.get('x-forwarded-proto')
+  return forwardedProto === 'https' || url.protocol === 'https:'
+}
+
 export const Route = createFileRoute('/api/auth/register')({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
+          const clientIP = getClientIP(request)
+          const registerKey = `register:${clientIP}`
+          const rateLimit = isRateLimited(registerKey)
+          if (rateLimit.limited) {
+            return Response.json(
+              { error: 'Too many registration attempts. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+            )
+          }
+
           const body = registerSchema.parse(await request.json())
           const { email, password, clientPubkey } = body
 
@@ -30,11 +48,13 @@ export const Route = createFileRoute('/api/auth/register')({
             return Response.json({ error: 'Email already registered' }, { status: 409 })
           }
 
-          const salt = crypto.getRandomValues(new Uint8Array(16))
-          const saltB64 = base64Encode(salt)
+          // Dedicated password hash salt and KDF salt are independent so the
+          // password hash cannot reveal the KDF-derived master key.
+          const kdfSalt = crypto.getRandomValues(new Uint8Array(16))
+          const kdfSaltB64 = base64Encode(kdfSalt)
 
-          const derivedKey = await deriveKey(password, salt)
-          const passwordHash = await hashPassword(password, salt)
+          const passwordHash = await hashPassword(password)
+          const derivedKey = await deriveKey(password, kdfSalt)
 
           const orgKey = generateKey()
           const wrappedOrgKey = await wrapKey(derivedKey, orgKey)
@@ -44,7 +64,7 @@ export const Route = createFileRoute('/api/auth/register')({
             id: userId,
             email,
             password_hash: passwordHash,
-            kdf_salt: saltB64,
+            kdf_salt: kdfSaltB64,
             kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
           })
 
@@ -74,7 +94,10 @@ export const Route = createFileRoute('/api/auth/register')({
           await auditLog({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId })
           await auditLog({ orgId, actorUserId: userId, action: 'org.create', targetType: 'org', targetId: orgId })
 
-          return Response.json({ token, serverPubkey, orgKeys }, { status: 201 })
+          const headers = new Headers()
+          headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
+
+          return Response.json({ token, serverPubkey, orgKeys }, { status: 201, headers })
         } catch (err) {
           return errorResponse(err)
         }
@@ -82,3 +105,4 @@ export const Route = createFileRoute('/api/auth/register')({
     },
   },
 })
+

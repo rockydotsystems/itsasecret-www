@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { requireAuthBeforeLoad } from '~/lib/route-guards'
 import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
@@ -17,6 +18,7 @@ const SECRETS = [
 const ENVIRONMENTS = ['production', 'staging', 'preview-pr-42']
 
 export const Route = createFileRoute('/dashboard')({
+  beforeLoad: requireAuthBeforeLoad,
   component: DashboardPage,
 })
 

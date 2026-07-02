@@ -1,18 +1,27 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
 import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
-import { submitAuthForm } from '~/lib/auth-form'
+import { submitAuthForm, getRedirectPath } from '~/lib/auth-form'
+import { requireGuestBeforeLoad } from '~/lib/route-guards'
+
+const registerSearchSchema = z.object({
+  redirect: z.string().optional(),
+})
 
 export const Route = createFileRoute('/register')({
+  validateSearch: registerSearchSchema,
+  beforeLoad: requireGuestBeforeLoad,
   component: RegisterPage,
 })
 
 function RegisterPage() {
-  const navigate = useNavigate()
+  const { redirect } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const redirectTo = getRedirectPath(redirect, typeof window !== 'undefined' ? window.location.origin : undefined)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -25,7 +34,7 @@ function RegisterPage() {
 
     try {
       await submitAuthForm('/api/auth/register', email, password)
-      navigate({ to: '/dashboard' })
+      window.location.href = redirectTo
     } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
     } finally {

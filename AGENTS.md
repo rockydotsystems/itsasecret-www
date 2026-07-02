@@ -38,7 +38,10 @@ docker compose up -d           # start Postgres 17
 - **RBAC roles at environment level**: `read`, `write`, `admin`. Forking an environment grants full (admin) to the forker on the fork only, not the parent.
 - **Personal orgs stay single-member** — sharing only via explicitly-created shared orgs.
 - **No MFA in v1** — master-password auth first; TOTP/passkeys later.
+- **Password hash is independent from the KDF-derived key** — the online authentication hash uses its own Argon2id salt/parameters so it cannot leak the master key that wraps organization keys.
+- **Login/register endpoints have per-IP rate limiting and timing-attack mitigations** — failed logins burn a dummy password hash so response times do not reveal whether an email is registered.
 - **API routes are TanStack Start server routes** — the Go CLI calls these as raw HTTP endpoints (not server functions).
+- **Route guards use `beforeLoad` with server-side cookie check** — protected pages redirect to `/login?redirect=<origin>`; logged-in users hitting `/login` or `/register` are redirected to `/dashboard`.
 
 ## Repo layout
 
@@ -63,7 +66,10 @@ www/
       db.ts              # Drizzle + postgres-js connection
       schema.ts          # Drizzle pgTable definitions for all 10 tables
       db-utils.ts        # generateId, per-table softDelete, auditLog
-      auth.ts            # requireAuth helper, session key utils, error handling
+      auth.ts            # requireAuth helper, session key utils, error handling, getCurrentUserFromRequest
+      auth-server.ts     # getCurrentUserFn server function (reads session cookie)
+      route-guards.ts    # requireAuthBeforeLoad / requireGuestBeforeLoad route guards
+      session-cookie.ts  # session_token cookie helpers (Set-Cookie / read)
       rbac.ts            # requireOrgRole, requireEnvRole helpers
       sessions.ts        # createSession, revokeSession
       crypto/            # envelope encryption (encrypt/decrypt/wrap/unwrap)

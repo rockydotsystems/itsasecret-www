@@ -41,10 +41,21 @@ export async function submitAuthForm(
   return data
 }
 
+export function getRedirectPath(redirect: string | undefined, origin?: string): string {
+  if (!redirect) return '/dashboard'
+  try {
+    const url = new URL(redirect)
+    if (origin && url.origin !== origin) return '/dashboard'
+    return url.pathname + url.search + url.hash
+  } catch {
+    return redirect.startsWith('/') ? redirect : '/dashboard'
+  }
+}
+
 export function storeAuthFormNativeListener(
   formId: string,
   endpoint: '/api/auth/register' | '/api/auth/login',
-  successUrl: string
+  fallbackUrl: string
 ): void {
   if (typeof document === 'undefined') return
   const form = document.getElementById(formId)
@@ -62,9 +73,13 @@ export function storeAuthFormNativeListener(
     const password = passwordEl.value
     if (!email || !password) return
 
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect') || fallbackUrl
+    const redirectTo = getRedirectPath(redirect)
+
     submitAuthForm(endpoint, email, password)
       .then(() => {
-        window.location.href = successUrl
+        window.location.href = redirectTo
       })
       .catch((err) => {
         const errorEl = form.querySelector('[data-auth-form-error]') as HTMLElement | null

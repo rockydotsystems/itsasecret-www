@@ -81,6 +81,15 @@ export function jsonError(message: string, status: number): HttpError {
   return new HttpError(status, { error: message })
 }
 
+export async function getCurrentUserFromRequest(request: Request): Promise<User | null> {
+  try {
+    const { user } = await requireAuth(request)
+    return user
+  } catch {
+    return null
+  }
+}
+
 export function errorResponse(err: unknown): Response {
   if (err instanceof HttpError) {
     return Response.json(err.body, { status: err.status })
