@@ -23,13 +23,13 @@ export async function deriveSessionKey(
   const peerKeyBytes = base64Decode(peerPublicKey);
   const peerPubKey = await crypto.subtle.importKey(
     'raw',
-    peerKeyBytes,
+    peerKeyBytes as BufferSource,
     { name: 'ECDH', namedCurve: 'P-256' },
     false,
     []
   );
   const sharedBits = await crypto.subtle.deriveBits(
-    { name: 'ECDH', public: peerPubKey } as SubtleCryptoDeriveKeyAlgorithm,
+    { name: 'ECDH', public: peerPubKey } as AlgorithmIdentifier,
     privateKey,
     256
   );

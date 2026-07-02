@@ -5,7 +5,7 @@ import { db } from '~/lib/db'
 import { orgs, orgMembers, sessions } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
-import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { ORG_ROLE_OWNER } from '~/lib/rbac'
 
 const createOrgSchema = z.object({
   name: z.string().min(1),

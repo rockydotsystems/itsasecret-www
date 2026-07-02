@@ -23,7 +23,7 @@ export async function requireAuth(request: Request): Promise<AuthContext> {
   } catch {
     throw jsonError('Invalid token format', 401)
   }
-  const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes as BufferSource)
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
 
   const sessionRows = await db

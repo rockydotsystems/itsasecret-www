@@ -12,6 +12,7 @@ export function Toggle({ checked = false, disabled = false, label, id }: ToggleP
       aria-checked={checked}
       aria-label={label || 'toggle'}
       className={`toggle${checked ? ' toggle-checked' : ''}`}
+      aria-disabled={disabled}
       data-toggle-target={id}
     >
       <span className={`toggle-thumb ${checked ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'}`} />

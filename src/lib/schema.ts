@@ -43,11 +43,13 @@ export const projects = pgTable('projects', {
   index('idx_projects_org').on(t.org_id),
 ])
 
+let environmentsRef: any
+
 export const environments = pgTable('environments', {
   id: text().primaryKey(),
   project_id: text().notNull().references(() => projects.id),
   name: text().notNull(),
-  parent_env_id: text().references(() => (environments as any).id),
+  parent_env_id: text().references(() => environmentsRef.id),
   created_by: text().notNull().references(() => users.id),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
@@ -56,6 +58,8 @@ export const environments = pgTable('environments', {
   index('idx_envs_project').on(t.project_id),
   index('idx_envs_parent').on(t.parent_env_id),
 ])
+
+environmentsRef = environments
 
 export const envVars = pgTable('env_vars', {
   id: text().primaryKey(),
