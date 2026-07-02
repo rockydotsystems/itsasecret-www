@@ -1,9 +1,7 @@
 import Database from 'better-sqlite3'
-import { readFileSync, readdirSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
 const dbPath = process.env.DATABASE_PATH || 'itsasecret.db'
 
 const rawDb = new Database(dbPath)
