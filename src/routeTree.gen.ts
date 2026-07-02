@@ -19,6 +19,7 @@ import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
 import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
+import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as ApiProjectsProjectIdEnvsRouteImport } from './routes/api/projects/$projectId.envs'
@@ -83,6 +84,11 @@ const ApiEnvsEnvIdRoute = ApiEnvsEnvIdRouteImport.update({
 const ApiAuthRegisterRoute = ApiAuthRegisterRouteImport.update({
   id: '/api/auth/register',
   path: '/api/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
+  id: '/api/auth/me',
+  path: '/api/auth/me',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/api/health': typeof ApiHealthRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/api/health': typeof ApiHealthRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/api/health': typeof ApiHealthRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
+  '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/auth/register'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/auth/register'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/api/health'
     | '/api/auth/login'
     | '/api/auth/logout'
+    | '/api/auth/me'
     | '/api/auth/register'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
@@ -340,6 +352,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
+  ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/register'
       fullPath: '/api/auth/register'
       preLoaderRoute: typeof ApiAuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/me': {
+      id: '/api/auth/me'
+      path: '/api/auth/me'
+      fullPath: '/api/auth/me'
+      preLoaderRoute: typeof ApiAuthMeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/logout': {
@@ -643,6 +663,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
+  ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,

@@ -369,3 +369,37 @@ a:hover { text-decoration: underline; }
 .feature-card p { font: 400 var(--text-sm)/var(--leading-relaxed) var(--font-family-body); color: var(--text-secondary); margin: 0; }
 
 .site-footer { padding: 40px; text-align: center; font-family: var(--font-family-mono); font-size: 12px; color: var(--text-tertiary); }
+
+/* ─── 404 page ──────────────────────────────────── */
+.not-found-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--space-8);
+  background: var(--bg-base);
+}
+.not-found-card {
+  max-width: 480px;
+  text-align: center;
+}
+.not-found-code {
+  font: 700 var(--text-6xl)/var(--leading-tight) var(--font-family-mono);
+  color: var(--text-primary);
+  letter-spacing: var(--tracking-mono);
+  margin-bottom: var(--space-2);
+}
+.not-found-title {
+  font: 600 var(--text-2xl)/var(--leading-snug) var(--font-family-display);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+.not-found-body {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+}
+.not-found-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}

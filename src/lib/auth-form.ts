@@ -92,6 +92,27 @@ export async function performLogout(): Promise<void> {
   window.location.href = '/login'
 }
 
+export interface CurrentUser {
+  id: string
+  email: string
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  if (typeof localStorage === 'undefined') return null
+  const token = localStorage.getItem('sessionToken')
+  if (!token) return null
+  try {
+    const resp = await fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!resp.ok) return null
+    const data = (await resp.json()) as { user: CurrentUser }
+    return data.user
+  } catch {
+    return null
+  }
+}
+
 export function attachLogoutButtonNativeListener(buttonId: string): void {
   if (typeof document === 'undefined') return
   const button = document.getElementById(buttonId)

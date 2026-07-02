@@ -2,9 +2,10 @@ import { LogoMark } from './logo'
 
 export type NavbarProps = {
   loggedIn?: boolean
+  userEmail?: string
 }
 
-export function Navbar({ loggedIn = false }: NavbarProps) {
+export function Navbar({ loggedIn = false, userEmail }: NavbarProps) {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
@@ -18,7 +19,10 @@ export function Navbar({ loggedIn = false }: NavbarProps) {
         </div>
         <div className="navbar-actions">
           {loggedIn ? (
-            <a href="/dashboard" className="btn btn-primary btn-sm">Dashboard</a>
+            <>
+              <span className="navbar-user" title={userEmail}>{userEmail}</span>
+              <a href="/dashboard" className="btn btn-primary btn-sm">Dashboard</a>
+            </>
           ) : (
             <>
               <a href="/login" className="btn btn-ghost btn-sm">Log in</a>

@@ -5,6 +5,7 @@ import {
   HeadContent,
   Scripts,
 } from '@tanstack/react-router'
+import { NotFound } from '~/components/not-found'
 import '~/styles.css'
 
 export const Route = createRootRoute({
@@ -16,6 +17,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  notFoundComponent: NotFound,
 })
 
 function RootComponent() {
