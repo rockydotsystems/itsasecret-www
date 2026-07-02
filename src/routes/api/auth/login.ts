@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
+import { users, orgMembers } from '~/lib/schema'
+import type { User } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
 import { deriveKey, verifyPassword } from '~/lib/crypto/kdf'
@@ -9,7 +12,6 @@ import { unwrapKey, encrypt } from '~/lib/crypto/envelope'
 import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
 import { base64Decode, base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
-import type { UserRow, OrgMemberRow } from '~/lib/types'
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -25,7 +27,8 @@ export const Route = createFileRoute('/api/auth/login')({
           const body = loginSchema.parse(await request.json())
           const { email, password, clientPubkey } = body
 
-          const user = await db.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<UserRow>()
+          const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1)
+          const user = userRows[0] ?? null
           if (!user) {
             return Response.json({ error: 'Invalid credentials' }, { status: 401 })
           }
@@ -39,15 +42,13 @@ export const Route = createFileRoute('/api/auth/login')({
           const params: KdfParams = JSON.parse(user.kdf_params)
           const derivedKey = await deriveKey(password, salt, params)
 
-          const members = await db.prepare(
-            'SELECT * FROM org_members WHERE user_id = ?'
-          ).bind(user.id).all<OrgMemberRow>()
+          const memberRows = await db.select().from(orgMembers).where(eq(orgMembers.user_id, user.id))
 
           const { publicKey: serverPubkey, privateKey } = await generateKeyPair()
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
 
           const orgKeys: Record<string, string> = {}
-          for (const member of members.results) {
+          for (const member of memberRows) {
             const orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
             orgKeys[member.org_id] = await encrypt(sessionKey, base64Encode(orgKey))
           }
