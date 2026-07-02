@@ -76,16 +76,19 @@ function DashboardPage() {
               <span>itsasecret</span>
             </Link>
 
-            <div className="dashboard-navbar-selects">
+            <div className="dashboard-navbar-crumbs">
               <Select
                 value={orgId}
                 options={ORGS}
                 onChange={handleOrgChange}
+                variant="crumb"
               />
+              <span className="dashboard-navbar-crumb-separator" aria-hidden="true">/</span>
               <Select
                 value={projectId}
                 options={projectOptions}
                 onChange={setProjectId}
+                variant="crumb"
               />
             </div>
           </div>

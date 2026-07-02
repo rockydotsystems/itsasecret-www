@@ -299,6 +299,15 @@ a:hover { text-decoration: underline; }
 .select-option:hover { background: var(--accent-subtle); color: var(--text-primary); }
 .select-option.selected { color: var(--text-brand); }
 
+.select-crumb .select-trigger {
+  border-color: transparent; background: transparent;
+  color: var(--text-primary); font-weight: 600;
+  min-width: 0; padding: 0; gap: 4px;
+}
+.select-crumb .select-trigger:hover { color: var(--text-brand); }
+.select-crumb .select-trigger:focus { box-shadow: none; color: var(--text-brand); }
+.select-crumb .select-chevron { width: 10px; height: 10px; opacity: 0.5; }
+
 /* ─── Card ──────────────────────────────────────── */
 .card {
   background: var(--bg-raised); border: 1px solid var(--border-default);
@@ -344,7 +353,7 @@ a:hover { text-decoration: underline; }
 /* ─── Dashboard navbar ──────────────────────────── */
 .dashboard-navbar {
   position: fixed; top: 0; left: 0; right: 0; height: 56px;
-  background: var(--bg-raised); border-bottom: 1px solid var(--border-default);
+  background: var(--bg-base); border-bottom: none;
   display: flex; align-items: center; justify-content: center;
   padding: 0 var(--space-4); z-index: 100;
 }
@@ -353,7 +362,7 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
 }
 .dashboard-navbar-left {
-  display: flex; align-items: center; gap: var(--space-5); flex-shrink: 0;
+  display: flex; align-items: center; gap: var(--space-4); flex-shrink: 0;
 }
 .dashboard-navbar-brand {
   display: flex; align-items: center; gap: 8px;
@@ -361,8 +370,14 @@ a:hover { text-decoration: underline; }
   color: var(--text-primary); text-decoration: none;
 }
 .dashboard-navbar-brand:hover { text-decoration: none; }
-.dashboard-navbar-selects {
+.dashboard-navbar-crumbs {
   display: flex; align-items: center; gap: var(--space-3);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+.dashboard-navbar-crumb-separator {
+  color: var(--text-tertiary);
+  user-select: none;
 }
 .dashboard-navbar-user {
   display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;

@@ -9,6 +9,7 @@ export type SelectProps = {
   onChange: (value: string) => void
   placeholder?: string
   disabled?: boolean
+  variant?: 'default' | 'crumb'
   className?: string
   style?: React.CSSProperties
 }
@@ -20,6 +21,7 @@ export function Select({
   onChange,
   placeholder,
   disabled = false,
+  variant = 'default',
   className,
   style,
 }: SelectProps) {
@@ -40,7 +42,7 @@ export function Select({
   }, [open])
 
   return (
-    <div ref={ref} className={`select ${className || ''}`} style={style}>
+    <div ref={ref} className={`select select-${variant} ${className || ''}`} style={style}>
       {label && <span className="select-label">{label}</span>}
       <button
         type="button"
