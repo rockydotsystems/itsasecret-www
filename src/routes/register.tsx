@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
+import { submitAuthForm } from '~/lib/auth-form'
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
@@ -23,38 +24,11 @@ function RegisterPage() {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
 
     try {
-      const kp = await crypto.subtle.generateKey(
-        { name: 'ECDH', namedCurve: 'P-256' },
-        true,
-        ['deriveKey', 'deriveBits']
-      )
-      const rawPub = await crypto.subtle.exportKey('raw', kp.publicKey)
-      const clientPubkey = btoa(String.fromCharCode(...new Uint8Array(rawPub)))
-
-      const resp = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, clientPubkey }),
-      })
-
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: 'Request failed' }))
-        setError(err.error || 'Something went wrong')
-        setLoading(false)
-        return
-      }
-
-      const data = await resp.json()
-
-      const rawPriv = await crypto.subtle.exportKey('pkcs8', kp.privateKey)
-      localStorage.setItem('ecdhPrivKey', btoa(String.fromCharCode(...new Uint8Array(rawPriv))))
-      localStorage.setItem('sessionToken', data.token)
-      localStorage.setItem('serverPubkey', data.serverPubkey)
-      localStorage.setItem('orgKeys', JSON.stringify(data.orgKeys))
-
+      await submitAuthForm('/api/auth/register', email, password)
       navigate({ to: '/dashboard' })
     } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
+    } finally {
       setLoading(false)
     }
   }
@@ -71,7 +45,7 @@ function RegisterPage() {
         <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">Your master password encrypts your secrets. We can't recover it for you.</p>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form id="register-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
           <Input
             name="password"
@@ -81,7 +55,7 @@ function RegisterPage() {
             helperText="This password encrypts your encryption key. Choose carefully."
             required
           />
-          {error && <span className="input-error">{error}</span>}
+          <span data-auth-form-error className="input-error">{error}</span>
           <Button type="submit" size="lg" disabled={loading}>
             {loading ? '...' : 'Create account'}
           </Button>
@@ -91,6 +65,15 @@ function RegisterPage() {
           Already have an account? <a href="/login">Log in</a>
         </p>
       </div>
+      <script
+        type="module"
+        dangerouslySetInnerHTML={{
+          __html: `
+            import { storeAuthFormNativeListener } from '/src/lib/auth-form.ts';
+            storeAuthFormNativeListener('register-form', '/api/auth/register', '/dashboard');
+          `,
+        }}
+      />
     </div>
   )
 }

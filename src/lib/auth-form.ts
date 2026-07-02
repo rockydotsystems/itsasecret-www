@@ -1,0 +1,79 @@
+import { base64Encode } from './crypto/base64'
+
+export interface AuthFormResult {
+  token: string
+  serverPubkey: string
+  orgKeys: Record<string, string>
+}
+
+export async function submitAuthForm(
+  endpoint: '/api/auth/register' | '/api/auth/login',
+  email: string,
+  password: string
+): Promise<AuthFormResult> {
+  const kp = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveKey', 'deriveBits']
+  )
+  const rawPub = await crypto.subtle.exportKey('raw', kp.publicKey)
+  const clientPubkey = base64Encode(new Uint8Array(rawPub))
+
+  const resp = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, clientPubkey }),
+  })
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(err.error || 'Something went wrong')
+  }
+
+  const data = (await resp.json()) as AuthFormResult
+
+  const rawPriv = await crypto.subtle.exportKey('pkcs8', kp.privateKey)
+  localStorage.setItem('ecdhPrivKey', base64Encode(new Uint8Array(rawPriv)))
+  localStorage.setItem('sessionToken', data.token)
+  localStorage.setItem('serverPubkey', data.serverPubkey)
+  localStorage.setItem('orgKeys', JSON.stringify(data.orgKeys))
+
+  return data
+}
+
+export function storeAuthFormNativeListener(
+  formId: string,
+  endpoint: '/api/auth/register' | '/api/auth/login',
+  successUrl: string
+): void {
+  if (typeof document === 'undefined') return
+  const form = document.getElementById(formId)
+  if (!form || !(form instanceof HTMLFormElement)) return
+
+  form.addEventListener('submit', (e) => {
+    if (e.defaultPrevented) return
+    e.preventDefault()
+
+    const emailEl = form.elements.namedItem('email') as HTMLInputElement | null
+    const passwordEl = form.elements.namedItem('password') as HTMLInputElement | null
+    if (!emailEl || !passwordEl) return
+
+    const email = emailEl.value
+    const password = passwordEl.value
+    if (!email || !password) return
+
+    submitAuthForm(endpoint, email, password)
+      .then(() => {
+        window.location.href = successUrl
+      })
+      .catch((err) => {
+        const errorEl = form.querySelector('[data-auth-form-error]') as HTMLElement | null
+        if (errorEl) errorEl.textContent = 'Error: ' + (err.message || 'unknown')
+      })
+  })
+}
+
+// Global function for inline script fallback
+if (typeof window !== 'undefined') {
+  (window as any).__registerAuthFormNative = storeAuthFormNativeListener
+}
