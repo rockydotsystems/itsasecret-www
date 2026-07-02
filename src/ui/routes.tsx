@@ -1,18 +1,14 @@
 import { Hono } from 'hono';
-import { jsxRenderer } from 'hono/jsx-renderer';
-import { Layout } from './layout';
+import { LandingPage } from './pages/landing';
+import { LoginPage } from './pages/login';
+import { RegisterPage } from './pages/register';
+import { DashboardPage } from './pages/dashboard';
 
 const app = new Hono();
 
-app.use('*', jsxRenderer(({ children }) => <Layout>{children}</Layout>));
-
-app.get('/', (c) =>
-  c.render(
-    <div>
-      <h1>itsasecret</h1>
-      <p>Sync env vars & secrets across environments.</p>
-    </div>
-  )
-);
+app.get('/', (c) => c.html(<LandingPage />));
+app.get('/login', (c) => c.html(<LoginPage />));
+app.get('/register', (c) => c.html(<RegisterPage />));
+app.get('/dashboard', (c) => c.html(<DashboardPage />));
 
 export const uiRoutes = app;
