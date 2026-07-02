@@ -1,4 +1,5 @@
-import { pgTable, text, timestamp, primaryKey, unique, index, sql } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import { pgTable, text, timestamp, primaryKey, unique, index } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: text().primaryKey(),
@@ -46,7 +47,7 @@ export const environments = pgTable('environments', {
   id: text().primaryKey(),
   project_id: text().notNull().references(() => projects.id),
   name: text().notNull(),
-  parent_env_id: text().references(() => environments.id),
+  parent_env_id: text().references(() => (environments as any).id),
   created_by: text().notNull().references(() => users.id),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
