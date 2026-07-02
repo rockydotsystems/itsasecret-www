@@ -9,29 +9,31 @@
     "build": "vite build",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
-    "db:apply": "tsx src/lib/migrate.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",
-    "@tanstack/react-router": "^1.170.0",
-    "@tanstack/react-start": "^1.168.0",
-    "better-sqlite3": "^12.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zod": "^3.24.0"
+    "@tanstack/react-router": "^1.170.17",
+    "@tanstack/react-start": "^1.168.27",
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.0",
-    "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.2.0",
-    "nitro": "^3.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.7.0",
-    "vite": "^7.0.0",
-    "vitest": "^4.0.0"
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "drizzle-kit": "^0.31.10",
+    "nitro": "^3.0.260610-beta",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.2",
+    "vitest": "^4.1.9"
   }
 }
