@@ -351,8 +351,19 @@ a:hover { text-decoration: underline; }
 }
 .navbar-links a:hover { color: var(--text-primary); text-decoration: none; }
 .navbar-actions { display: flex; align-items: center; gap: 8px; }
+.navbar-user {
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
 
 .hero { position: relative; padding: 120px 40px 100px; text-align: center; overflow: hidden; background: var(--bg-base); }
+.hero-logged-in {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.hero-logged-in::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--status-success-fg);
+}
 .hero-badge {
   display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;
   padding: 6px 14px; border-radius: var(--radius-full); border: 1px solid var(--border-default);

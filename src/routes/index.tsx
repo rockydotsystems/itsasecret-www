@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { Button } from '~/components/button'
 import { Badge } from '~/components/badge'
 import { LogoMark } from '~/components/logo'
 import { Navbar } from '~/components/navbar'
+import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 
 const FEATURES = [
   {
@@ -32,9 +34,17 @@ export const Route = createFileRoute('/')({
 })
 
 function LandingPage() {
+  const [user, setUser] = useState<CurrentUser | null>(null)
+
+  useEffect(() => {
+    void getCurrentUser().then((u) => {
+      setUser(u)
+    })
+  }, [])
+
   return (
     <>
-      <Navbar />
+      <Navbar loggedIn={!!user} userEmail={user?.email} />
       <section className="hero">
         <div style={{ position: 'relative', maxWidth: '720px', margin: '0 auto' }}>
           <div className="hero-badge">
@@ -46,8 +56,17 @@ function LandingPage() {
             One encrypted source of truth for every env var, on every machine, in every environment your team ships to.
           </p>
           <div className="hero-ctas">
-            <Button variant="primary" size="lg" href="/register">Get started free</Button>
-            <Button variant="secondary" size="lg" href="/docs">Read the docs</Button>
+            {user ? (
+              <>
+                <span className="hero-logged-in">Logged in as {user.email}</span>
+                <Button variant="primary" size="lg" href="/dashboard">Go to dashboard</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="primary" size="lg" href="/register">Get started free</Button>
+                <Button variant="secondary" size="lg" href="/docs">Read the docs</Button>
+              </>
+            )}
           </div>
         </div>
       </section>
