@@ -40,14 +40,6 @@ const PROJECTS_BY_ORG: Record<string, Array<{ value: string; label: string }>> =
   ],
 }
 
-const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Secrets' },
-  { to: '/dashboard/projects', label: 'Projects' },
-  { to: '/dashboard/environments', label: 'Environments' },
-  { to: '/dashboard/activity', label: 'Activity' },
-  { to: '/dashboard/members', label: 'Members' },
-  { to: '/dashboard/settings', label: 'Settings' },
-]
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: requireAuthBeforeLoad,
@@ -76,63 +68,29 @@ function DashboardPage() {
 
   return (
     <div className="app-shell">
-      <main className="app-main">
-        <div className="app-header">
-          <div className="app-header-context">
-            <Select
-              label="Organization"
-              value={orgId}
-              options={ORGS}
-              onChange={handleOrgChange}
-            />
-            <Select
-              label="Project"
-              value={projectId}
-              options={projectOptions}
-              onChange={setProjectId}
-            />
-          </div>
-          <Button variant="primary" size="md">Add secret</Button>
-        </div>
+      <nav className="dashboard-navbar" aria-label="Dashboard">
+        <div className="dashboard-navbar-inner">
+          <div className="dashboard-navbar-left">
+            <Link to="/" className="dashboard-navbar-brand" aria-label="itsasecret home">
+              <LogoMark size={20} />
+              <span>itsasecret</span>
+            </Link>
 
-        <div className="app-meta">
-          <h1 className="app-title">{projectName}</h1>
-          <span className="app-subtitle">12 secrets · synced to 3 machines · 3 environments</span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-          {ENVIRONMENTS.map((env, i) => (
-            <EnvironmentTag key={env} name={env} active={i === 0} href={`/dashboard?env=${env}`} />
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {SECRETS.map((s) => (
-            <SecretRow key={s.name} name={s.name} value={s.value} lastSynced={s.lastSynced} />
-          ))}
-        </div>
-      </main>
-
-      <nav className="bottom-bar" aria-label="Dashboard">
-        <div className="bottom-bar-inner">
-          <Link to="/" className="bottom-bar-brand" aria-label="itsasecret home">
-            <LogoMark size={20} />
-          </Link>
-
-          <div className="bottom-bar-links">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="bottom-bar-link"
-                activeProps={{ className: 'bottom-bar-link active' }}
-              >
-                {item.label}
-              </Link>
-            ))}
+            <div className="dashboard-navbar-selects">
+              <Select
+                value={orgId}
+                options={ORGS}
+                onChange={handleOrgChange}
+              />
+              <Select
+                value={projectId}
+                options={projectOptions}
+                onChange={setProjectId}
+              />
+            </div>
           </div>
 
-          <div className="bottom-bar-user">
+          <div className="dashboard-navbar-user">
             <Avatar name="Hack R" size="sm" />
             <Button
               variant="ghost"
@@ -146,6 +104,28 @@ function DashboardPage() {
           </div>
         </div>
       </nav>
+
+      <main className="app-main">
+        <div className="app-meta">
+          <h1 className="app-title">{projectName}</h1>
+          <span className="app-subtitle">12 secrets · synced to 3 machines · 3 environments</span>
+        </div>
+
+        <div className="app-actions">
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {ENVIRONMENTS.map((env, i) => (
+              <EnvironmentTag key={env} name={env} active={i === 0} href={`/dashboard?env=${env}`} />
+            ))}
+          </div>
+          <Button variant="primary" size="md">Add secret</Button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {SECRETS.map((s) => (
+            <SecretRow key={s.name} name={s.name} value={s.value} lastSynced={s.lastSynced} />
+          ))}
+        </div>
+      </main>
     </div>
   )
 }

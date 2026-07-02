@@ -332,55 +332,49 @@ a:hover { text-decoration: underline; }
 .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
 
 /* ─── Main content ──────────────────────────────── */
-.app-main { flex: 1; padding: var(--space-8) var(--space-10) calc(var(--space-8) + 80px); overflow-y: auto; }
-.app-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-8); }
-.app-header-context { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+.app-main { flex: 1; padding: calc(var(--space-8) + 64px) var(--space-10) var(--space-8); overflow-y: auto; }
 .app-meta { margin-bottom: var(--space-6); }
+.app-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-8); }
 .app-title {
   font: 600 var(--text-3xl)/var(--leading-snug) var(--font-family-display);
   color: var(--text-primary); margin-bottom: 4px;
 }
 .app-subtitle { font-size: var(--text-sm); color: var(--text-secondary); }
 
-/* ─── Bottom bar ────────────────────────────────── */
-.bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 64px;
-  background: var(--bg-raised); border-top: 1px solid var(--border-default);
+/* ─── Dashboard navbar ──────────────────────────── */
+.dashboard-navbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 56px;
+  background: var(--bg-raised); border-bottom: 1px solid var(--border-default);
   display: flex; align-items: center; justify-content: center;
   padding: 0 var(--space-4); z-index: 100;
 }
-.bottom-bar-inner {
-  width: 100%; max-width: 960px;
+.dashboard-navbar-inner {
+  width: 100%; max-width: 1100px;
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
 }
-.bottom-bar-brand {
-  display: flex; align-items: center; color: var(--text-primary);
-  flex-shrink: 0; text-decoration: none;
+.dashboard-navbar-left {
+  display: flex; align-items: center; gap: var(--space-5); flex-shrink: 0;
 }
-.bottom-bar-brand:hover { text-decoration: none; }
-.bottom-bar-links {
-  display: flex; align-items: center; gap: 2px;
+.dashboard-navbar-brand {
+  display: flex; align-items: center; gap: 8px;
+  font: 600 var(--text-md)/var(--leading-snug) var(--font-family-display);
+  color: var(--text-primary); text-decoration: none;
 }
-.bottom-bar-link {
-  display: flex; align-items: center; padding: 8px 14px;
-  border-radius: var(--radius-sm); color: var(--text-secondary);
-  font-size: var(--text-sm); font-weight: 500; text-decoration: none;
-  white-space: nowrap;
+.dashboard-navbar-brand:hover { text-decoration: none; }
+.dashboard-navbar-selects {
+  display: flex; align-items: center; gap: var(--space-3);
 }
-.bottom-bar-link:hover { background: var(--accent-subtle); color: var(--text-primary); text-decoration: none; }
-.bottom-bar-link.active { background: var(--accent-subtle); color: var(--text-brand); }
-.bottom-bar-user {
+.dashboard-navbar-user {
   display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0;
 }
 
-@media (max-width: 760px) {
-  .bottom-bar { height: auto; padding: var(--space-3) var(--space-4); }
-  .bottom-bar-inner { flex-direction: column; gap: var(--space-3); }
-  .bottom-bar-links { flex-wrap: wrap; justify-content: center; }
-  .bottom-bar-user { width: 100%; justify-content: space-between; }
-  .app-main { padding: var(--space-6) var(--space-5) calc(var(--space-6) + 140px); }
-  .app-header { flex-direction: column; align-items: flex-start; }
-  .app-header-context { width: 100%; }
+@media (max-width: 900px) {
+  .dashboard-navbar { height: auto; padding: var(--space-3) var(--space-4); }
+  .dashboard-navbar-inner { flex-direction: column; gap: var(--space-3); align-items: stretch; }
+  .dashboard-navbar-left { justify-content: center; flex-wrap: wrap; }
+  .dashboard-navbar-user { display: none; }
+  .app-main { padding: calc(var(--space-6) + 100px) var(--space-5) var(--space-6); }
+  .app-actions { flex-direction: column; align-items: flex-start; }
 }
 
 /* ─── Auth page ─────────────────────────────────── */
