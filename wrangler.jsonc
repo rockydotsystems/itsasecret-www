@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "itsasecret-www",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "itsasecret",
+      "database_id": "LOCAL",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  },
+  "env": {
+    "staging": {
+      "name": "itsasecret-www-staging",
+      "vars": { "APP_ENV": "staging" }
+    },
+    "production": {
+      "name": "itsasecret-www",
+      "vars": { "APP_ENV": "production" }
+    }
+  }
+}
