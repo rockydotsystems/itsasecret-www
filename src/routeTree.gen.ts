@@ -13,6 +13,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsNewRouteImport } from './routes/projects/new'
 import { Route as OrgsNewRouteImport } from './routes/orgs/new'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
@@ -55,6 +56,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsNewRoute = ProjectsNewRouteImport.update({
+  id: '/projects/new',
+  path: '/projects/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrgsNewRoute = OrgsNewRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
+  '/projects/new': typeof ProjectsNewRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/api/health'
     | '/orgs/new'
+    | '/projects/new'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/api/health'
     | '/orgs/new'
+    | '/projects/new'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/api/health'
     | '/orgs/new'
+    | '/projects/new'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ApiHealthRoute: typeof ApiHealthRoute
   OrgsNewRoute: typeof OrgsNewRoute
+  ProjectsNewRoute: typeof ProjectsNewRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -401,6 +414,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/new': {
+      id: '/projects/new'
+      path: '/projects/new'
+      fullPath: '/projects/new'
+      preLoaderRoute: typeof ProjectsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orgs/new': {
@@ -682,6 +702,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ApiHealthRoute: ApiHealthRoute,
   OrgsNewRoute: OrgsNewRoute,
+  ProjectsNewRoute: ProjectsNewRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,

@@ -111,7 +111,13 @@ function DashboardPage() {
                 options={projectOptions}
                 onChange={setProjectId}
                 variant="crumb"
-                disabled={loadingProjects || projectOptions.length === 0}
+                placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
+                disabled={loadingProjects || !orgId}
+                action={
+                  <Link to="/projects/new" search={{ orgId }} aria-label="Create new project">
+                    + New project
+                  </Link>
+                }
               />
             </div>
           </div>
