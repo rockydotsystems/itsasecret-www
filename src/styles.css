@@ -323,6 +323,7 @@ a:hover { text-decoration: underline; }
   color: var(--text-primary); font-weight: 600;
   min-width: 0; padding: 0; gap: 4px;
 }
+.select-crumb .select-menu { min-width: 175px; }
 .select-crumb .select-trigger:hover { color: var(--text-brand); }
 .select-crumb .select-trigger:focus { box-shadow: none; color: var(--text-brand); }
 .select-crumb .select-chevron { width: 10px; height: 10px; opacity: 0.5; }

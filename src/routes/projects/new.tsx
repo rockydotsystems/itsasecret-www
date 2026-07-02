@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
-import { Select } from '~/components/select'
 import { LogoMark } from '~/components/logo'
 import { createProject } from '~/lib/project-form'
 import { getOrgsFn } from '~/lib/orgs-server'
@@ -25,13 +24,9 @@ function CreateProjectPage() {
   const navigate = useNavigate()
   const { orgs } = Route.useLoaderData() as { orgs: Org[] }
   const { orgId: searchOrgId } = Route.useSearch()
-  const [orgId, setOrgId] = useState(
-    searchOrgId && orgs.some((o) => o.id === searchOrgId) ? searchOrgId : (orgs[0]?.id ?? '')
-  )
+  const org = orgs.find((o) => o.id === searchOrgId) ?? orgs[0]
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const orgOptions = orgs.map((org) => ({ value: org.id, label: org.name }))
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -42,7 +37,8 @@ function CreateProjectPage() {
     const name = (form.elements.namedItem('name') as HTMLInputElement).value
 
     try {
-      await createProject(orgId, name)
+      if (!org) throw new Error('No organization selected')
+      await createProject(org.id, name)
       await navigate({ to: '/dashboard' })
     } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
@@ -64,12 +60,10 @@ function CreateProjectPage() {
         <p className="auth-subtitle">Projects group the environments your secrets live in.</p>
 
         <form id="create-project-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <Select
+          <Input
             label="Organization"
-            value={orgId}
-            options={orgOptions}
-            onChange={setOrgId}
-            disabled={orgOptions.length === 0}
+            value={org?.name ?? ''}
+            disabled
           />
           <Input
             name="name"
@@ -79,7 +73,7 @@ function CreateProjectPage() {
             required
           />
           <span className="input-error">{error}</span>
-          <Button type="submit" size="lg" disabled={loading || !orgId}>
+          <Button type="submit" size="lg" disabled={loading || !org}>
             {loading ? '...' : 'Create project'}
           </Button>
         </form>
