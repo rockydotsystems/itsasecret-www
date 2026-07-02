@@ -1,3 +1,4 @@
+import { Avatar } from './avatar'
 import { LogoMark } from './logo'
 
 export type NavbarProps = {
@@ -20,7 +21,10 @@ export function Navbar({ loggedIn = false, userEmail }: NavbarProps) {
         <div className="navbar-actions">
           {loggedIn ? (
             <>
-              <span className="navbar-user" title={userEmail}>{userEmail}</span>
+              <a href="/dashboard" className="navbar-user" title={userEmail}>
+                <Avatar name={userEmail} size="sm" />
+                <span className="navbar-user-email">{userEmail}</span>
+              </a>
               <a href="/dashboard" className="btn btn-primary btn-sm">Dashboard</a>
             </>
           ) : (
