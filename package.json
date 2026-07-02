@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hono/zod-openapi": "^0.19.0",
+    "@scalar/hono-api-reference": "^0.6.0",
     "hash-wasm": "^2.4.0",
     "hono": "^4.7.0",
     "zod": "^3.24.0"
