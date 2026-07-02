@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { requireAuthBeforeLoad } from '~/lib/route-guards'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
@@ -8,6 +8,8 @@ import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { Select } from '~/components/select'
 import { performLogout } from '~/lib/auth-form'
+import { getOrgsFn, getProjectsFn } from '~/lib/orgs-server'
+import type { Org, Project } from '~/lib/schema'
 
 const SECRETS = [
   { name: 'STRIPE_SECRET_KEY', value: 'sk_live_••••••••••••••••', lastSynced: '2m ago' },
@@ -18,47 +20,61 @@ const SECRETS = [
 
 const ENVIRONMENTS = ['production', 'staging', 'preview-pr-42']
 
-const ORGS = [
-  { value: 'personal', label: 'hackr (personal)' },
-  { value: 'acme', label: 'Acme Corp' },
-  { value: 'stark', label: 'Stark Industries' },
-]
-
-const PROJECTS_BY_ORG: Record<string, Array<{ value: string; label: string }>> = {
-  personal: [
-    { value: 'acme-api', label: 'acme-api' },
-    { value: 'acme-web', label: 'acme-web' },
-  ],
-  acme: [
-    { value: 'acme-api', label: 'acme-api' },
-    { value: 'acme-web', label: 'acme-web' },
-    { value: 'acme-billing', label: 'acme-billing' },
-  ],
-  stark: [
-    { value: 'arc-reactor', label: 'arc-reactor' },
-    { value: 'jarvis', label: 'jarvis' },
-  ],
-}
-
-
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: requireAuthBeforeLoad,
+  loader: async () => {
+    const orgs = await getOrgsFn()
+    return { orgs }
+  },
   component: DashboardPage,
 })
 
 function DashboardPage() {
+  const { orgs: initialOrgs } = Route.useLoaderData() as { orgs: Org[] }
   const [loggingOut, setLoggingOut] = useState(false)
-  const [orgId, setOrgId] = useState('personal')
-  const [projectId, setProjectId] = useState('acme-api')
+  const [orgId, setOrgId] = useState<string>(initialOrgs[0]?.id ?? '')
+  const [projectId, setProjectId] = useState<string>('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(false)
 
-  const projectOptions = useMemo(() => PROJECTS_BY_ORG[orgId] || [], [orgId])
-  const selectedProject = projectOptions.find((p) => p.value === projectId)
-  const projectName = selectedProject?.label || projectOptions[0]?.label || 'Select project'
+  const orgOptions = useMemo(() => {
+    return initialOrgs.map((org) => ({ value: org.id, label: org.name }))
+  }, [initialOrgs])
+
+  const projectOptions = useMemo(() => {
+    return projects.map((project) => ({ value: project.id, label: project.name }))
+  }, [projects])
+
+  const selectedProject = projects.find((p) => p.id === projectId)
+  const projectName = selectedProject?.name || projectOptions[0]?.label || 'Select project'
+
+  useEffect(() => {
+    if (!orgId) {
+      setProjects([])
+      setProjectId('')
+      return
+    }
+    let cancelled = false
+    setLoadingProjects(true)
+    getProjectsFn({ data: { orgId } })
+      .then((rows) => {
+        if (cancelled) return
+        setProjects(rows)
+        setProjectId(rows[0]?.id ?? '')
+      })
+      .catch(() => {
+        if (cancelled) return
+        setProjects([])
+        setProjectId('')
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProjects(false)
+      })
+    return () => { cancelled = true }
+  }, [orgId])
 
   function handleOrgChange(nextOrgId: string) {
     setOrgId(nextOrgId)
-    const projects = PROJECTS_BY_ORG[nextOrgId] || []
-    setProjectId(projects[0]?.value || '')
   }
 
   async function handleLogout() {
@@ -79,9 +95,10 @@ function DashboardPage() {
             <div className="dashboard-navbar-crumbs">
               <Select
                 value={orgId}
-                options={ORGS}
+                options={orgOptions}
                 onChange={handleOrgChange}
                 variant="crumb"
+                disabled={orgOptions.length === 0}
               />
               <span className="dashboard-navbar-crumb-separator" aria-hidden="true">/</span>
               <Select
@@ -89,6 +106,7 @@ function DashboardPage() {
                 options={projectOptions}
                 onChange={setProjectId}
                 variant="crumb"
+                disabled={loadingProjects || projectOptions.length === 0}
               />
             </div>
           </div>

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers } from '~/lib/schema'
+import { users, orgs, orgMembers, projects } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
 import { deriveKey, hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
@@ -83,6 +83,13 @@ export const Route = createFileRoute('/api/auth/register')({
             wrapped_org_key: wrappedOrgKey,
           })
 
+          const projectId = generateId()
+          await db.insert(projects).values({
+            id: projectId,
+            org_id: orgId,
+            name: 'default',
+          })
+
           const { publicKey: serverPubkey, privateKey } = await generateKeyPair()
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
 
@@ -93,6 +100,7 @@ export const Route = createFileRoute('/api/auth/register')({
 
           await auditLog({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId })
           await auditLog({ orgId, actorUserId: userId, action: 'org.create', targetType: 'org', targetId: orgId })
+          await auditLog({ orgId, actorUserId: userId, action: 'project.create', targetType: 'project', targetId: projectId })
 
           const headers = new Headers()
           headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
