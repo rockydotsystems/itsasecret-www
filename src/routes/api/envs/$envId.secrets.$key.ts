@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { eq, and, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { generateId, auditLog, softDelete } from '~/lib/db-utils'
+import { secrets } from '~/lib/schema'
+import { generateId, auditLog, softDeleteSecret } from '~/lib/db-utils'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { encrypt, decrypt } from '~/lib/crypto/envelope'
-import type { SecretRow } from '~/lib/types'
 
 const upsertSchema = z.object({
   encryptedValue: z.string(),
@@ -21,9 +22,10 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const envId = params.envId!
           const key = params.key!
 
-          const secret = await db.prepare(
-            'SELECT * FROM secrets WHERE env_id = ? AND key = ? AND deleted_at IS NULL'
-          ).bind(envId, key).first<SecretRow>()
+          const secretRows = await db.select().from(secrets)
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+            .limit(1)
+          const secret = secretRows[0] ?? null
           if (!secret) return Response.json({ error: 'Secret not found' }, { status: 404 })
 
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
@@ -54,37 +56,47 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const plaintext = await decrypt(sessionKey, encryptedValue)
           const storedEncrypted = await encrypt(orgKey, plaintext)
 
-          const existing = await db.prepare(
-            'SELECT * FROM secrets WHERE env_id = ? AND key = ? AND deleted_at IS NULL'
-          ).bind(envId, key).first<SecretRow>()
+          const existingRows = await db.select().from(secrets)
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+            .limit(1)
+          const existing = existingRows[0] ?? null
 
           if (existing) {
-            await db.prepare(
-              `UPDATE secrets SET encrypted_value = ?, updated_at = datetime('now') WHERE id = ?`
-            ).bind(storedEncrypted, existing.id).run()
+            await db.update(secrets)
+              .set({ encrypted_value: storedEncrypted, updated_at: new Date() })
+              .where(eq(secrets.id, existing.id))
           } else {
-            const deleted = await db.prepare(
-              'SELECT id FROM secrets WHERE env_id = ? AND key = ? AND deleted_at IS NOT NULL'
-            ).bind(envId, key).first<SecretRow>()
+            const deletedRows = await db.select({ id: secrets.id }).from(secrets)
+              .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNotNull(secrets.deleted_at)))
+              .limit(1)
+            const deleted = deletedRows[0] ?? null
 
             if (deleted) {
-              await db.prepare(
-                `UPDATE secrets SET encrypted_value = ?, deleted_at = NULL, updated_at = datetime('now') WHERE id = ?`
-              ).bind(storedEncrypted, deleted.id).run()
+              await db.update(secrets)
+                .set({ encrypted_value: storedEncrypted, deleted_at: null, updated_at: new Date() })
+                .where(eq(secrets.id, deleted.id))
             } else {
               const secretId = generateId()
-              await db.prepare(
-                'INSERT INTO secrets (id, env_id, key, encrypted_value, created_by) VALUES (?, ?, ?, ?, ?)'
-              ).bind(secretId, envId, key, storedEncrypted, user.id).run()
+              await db.insert(secrets).values({
+                id: secretId,
+                env_id: envId,
+                key,
+                encrypted_value: storedEncrypted,
+                created_by: user.id,
+              })
             }
           }
 
           await auditLog({ orgId, actorUserId: user.id, action: 'secret.upsert', targetType: 'secret', targetId: key, metadata: { envId } })
 
-          const updated = await db.prepare(
-            'SELECT key, created_at, updated_at FROM secrets WHERE env_id = ? AND key = ? AND deleted_at IS NULL'
-          ).bind(envId, key).first<{ key: string; created_at: string; updated_at: string }>()
-          return Response.json(updated, { status: 200 })
+          const updatedRows = await db.select({
+            key: secrets.key,
+            created_at: secrets.created_at,
+            updated_at: secrets.updated_at,
+          }).from(secrets)
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+            .limit(1)
+          return Response.json(updatedRows[0], { status: 200 })
         } catch (err) {
           return errorResponse(err)
         }
@@ -97,12 +109,13 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const envId = params.envId!
           const key = params.key!
 
-          const existing = await db.prepare(
-            'SELECT id FROM secrets WHERE env_id = ? AND key = ? AND deleted_at IS NULL'
-          ).bind(envId, key).first<SecretRow>()
+          const existingRows = await db.select({ id: secrets.id }).from(secrets)
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+            .limit(1)
+          const existing = existingRows[0] ?? null
           if (!existing) return Response.json({ error: 'Secret not found' }, { status: 404 })
 
-          await softDelete('secrets', existing.id)
+          await softDeleteSecret(existing.id)
           await auditLog({ orgId, actorUserId: user.id, action: 'secret.delete', targetType: 'secret', targetId: key, metadata: { envId } })
           return new Response(null, { status: 204 })
         } catch (err) {
