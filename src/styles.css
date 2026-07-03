@@ -147,6 +147,11 @@ a:hover { text-decoration: underline; }
 .btn-md { height: 40px; padding: 0 16px; font-size: var(--text-base); gap: 8px; }
 .btn-lg { height: 48px; padding: 0 22px; font-size: var(--text-md); gap: 8px; }
 
+.btn-icon { padding: 0; }
+.btn-sm.btn-icon { width: 32px; }
+.btn-md.btn-icon { width: 40px; }
+.btn-lg.btn-icon { width: 48px; }
+
 .btn-primary { background: var(--signal-400); color: #FCFAF6; box-shadow: 0 4px 0 var(--signal-700); }
 .btn-primary:hover { background: var(--signal-500); text-decoration: none; }
 .btn-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--signal-700); }
@@ -187,7 +192,7 @@ a:hover { text-decoration: underline; }
 
 /* ─── Avatar ────────────────────────────────────── */
 .avatar {
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center;
   font-family: var(--font-family-body); font-weight: 600; flex-shrink: 0; user-select: none;
 }
 .avatar-sm { width: 24px; height: 24px; font-size: 10px; }
@@ -440,13 +445,13 @@ a:hover { text-decoration: underline; }
 .navbar-user {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 12px 0 4px;
-  border: 1px solid var(--border-default); border-radius: var(--radius-full);
-  background: var(--bg-raised);
-  font-size: var(--text-sm); color: var(--text-secondary); text-decoration: none;
+  border-radius: var(--radius-md);
+  background: var(--signal-400); box-shadow: 0 4px 0 var(--signal-700);
+  font-size: var(--text-sm); font-weight: 600; color: #FCFAF6; text-decoration: none;
+  transition: background 0.12s, transform 0.08s, box-shadow 0.08s;
 }
-.navbar-user:hover {
-  border-color: var(--border-strong); color: var(--text-primary); text-decoration: none;
-}
+.navbar-user:hover { background: var(--signal-500); text-decoration: none; }
+.navbar-user:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--signal-700); }
 .navbar-user-email {
   max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }

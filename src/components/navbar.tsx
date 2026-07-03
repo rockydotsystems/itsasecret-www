@@ -1,5 +1,6 @@
 import { Avatar } from './avatar'
 import { LogoMark } from './logo'
+import { performLogout } from '~/lib/auth-form'
 
 export type NavbarProps = {
   loggedIn?: boolean
@@ -25,7 +26,19 @@ export function Navbar({ loggedIn = false, userEmail }: NavbarProps) {
                 <Avatar name={userEmail} size="sm" />
                 <span className="navbar-user-email">{userEmail}</span>
               </a>
-              <a href="/dashboard" className="btn btn-primary btn-sm">Dashboard</a>
+              <button
+                type="button"
+                className="btn btn-danger btn-sm btn-icon"
+                aria-label="Log out"
+                title="Log out"
+                onClick={() => void performLogout()}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </button>
             </>
           ) : (
             <>
