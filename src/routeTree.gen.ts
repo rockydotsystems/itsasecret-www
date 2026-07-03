@@ -16,9 +16,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as DashboardOrgIdIndexRouteImport } from './routes/dashboard/$orgId/index'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
-import { Route as ProjectsProjectIdSettingsRouteImport } from './routes/projects/$projectId/settings'
-import { Route as OrgsOrgIdSettingsRouteImport } from './routes/orgs/$orgId/settings'
-import { Route as DashboardOrgIdProjectIdRouteImport } from './routes/dashboard/$orgId/$projectId'
+import { Route as DashboardOrgIdSettingsRouteImport } from './routes/dashboard/$orgId/settings'
 import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/$projectId'
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
@@ -26,6 +24,8 @@ import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as DashboardOrgIdProjectIdIndexRouteImport } from './routes/dashboard/$orgId/$projectId/index'
+import { Route as DashboardOrgIdProjectIdSettingsRouteImport } from './routes/dashboard/$orgId/$projectId/settings'
 import { Route as ApiProjectsProjectIdEnvsRouteImport } from './routes/api/projects/$projectId.envs'
 import { Route as ApiOrgsOrgIdProjectsRouteImport } from './routes/api/orgs/$orgId.projects'
 import { Route as ApiOrgsOrgIdMembersRouteImport } from './routes/api/orgs/$orgId.members'
@@ -75,20 +75,9 @@ const ApiOrgsIndexRoute = ApiOrgsIndexRouteImport.update({
   path: '/api/orgs/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProjectsProjectIdSettingsRoute =
-  ProjectsProjectIdSettingsRouteImport.update({
-    id: '/projects/$projectId/settings',
-    path: '/projects/$projectId/settings',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const OrgsOrgIdSettingsRoute = OrgsOrgIdSettingsRouteImport.update({
-  id: '/orgs/$orgId/settings',
-  path: '/orgs/$orgId/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardOrgIdProjectIdRoute = DashboardOrgIdProjectIdRouteImport.update({
-  id: '/dashboard/$orgId/$projectId',
-  path: '/dashboard/$orgId/$projectId',
+const DashboardOrgIdSettingsRoute = DashboardOrgIdSettingsRouteImport.update({
+  id: '/dashboard/$orgId/settings',
+  path: '/dashboard/$orgId/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProjectsProjectIdRoute = ApiProjectsProjectIdRouteImport.update({
@@ -126,6 +115,18 @@ const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
   path: '/api/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardOrgIdProjectIdIndexRoute =
+  DashboardOrgIdProjectIdIndexRouteImport.update({
+    id: '/dashboard/$orgId/$projectId/',
+    path: '/dashboard/$orgId/$projectId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DashboardOrgIdProjectIdSettingsRoute =
+  DashboardOrgIdProjectIdSettingsRouteImport.update({
+    id: '/dashboard/$orgId/$projectId/settings',
+    path: '/dashboard/$orgId/$projectId/settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiProjectsProjectIdEnvsRoute =
   ApiProjectsProjectIdEnvsRouteImport.update({
     id: '/envs',
@@ -210,9 +211,7 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
-  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
-  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
-  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
+  '/dashboard/$orgId/settings': typeof DashboardOrgIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
   '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
@@ -222,6 +221,8 @@ export interface FileRoutesByFullPath {
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
+  '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
@@ -242,9 +243,7 @@ export interface FileRoutesByTo {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
-  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
-  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
-  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
+  '/dashboard/$orgId/settings': typeof DashboardOrgIdSettingsRoute
   '/api/orgs': typeof ApiOrgsIndexRoute
   '/dashboard/$orgId': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
@@ -254,6 +253,8 @@ export interface FileRoutesByTo {
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
+  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
@@ -275,9 +276,7 @@ export interface FileRoutesById {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
-  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
-  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
-  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
+  '/dashboard/$orgId/settings': typeof DashboardOrgIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
   '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
@@ -287,6 +286,8 @@ export interface FileRoutesById {
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
+  '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
@@ -309,9 +310,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
-    | '/dashboard/$orgId/$projectId'
-    | '/orgs/$orgId/settings'
-    | '/projects/$projectId/settings'
+    | '/dashboard/$orgId/settings'
     | '/api/orgs/'
     | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
@@ -321,6 +320,8 @@ export interface FileRouteTypes {
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
+    | '/dashboard/$orgId/$projectId/settings'
+    | '/dashboard/$orgId/$projectId/'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
@@ -341,9 +342,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
-    | '/dashboard/$orgId/$projectId'
-    | '/orgs/$orgId/settings'
-    | '/projects/$projectId/settings'
+    | '/dashboard/$orgId/settings'
     | '/api/orgs'
     | '/dashboard/$orgId'
     | '/api/envs/$envId/permissions'
@@ -353,6 +352,8 @@ export interface FileRouteTypes {
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
+    | '/dashboard/$orgId/$projectId/settings'
+    | '/dashboard/$orgId/$projectId'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
@@ -373,9 +374,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
-    | '/dashboard/$orgId/$projectId'
-    | '/orgs/$orgId/settings'
-    | '/projects/$projectId/settings'
+    | '/dashboard/$orgId/settings'
     | '/api/orgs/'
     | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
@@ -385,6 +384,8 @@ export interface FileRouteTypes {
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
+    | '/dashboard/$orgId/$projectId/settings'
+    | '/dashboard/$orgId/$projectId/'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
@@ -406,11 +407,11 @@ export interface RootRouteChildren {
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
   ApiProjectsProjectIdRoute: typeof ApiProjectsProjectIdRouteWithChildren
-  DashboardOrgIdProjectIdRoute: typeof DashboardOrgIdProjectIdRoute
-  OrgsOrgIdSettingsRoute: typeof OrgsOrgIdSettingsRoute
-  ProjectsProjectIdSettingsRoute: typeof ProjectsProjectIdSettingsRoute
+  DashboardOrgIdSettingsRoute: typeof DashboardOrgIdSettingsRoute
   ApiOrgsIndexRoute: typeof ApiOrgsIndexRoute
   DashboardOrgIdIndexRoute: typeof DashboardOrgIdIndexRoute
+  DashboardOrgIdProjectIdSettingsRoute: typeof DashboardOrgIdProjectIdSettingsRoute
+  DashboardOrgIdProjectIdIndexRoute: typeof DashboardOrgIdProjectIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -464,25 +465,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrgsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/projects/$projectId/settings': {
-      id: '/projects/$projectId/settings'
-      path: '/projects/$projectId/settings'
-      fullPath: '/projects/$projectId/settings'
-      preLoaderRoute: typeof ProjectsProjectIdSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orgs/$orgId/settings': {
-      id: '/orgs/$orgId/settings'
-      path: '/orgs/$orgId/settings'
-      fullPath: '/orgs/$orgId/settings'
-      preLoaderRoute: typeof OrgsOrgIdSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard/$orgId/$projectId': {
-      id: '/dashboard/$orgId/$projectId'
-      path: '/dashboard/$orgId/$projectId'
-      fullPath: '/dashboard/$orgId/$projectId'
-      preLoaderRoute: typeof DashboardOrgIdProjectIdRouteImport
+    '/dashboard/$orgId/settings': {
+      id: '/dashboard/$orgId/settings'
+      path: '/dashboard/$orgId/settings'
+      fullPath: '/dashboard/$orgId/settings'
+      preLoaderRoute: typeof DashboardOrgIdSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/projects/$projectId': {
@@ -532,6 +519,20 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/login'
       fullPath: '/api/auth/login'
       preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/$orgId/$projectId/': {
+      id: '/dashboard/$orgId/$projectId/'
+      path: '/dashboard/$orgId/$projectId'
+      fullPath: '/dashboard/$orgId/$projectId/'
+      preLoaderRoute: typeof DashboardOrgIdProjectIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/$orgId/$projectId/settings': {
+      id: '/dashboard/$orgId/$projectId/settings'
+      path: '/dashboard/$orgId/$projectId/settings'
+      fullPath: '/dashboard/$orgId/$projectId/settings'
+      preLoaderRoute: typeof DashboardOrgIdProjectIdSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/projects/$projectId/envs': {
@@ -749,11 +750,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,
   ApiProjectsProjectIdRoute: ApiProjectsProjectIdRouteWithChildren,
-  DashboardOrgIdProjectIdRoute: DashboardOrgIdProjectIdRoute,
-  OrgsOrgIdSettingsRoute: OrgsOrgIdSettingsRoute,
-  ProjectsProjectIdSettingsRoute: ProjectsProjectIdSettingsRoute,
+  DashboardOrgIdSettingsRoute: DashboardOrgIdSettingsRoute,
   ApiOrgsIndexRoute: ApiOrgsIndexRoute,
   DashboardOrgIdIndexRoute: DashboardOrgIdIndexRoute,
+  DashboardOrgIdProjectIdSettingsRoute: DashboardOrgIdProjectIdSettingsRoute,
+  DashboardOrgIdProjectIdIndexRoute: DashboardOrgIdProjectIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

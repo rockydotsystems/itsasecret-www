@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { requireAuthBeforeLoad } from '~/lib/route-guards'
 
-export const Route = createFileRoute('/projects/$projectId/settings')({
+export const Route = createFileRoute('/dashboard/$orgId/settings')({
   beforeLoad: requireAuthBeforeLoad,
-  component: ProjectSettingsPage,
+  component: OrgSettingsPage,
 })
 
-function ProjectSettingsPage() {
+function OrgSettingsPage() {
   return null
 }

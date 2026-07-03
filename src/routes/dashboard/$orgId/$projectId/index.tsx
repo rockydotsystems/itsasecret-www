@@ -9,7 +9,7 @@ const projectSearchSchema = z.object({
   env: z.string().optional(),
 })
 
-export const Route = createFileRoute('/dashboard/$orgId/$projectId')({
+export const Route = createFileRoute('/dashboard/$orgId/$projectId/')({
   validateSearch: projectSearchSchema,
   beforeLoad: requireAuthBeforeLoad,
   loaderDeps: ({ search }) => ({ env: search.env }),

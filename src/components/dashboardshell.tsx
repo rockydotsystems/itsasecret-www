@@ -102,7 +102,7 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 }
                 optionAction={(option) => (
                   <Link
-                    to="/orgs/$orgId/settings"
+                    to="/dashboard/$orgId/settings"
                     params={{ orgId: option.value }}
                     aria-label={`Settings for ${option.label}`}
                     title={`Settings for ${option.label}`}
@@ -126,8 +126,8 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 }
                 optionAction={(option) => (
                   <Link
-                    to="/projects/$projectId/settings"
-                    params={{ projectId: option.value }}
+                    to="/dashboard/$orgId/$projectId/settings"
+                    params={{ orgId, projectId: option.value }}
                     aria-label={`Settings for ${option.label}`}
                     title={`Settings for ${option.label}`}
                   >
