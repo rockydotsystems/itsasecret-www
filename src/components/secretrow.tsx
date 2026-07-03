@@ -2,21 +2,21 @@ import { useState } from 'react'
 
 export type SecretRowProps = {
   name: string
-  value: string
-  lastSynced?: string
+  value?: string
+  meta?: string
 }
 
-export function SecretRow({ name, value, lastSynced }: SecretRowProps) {
+export function SecretRow({ name, value, meta }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
 
   return (
     <div className="secret-row" data-secret-row>
       <div className="secret-row-info">
         <span className="secret-row-name">{name}</span>
-        <span className="secret-row-synced">{lastSynced ? `synced ${lastSynced}` : 'not synced yet'}</span>
+        {meta && <span className="secret-row-synced">{meta}</span>}
       </div>
       <div className={`secret-row-value${revealed ? ' revealed' : ''}`}>
-        {revealed ? (
+        {revealed && value !== undefined ? (
           <span>{value}</span>
         ) : (
           <span className="secret-masked">
@@ -29,6 +29,8 @@ export function SecretRow({ name, value, lastSynced }: SecretRowProps) {
             ))}
           </span>
         )}
+        {value !== undefined && (
+        <>
         <button
           type="button"
           className="secret-action"
@@ -59,6 +61,8 @@ export function SecretRow({ name, value, lastSynced }: SecretRowProps) {
             <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
           </svg>
         </button>
+        </>
+        )}
       </div>
     </div>
   )

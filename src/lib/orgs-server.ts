@@ -3,7 +3,7 @@ import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
 import { eq, and, isNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, projects, environments, envPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
+import { users, orgs, orgMembers, projects, environments, envPermissions, secrets, envVars, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import type { Org, Project, Environment } from '~/lib/schema'
@@ -28,12 +28,19 @@ export type OrgView = {
   projectId: string
 }
 
+export type SecretSummary = {
+  key: string
+  updated_at: Date
+}
+
 export type ProjectView = {
   orgs: Org[]
   projects: Project[]
   environments: Environment[]
   envId: string
   currentUserRole: string
+  envSecrets: SecretSummary[]
+  envVarCount: number
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -307,11 +314,26 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
     }
 
+    let envSecrets: SecretSummary[] = []
+    let envVarCount = 0
+    if (envId) {
+      const [secretRows, varRows] = await Promise.all([
+        db.select({ key: secrets.key, updated_at: secrets.updated_at }).from(secrets)
+          .where(and(eq(secrets.env_id, envId), isNull(secrets.deleted_at))),
+        db.select({ id: envVars.id }).from(envVars)
+          .where(and(eq(envVars.env_id, envId), isNull(envVars.deleted_at))),
+      ])
+      envSecrets = secretRows
+      envVarCount = varRows.length
+    }
+
     return {
       orgs: userOrgs,
       projects: orgProjects,
       environments: envs,
       envId,
       currentUserRole: memberRows[0]?.role ?? '',
+      envSecrets,
+      envVarCount,
     }
   })

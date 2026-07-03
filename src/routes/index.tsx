@@ -199,7 +199,7 @@ function LandingPage() {
               <EnvironmentTag name="preview-pr-42" />
             </div>
             {DEMO_SECRETS.map((s) => (
-              <SecretRow key={s.name} name={s.name} value={s.value} lastSynced={s.lastSynced} />
+              <SecretRow key={s.name} name={s.name} value={s.value} meta={`synced ${s.lastSynced}`} />
             ))}
             <div className="vault-caption">12 secrets · synced to 3 machines · 3 environments</div>
           </div>
