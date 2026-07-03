@@ -330,20 +330,24 @@ a:hover { text-decoration: underline; }
 .select-option.selected { color: var(--text-brand); }
 .select-action {
   margin-top: 4px;
-  padding: 8px 12px;
+  padding-top: 4px;
   border-top: 1px solid var(--border-default);
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 .select-action a, .select-action button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-tertiary);
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
 }
 .select-action a:hover, .select-action button:hover {
+  background: var(--accent-subtle);
   color: var(--text-brand);
   text-decoration: none;
 }
