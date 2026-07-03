@@ -7,6 +7,27 @@ export function generateId(): string {
   return createId()
 }
 
+// Every project starts with a production environment (product spec).
+export async function createProjectWithProductionEnv(
+  orgId: string,
+  name: string,
+  createdBy: string
+): Promise<string> {
+  const projectId = generateId()
+  await db.insert(schema.projects).values({
+    id: projectId,
+    org_id: orgId,
+    name,
+  })
+  await db.insert(schema.environments).values({
+    id: generateId(),
+    project_id: projectId,
+    name: 'production',
+    created_by: createdBy,
+  })
+  return projectId
+}
+
 export async function softDeleteOrg(id: string): Promise<void> {
   await db.update(schema.orgs).set({ deleted_at: new Date() }).where(eq(schema.orgs.id, id))
 }

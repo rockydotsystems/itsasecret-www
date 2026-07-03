@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgs, orgMembers, projects, sessions } from '~/lib/schema'
-import { generateId, auditLog } from '~/lib/db-utils'
+import { orgs, orgMembers, sessions } from '~/lib/schema'
+import { generateId, auditLog, createProjectWithProductionEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
 
@@ -56,12 +56,7 @@ export const Route = createFileRoute('/api/orgs/')({
             wrapped_org_key: wrappedOrgKey,
           })
 
-          const projectId = generateId()
-          await db.insert(projects).values({
-            id: projectId,
-            org_id: orgId,
-            name: 'default',
-          })
+          const projectId = await createProjectWithProductionEnv(orgId, 'default', user.id)
 
           const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
           encryptedOrgKeys[orgId] = encryptedOrgKey

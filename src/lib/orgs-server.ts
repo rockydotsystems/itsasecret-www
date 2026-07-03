@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, projects, environments, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
+import { users, orgs, orgMembers, projects, environments, envPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import type { Org, Project, Environment } from '~/lib/schema'
@@ -193,6 +193,78 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
     const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
 
     return { orgs: userOrgs, projects: orgProjects, projectId, org, members, currentUserId: user.id, currentUserRole }
+  })
+
+export type EnvPermissionView = {
+  env_id: string
+  user_id: string
+  email: string
+  role: string
+}
+
+export type ProjectSettingsView = OrgView & {
+  project: Project
+  environments: Environment[]
+  envPermissions: EnvPermissionView[]
+  members: OrgMemberView[]
+  currentUserId: string
+  currentUserRole: string
+}
+
+// Loads everything the project settings page needs: top-bar data plus the
+// project row, its environments, all environment permission grants (with
+// emails), the org member list (for the grant picker), and the caller's role.
+export const getProjectSettingsFn = createServerFn({ method: 'POST' })
+  .validator(z.object({ orgId: z.string(), projectId: z.string() }))
+  .handler(async ({ data }): Promise<ProjectSettingsView> => {
+    const request = buildAuthRequest()
+    if (!request) throw new Error('Not authenticated')
+    const { user } = await requireAuth(request)
+    const { orgId, projectId } = data
+
+    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+
+    const [userOrgs, orgProjects, members] = await Promise.all([
+      listOrgsForUser(user.id),
+      listProjectsForOrg(orgId),
+      db.select({
+        user_id: orgMembers.user_id,
+        email: users.email,
+        role: orgMembers.role,
+        created_at: orgMembers.created_at,
+      }).from(orgMembers)
+        .innerJoin(users, eq(users.id, orgMembers.user_id))
+        .where(eq(orgMembers.org_id, orgId)),
+    ])
+
+    const project = orgProjects.find((p) => p.id === projectId)
+    if (!project) throw new Error('Project not found in organization')
+
+    const envs = await db.select().from(environments)
+      .where(and(eq(environments.project_id, projectId), isNull(environments.deleted_at)))
+
+    const perms: EnvPermissionView[] = envs.length === 0 ? [] : await db.select({
+      env_id: envPermissions.env_id,
+      user_id: envPermissions.user_id,
+      email: users.email,
+      role: envPermissions.role,
+    }).from(envPermissions)
+      .innerJoin(users, eq(users.id, envPermissions.user_id))
+      .where(inArray(envPermissions.env_id, envs.map((e) => e.id)))
+
+    const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
+
+    return {
+      orgs: userOrgs,
+      projects: orgProjects,
+      projectId,
+      project,
+      environments: envs,
+      envPermissions: perms,
+      members,
+      currentUserId: user.id,
+      currentUserRole,
+    }
   })
 
 // Loads the project-level dashboard view and records org + project (and, when

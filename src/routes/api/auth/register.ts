@@ -2,8 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, projects } from '~/lib/schema'
-import { generateId, auditLog } from '~/lib/db-utils'
+import { users, orgs, orgMembers } from '~/lib/schema'
+import { generateId, auditLog, createProjectWithProductionEnv } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
 import { deriveKey, hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
 import { generateKey, wrapKey, encrypt } from '~/lib/crypto/envelope'
@@ -88,12 +88,7 @@ export const Route = createFileRoute('/api/auth/register')({
             wrapped_org_key: wrappedOrgKey,
           })
 
-          const projectId = generateId()
-          await db.insert(projects).values({
-            id: projectId,
-            org_id: orgId,
-            name: 'default',
-          })
+          const projectId = await createProjectWithProductionEnv(orgId, 'default', userId)
 
           const { publicKey: serverPubkey, privateKey } = await generateKeyPair()
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
