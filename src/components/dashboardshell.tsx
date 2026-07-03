@@ -1,6 +1,5 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { requireAuthBeforeLoad } from '~/lib/route-guards'
-import { useState, useMemo, useRef } from 'react'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { useState, useMemo } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
@@ -8,9 +7,7 @@ import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { Select } from '~/components/select'
 import { performLogout } from '~/lib/auth-form'
-import { getDashboardStateFn, visitOrgFn, visitProjectFn, visitEnvFn } from '~/lib/orgs-server'
-import type { DashboardState } from '~/lib/orgs-server'
-import type { Environment, Project } from '~/lib/schema'
+import type { Environment, Org, Project } from '~/lib/schema'
 
 const SECRETS = [
   { name: 'STRIPE_SECRET_KEY', value: 'sk_live_••••••••••••••••', lastSynced: '2m ago' },
@@ -28,86 +25,46 @@ function SettingsIcon() {
   )
 }
 
-export const Route = createFileRoute('/dashboard')({
-  beforeLoad: requireAuthBeforeLoad,
-  loader: async (): Promise<DashboardState> => getDashboardStateFn(),
-  component: DashboardPage,
-})
+export type DashboardShellProps = {
+  orgs: Org[]
+  orgId: string
+  projects: Project[]
+  projectId: string
+  environments: Environment[]
+  envId: string
+}
 
-function DashboardPage() {
-  const initial = Route.useLoaderData() as DashboardState
+export function DashboardShell({ orgs, orgId, projects, projectId, environments, envId }: DashboardShellProps) {
+  const navigate = useNavigate()
+  const isNavigating = useRouterState({ select: (s) => s.status === 'pending' })
   const [loggingOut, setLoggingOut] = useState(false)
-  const [orgId, setOrgId] = useState<string>(initial.orgId)
-  const [projects, setProjects] = useState<Project[]>(initial.projects)
-  const [projectId, setProjectId] = useState<string>(initial.projectId)
-  const [environments, setEnvironments] = useState<Environment[]>(initial.environments)
-  const [envId, setEnvId] = useState<string>(initial.envId)
-  const [switching, setSwitching] = useState(false)
-  // Guards against out-of-order responses when switching quickly.
-  const switchSeq = useRef(0)
 
   const orgOptions = useMemo(() => {
-    return initial.orgs.map((org) => ({ value: org.id, label: org.name }))
-  }, [initial.orgs])
+    return orgs.map((org) => ({ value: org.id, label: org.name }))
+  }, [orgs])
 
   const projectOptions = useMemo(() => {
     return projects.map((project) => ({ value: project.id, label: project.name }))
   }, [projects])
 
-  const selectedProject = projects.find((p) => p.id === projectId)
-  const projectName = selectedProject?.name || projectOptions[0]?.label || 'Select project'
+  const projectName = projects.find((p) => p.id === projectId)?.name || 'Select project'
 
   function handleOrgChange(nextOrgId: string) {
     if (nextOrgId === orgId) return
-    const seq = ++switchSeq.current
-    setOrgId(nextOrgId)
-    setSwitching(true)
-    visitOrgFn({ data: { orgId: nextOrgId } })
-      .then((state) => {
-        if (seq !== switchSeq.current) return
-        setProjects(state.projects)
-        setProjectId(state.projectId)
-        setEnvironments(state.environments)
-        setEnvId(state.envId)
-      })
-      .catch(() => {
-        if (seq !== switchSeq.current) return
-        setProjects([])
-        setProjectId('')
-        setEnvironments([])
-        setEnvId('')
-      })
-      .finally(() => {
-        if (seq === switchSeq.current) setSwitching(false)
-      })
+    void navigate({ to: '/dashboard/$orgId', params: { orgId: nextOrgId } })
   }
 
   function handleProjectChange(nextProjectId: string) {
     if (nextProjectId === projectId) return
-    const seq = ++switchSeq.current
-    setProjectId(nextProjectId)
-    setSwitching(true)
-    visitProjectFn({ data: { projectId: nextProjectId } })
-      .then((state) => {
-        if (seq !== switchSeq.current) return
-        setEnvironments(state.environments)
-        setEnvId(state.envId)
-      })
-      .catch(() => {
-        if (seq !== switchSeq.current) return
-        setEnvironments([])
-        setEnvId('')
-      })
-      .finally(() => {
-        if (seq === switchSeq.current) setSwitching(false)
-      })
+    void navigate({ to: '/dashboard/$orgId/$projectId', params: { orgId, projectId: nextProjectId } })
   }
 
   function handleEnvChange(nextEnvId: string) {
     if (nextEnvId === envId) return
-    setEnvId(nextEnvId)
-    visitEnvFn({ data: { envId: nextEnvId } }).catch(() => {
-      // Recording the visit is best-effort; the selection still applies locally.
+    void navigate({
+      to: '/dashboard/$orgId/$projectId',
+      params: { orgId, projectId },
+      search: { env: nextEnvId },
     })
   }
 
@@ -132,7 +89,7 @@ function DashboardPage() {
                 options={orgOptions}
                 onChange={handleOrgChange}
                 variant="crumb"
-                disabled={switching || orgOptions.length === 0}
+                disabled={isNavigating || orgOptions.length === 0}
                 action={
                   <Link to="/orgs/new" aria-label="Create new organization">
                     + New org
@@ -156,7 +113,7 @@ function DashboardPage() {
                 onChange={handleProjectChange}
                 variant="crumb"
                 placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
-                disabled={switching || !orgId}
+                disabled={isNavigating || !orgId}
                 action={
                   <Link to="/projects/new" search={{ orgId }} aria-label="Create new project">
                     + New project

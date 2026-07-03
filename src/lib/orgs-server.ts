@@ -26,35 +26,23 @@ export const getOrgsFn = createServerFn({ method: 'GET' })
     return listOrgsForUser(user.id)
   })
 
-export const getProjectsFn = createServerFn({ method: 'GET' })
-  .validator(z.object({ orgId: z.string() }))
-  .handler(async ({ data }): Promise<Project[]> => {
-    const request = buildAuthRequest()
-    if (!request) return []
-    const { user } = await requireAuth(request)
-    const { orgId } = data
-
-    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
-
-    const rows = await db.select().from(projects)
-      .where(and(eq(projects.org_id, orgId), isNull(projects.deleted_at)))
-
-    return rows
-  })
-
-export type EnvState = {
-  environments: Environment[]
+export type LastVisited = {
+  orgId: string
+  projectId: string
   envId: string
 }
 
-export type ProjectState = EnvState & {
+export type OrgView = {
+  orgs: Org[]
   projects: Project[]
   projectId: string
 }
 
-export type DashboardState = ProjectState & {
+export type ProjectView = {
   orgs: Org[]
-  orgId: string
+  projects: Project[]
+  environments: Environment[]
+  envId: string
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -70,123 +58,140 @@ async function listOrgsForUser(userId: string): Promise<Org[]> {
     .where(isNull(orgs.deleted_at))
 }
 
-// Resolves the environment list for a project plus the user's last-visited
-// env in it, falling back to the first env when there is no valid record.
-async function loadEnvState(userId: string, projectId: string): Promise<EnvState> {
-  const envs = await db.select().from(environments)
-    .where(and(eq(environments.project_id, projectId), isNull(environments.deleted_at)))
-
-  const lastRows = await db.select({ env_id: userLastEnv.env_id }).from(userLastEnv)
-    .where(and(eq(userLastEnv.user_id, userId), eq(userLastEnv.project_id, projectId)))
-    .limit(1)
-  const lastEnvId = lastRows[0]?.env_id
-  const envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
-
-  return { environments: envs, envId }
+async function listProjectsForOrg(orgId: string): Promise<Project[]> {
+  return db.select().from(projects)
+    .where(and(eq(projects.org_id, orgId), isNull(projects.deleted_at)))
 }
 
-// Same idea one level up: projects of an org plus the user's last-visited
-// project, then the env state for whichever project was resolved.
-async function loadProjectState(userId: string, orgId: string): Promise<ProjectState> {
-  const rows = await db.select().from(projects)
-    .where(and(eq(projects.org_id, orgId), isNull(projects.deleted_at)))
-
-  const lastRows = await db.select({ project_id: userLastProject.project_id }).from(userLastProject)
+async function lastProjectIdForOrg(userId: string, orgId: string): Promise<string | undefined> {
+  const rows = await db.select({ project_id: userLastProject.project_id }).from(userLastProject)
     .where(and(eq(userLastProject.user_id, userId), eq(userLastProject.org_id, orgId)))
     .limit(1)
-  const lastProjectId = lastRows[0]?.project_id
-  const projectId = rows.find((p) => p.id === lastProjectId)?.id ?? rows[0]?.id ?? ''
-
-  const envState = projectId
-    ? await loadEnvState(userId, projectId)
-    : { environments: [], envId: '' }
-
-  return { projects: rows, projectId, ...envState }
+  return rows[0]?.project_id
 }
 
-export const getDashboardStateFn = createServerFn({ method: 'GET' })
-  .handler(async (): Promise<DashboardState> => {
-    const empty: DashboardState = { orgs: [], orgId: '', projects: [], projectId: '', environments: [], envId: '' }
+async function lastEnvIdForProject(userId: string, projectId: string): Promise<string | undefined> {
+  const rows = await db.select({ env_id: userLastEnv.env_id }).from(userLastEnv)
+    .where(and(eq(userLastEnv.user_id, userId), eq(userLastEnv.project_id, projectId)))
+    .limit(1)
+  return rows[0]?.env_id
+}
+
+async function recordOrgVisit(userId: string, orgId: string): Promise<void> {
+  await db.insert(userLastOrg)
+    .values({ user_id: userId, org_id: orgId })
+    .onConflictDoUpdate({
+      target: userLastOrg.user_id,
+      set: { org_id: orgId, updated_at: new Date() },
+    })
+}
+
+async function recordProjectVisit(userId: string, orgId: string, projectId: string): Promise<void> {
+  await db.insert(userLastProject)
+    .values({ user_id: userId, org_id: orgId, project_id: projectId })
+    .onConflictDoUpdate({
+      target: [userLastProject.user_id, userLastProject.org_id],
+      set: { project_id: projectId, updated_at: new Date() },
+    })
+}
+
+async function recordEnvVisit(userId: string, projectId: string, envId: string): Promise<void> {
+  await db.insert(userLastEnv)
+    .values({ user_id: userId, project_id: projectId, env_id: envId })
+    .onConflictDoUpdate({
+      target: [userLastEnv.user_id, userLastEnv.project_id],
+      set: { env_id: envId, updated_at: new Date() },
+    })
+}
+
+// Resolves the deepest last-visited location the user still has access to,
+// falling back to first org/project/env. Empty strings mean "none".
+export const resolveLastVisitedFn = createServerFn({ method: 'GET' })
+  .handler(async (): Promise<LastVisited> => {
+    const empty: LastVisited = { orgId: '', projectId: '', envId: '' }
     const request = buildAuthRequest()
     if (!request) return empty
     const user = await getCurrentUserFromRequest(request)
     if (!user) return empty
 
     const userOrgs = await listOrgsForUser(user.id)
-
-    const lastRows = await db.select({ org_id: userLastOrg.org_id }).from(userLastOrg)
+    const lastOrgRows = await db.select({ org_id: userLastOrg.org_id }).from(userLastOrg)
       .where(eq(userLastOrg.user_id, user.id))
       .limit(1)
-    const lastOrgId = lastRows[0]?.org_id
-    const orgId = userOrgs.find((o) => o.id === lastOrgId)?.id ?? userOrgs[0]?.id ?? ''
+    const orgId = userOrgs.find((o) => o.id === lastOrgRows[0]?.org_id)?.id ?? userOrgs[0]?.id ?? ''
+    if (!orgId) return empty
 
-    const projectState = orgId
-      ? await loadProjectState(user.id, orgId)
-      : { projects: [], projectId: '', environments: [] as Environment[], envId: '' }
+    const orgProjects = await listProjectsForOrg(orgId)
+    const lastProjectId = await lastProjectIdForOrg(user.id, orgId)
+    const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
+    if (!projectId) return { orgId, projectId: '', envId: '' }
 
-    return { orgs: userOrgs, orgId, ...projectState }
+    const envs = await db.select({ id: environments.id }).from(environments)
+      .where(and(eq(environments.project_id, projectId), isNull(environments.deleted_at)))
+    const lastEnvId = await lastEnvIdForProject(user.id, projectId)
+    const envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
+
+    return { orgId, projectId, envId }
   })
 
-export const visitOrgFn = createServerFn({ method: 'POST' })
+// Loads the org-level dashboard view and records the visit. projectId is the
+// user's last-visited (or first) project in the org, for redirecting deeper.
+export const getOrgViewFn = createServerFn({ method: 'POST' })
   .validator(z.object({ orgId: z.string() }))
-  .handler(async ({ data }): Promise<ProjectState> => {
+  .handler(async ({ data }): Promise<OrgView> => {
     const request = buildAuthRequest()
     if (!request) throw new Error('Not authenticated')
     const { user } = await requireAuth(request)
     const { orgId } = data
 
     await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+    await recordOrgVisit(user.id, orgId)
 
-    await db.insert(userLastOrg)
-      .values({ user_id: user.id, org_id: orgId })
-      .onConflictDoUpdate({
-        target: userLastOrg.user_id,
-        set: { org_id: orgId, updated_at: new Date() },
-      })
+    const [userOrgs, orgProjects, lastProjectId] = await Promise.all([
+      listOrgsForUser(user.id),
+      listProjectsForOrg(orgId),
+      lastProjectIdForOrg(user.id, orgId),
+    ])
+    const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
 
-    return loadProjectState(user.id, orgId)
+    return { orgs: userOrgs, projects: orgProjects, projectId }
   })
 
-export const visitProjectFn = createServerFn({ method: 'POST' })
-  .validator(z.object({ projectId: z.string() }))
-  .handler(async ({ data }): Promise<EnvState> => {
+// Loads the project-level dashboard view and records org + project (and, when
+// a valid envId is passed, env) visits. The returned envId is the requested
+// one when valid, otherwise last-visited or first — callers canonicalize the
+// URL against it.
+export const getProjectViewFn = createServerFn({ method: 'POST' })
+  .validator(z.object({ orgId: z.string(), projectId: z.string(), envId: z.string().optional() }))
+  .handler(async ({ data }): Promise<ProjectView> => {
     const request = buildAuthRequest()
     if (!request) throw new Error('Not authenticated')
     const { user } = await requireAuth(request)
-    const { projectId } = data
+    const { orgId, projectId } = data
 
-    const orgId = await requireOrgRole({ projectId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
 
-    await db.insert(userLastProject)
-      .values({ user_id: user.id, org_id: orgId, project_id: projectId })
-      .onConflictDoUpdate({
-        target: [userLastProject.user_id, userLastProject.org_id],
-        set: { project_id: projectId, updated_at: new Date() },
-      })
+    const [userOrgs, orgProjects] = await Promise.all([
+      listOrgsForUser(user.id),
+      listProjectsForOrg(orgId),
+    ])
+    if (!orgProjects.some((p) => p.id === projectId)) {
+      throw new Error('Project not found in organization')
+    }
 
-    return loadEnvState(user.id, projectId)
-  })
+    await recordOrgVisit(user.id, orgId)
+    await recordProjectVisit(user.id, orgId, projectId)
 
-export const visitEnvFn = createServerFn({ method: 'POST' })
-  .validator(z.object({ envId: z.string() }))
-  .handler(async ({ data }): Promise<void> => {
-    const request = buildAuthRequest()
-    if (!request) throw new Error('Not authenticated')
-    const { user } = await requireAuth(request)
-    const { envId } = data
+    const envs = await db.select().from(environments)
+      .where(and(eq(environments.project_id, projectId), isNull(environments.deleted_at)))
 
-    await requireOrgRole({ envId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+    let envId = envs.find((e) => e.id === data.envId)?.id ?? ''
+    if (envId) {
+      await recordEnvVisit(user.id, projectId, envId)
+    } else {
+      const lastEnvId = await lastEnvIdForProject(user.id, projectId)
+      envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
+    }
 
-    const envRows = await db.select({ project_id: environments.project_id }).from(environments)
-      .where(and(eq(environments.id, envId), isNull(environments.deleted_at)))
-      .limit(1)
-    const env = envRows[0]
-    if (!env) throw new Error('Environment not found')
-
-    await db.insert(userLastEnv)
-      .values({ user_id: user.id, project_id: env.project_id, env_id: envId })
-      .onConflictDoUpdate({
-        target: [userLastEnv.user_id, userLastEnv.project_id],
-        set: { env_id: envId, updated_at: new Date() },
-      })
+    return { orgs: userOrgs, projects: orgProjects, environments: envs, envId }
   })

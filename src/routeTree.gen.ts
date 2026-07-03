@@ -11,14 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
 import { Route as OrgsNewRouteImport } from './routes/orgs/new'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as DashboardOrgIdIndexRouteImport } from './routes/dashboard/$orgId/index'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
 import { Route as ProjectsProjectIdSettingsRouteImport } from './routes/projects/$projectId/settings'
 import { Route as OrgsOrgIdSettingsRouteImport } from './routes/orgs/$orgId/settings'
+import { Route as DashboardOrgIdProjectIdRouteImport } from './routes/dashboard/$orgId/$projectId'
 import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/$projectId'
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
@@ -50,14 +52,14 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsNewRoute = ProjectsNewRouteImport.update({
@@ -75,6 +77,11 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardOrgIdIndexRoute = DashboardOrgIdIndexRouteImport.update({
+  id: '/dashboard/$orgId/',
+  path: '/dashboard/$orgId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOrgsIndexRoute = ApiOrgsIndexRouteImport.update({
   id: '/api/orgs/',
   path: '/api/orgs/',
@@ -89,6 +96,11 @@ const ProjectsProjectIdSettingsRoute =
 const OrgsOrgIdSettingsRoute = OrgsOrgIdSettingsRouteImport.update({
   id: '/orgs/$orgId/settings',
   path: '/orgs/$orgId/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardOrgIdProjectIdRoute = DashboardOrgIdProjectIdRouteImport.update({
+  id: '/dashboard/$orgId/$projectId',
+  path: '/dashboard/$orgId/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProjectsProjectIdRoute = ApiProjectsProjectIdRouteImport.update({
@@ -199,12 +211,12 @@ const ApiProjectsProjectIdEnvsEnvIdForkRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -212,9 +224,11 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
   '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
   '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
+  '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
@@ -231,12 +245,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -244,9 +258,11 @@ export interface FileRoutesByTo {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
   '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
   '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs': typeof ApiOrgsIndexRoute
+  '/dashboard/$orgId': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
@@ -264,12 +280,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
   '/orgs/new': typeof OrgsNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -277,9 +293,11 @@ export interface FileRoutesById {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdRoute
   '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
   '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
+  '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
@@ -298,12 +316,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/dashboard'
     | '/login'
     | '/register'
     | '/api/health'
     | '/orgs/new'
     | '/projects/new'
+    | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -311,9 +329,11 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/dashboard/$orgId/$projectId'
     | '/orgs/$orgId/settings'
     | '/projects/$projectId/settings'
     | '/api/orgs/'
+    | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
@@ -330,12 +350,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/dashboard'
     | '/login'
     | '/register'
     | '/api/health'
     | '/orgs/new'
     | '/projects/new'
+    | '/dashboard'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -343,9 +363,11 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/dashboard/$orgId/$projectId'
     | '/orgs/$orgId/settings'
     | '/projects/$projectId/settings'
     | '/api/orgs'
+    | '/dashboard/$orgId'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
@@ -362,12 +384,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
     | '/login'
     | '/register'
     | '/api/health'
     | '/orgs/new'
     | '/projects/new'
+    | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -375,9 +397,11 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/dashboard/$orgId/$projectId'
     | '/orgs/$orgId/settings'
     | '/projects/$projectId/settings'
     | '/api/orgs/'
+    | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
@@ -395,12 +419,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ApiHealthRoute: typeof ApiHealthRoute
   OrgsNewRoute: typeof OrgsNewRoute
   ProjectsNewRoute: typeof ProjectsNewRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -408,9 +432,11 @@ export interface RootRouteChildren {
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
   ApiProjectsProjectIdRoute: typeof ApiProjectsProjectIdRouteWithChildren
+  DashboardOrgIdProjectIdRoute: typeof DashboardOrgIdProjectIdRoute
   OrgsOrgIdSettingsRoute: typeof OrgsOrgIdSettingsRoute
   ProjectsProjectIdSettingsRoute: typeof ProjectsProjectIdSettingsRoute
   ApiOrgsIndexRoute: typeof ApiOrgsIndexRoute
+  DashboardOrgIdIndexRoute: typeof DashboardOrgIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -429,18 +455,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/new': {
@@ -464,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/$orgId/': {
+      id: '/dashboard/$orgId/'
+      path: '/dashboard/$orgId'
+      fullPath: '/dashboard/$orgId/'
+      preLoaderRoute: typeof DashboardOrgIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/orgs/': {
       id: '/api/orgs/'
       path: '/api/orgs'
@@ -483,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/orgs/$orgId/settings'
       fullPath: '/orgs/$orgId/settings'
       preLoaderRoute: typeof OrgsOrgIdSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/$orgId/$projectId': {
+      id: '/dashboard/$orgId/$projectId'
+      path: '/dashboard/$orgId/$projectId'
+      fullPath: '/dashboard/$orgId/$projectId'
+      preLoaderRoute: typeof DashboardOrgIdProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/projects/$projectId': {
@@ -738,12 +778,12 @@ const ApiProjectsProjectIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ApiHealthRoute: ApiHealthRoute,
   OrgsNewRoute: OrgsNewRoute,
   ProjectsNewRoute: ProjectsNewRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
@@ -751,9 +791,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,
   ApiProjectsProjectIdRoute: ApiProjectsProjectIdRouteWithChildren,
+  DashboardOrgIdProjectIdRoute: DashboardOrgIdProjectIdRoute,
   OrgsOrgIdSettingsRoute: OrgsOrgIdSettingsRoute,
   ProjectsProjectIdSettingsRoute: ProjectsProjectIdSettingsRoute,
   ApiOrgsIndexRoute: ApiOrgsIndexRoute,
+  DashboardOrgIdIndexRoute: DashboardOrgIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
