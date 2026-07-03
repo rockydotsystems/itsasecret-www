@@ -16,16 +16,6 @@ function buildAuthRequest(): Request | null {
   })
 }
 
-export const getOrgsFn = createServerFn({ method: 'GET' })
-  .handler(async (): Promise<Org[]> => {
-    const request = buildAuthRequest()
-    if (!request) return []
-    const user = await getCurrentUserFromRequest(request)
-    if (!user) return []
-
-    return listOrgsForUser(user.id)
-  })
-
 export type LastVisited = {
   orgId: string
   projectId: string

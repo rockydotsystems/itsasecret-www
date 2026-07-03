@@ -13,8 +13,6 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as ProjectsNewRouteImport } from './routes/projects/new'
-import { Route as OrgsNewRouteImport } from './routes/orgs/new'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as DashboardOrgIdIndexRouteImport } from './routes/dashboard/$orgId/index'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
@@ -60,16 +58,6 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProjectsNewRoute = ProjectsNewRouteImport.update({
-  id: '/projects/new',
-  path: '/projects/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrgsNewRoute = OrgsNewRouteImport.update({
-  id: '/orgs/new',
-  path: '/orgs/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -214,8 +202,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
-  '/orgs/new': typeof OrgsNewRoute
-  '/projects/new': typeof ProjectsNewRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -248,8 +234,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
-  '/orgs/new': typeof OrgsNewRoute
-  '/projects/new': typeof ProjectsNewRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -283,8 +267,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/api/health': typeof ApiHealthRoute
-  '/orgs/new': typeof OrgsNewRoute
-  '/projects/new': typeof ProjectsNewRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -319,8 +301,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/api/health'
-    | '/orgs/new'
-    | '/projects/new'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -353,8 +333,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/api/health'
-    | '/orgs/new'
-    | '/projects/new'
     | '/dashboard'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -387,8 +365,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/api/health'
-    | '/orgs/new'
-    | '/projects/new'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -422,8 +398,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ApiHealthRoute: typeof ApiHealthRoute
-  OrgsNewRoute: typeof OrgsNewRoute
-  ProjectsNewRoute: typeof ProjectsNewRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
@@ -467,20 +441,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/projects/new': {
-      id: '/projects/new'
-      path: '/projects/new'
-      fullPath: '/projects/new'
-      preLoaderRoute: typeof ProjectsNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orgs/new': {
-      id: '/orgs/new'
-      path: '/orgs/new'
-      fullPath: '/orgs/new'
-      preLoaderRoute: typeof OrgsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -781,8 +741,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ApiHealthRoute: ApiHealthRoute,
-  OrgsNewRoute: OrgsNewRoute,
-  ProjectsNewRoute: ProjectsNewRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,

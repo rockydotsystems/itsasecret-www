@@ -6,6 +6,9 @@ import { LogoMark } from '~/components/logo'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { Select } from '~/components/select'
+import { Modal } from '~/components/modal'
+import { CreateOrgForm } from '~/components/createorgform'
+import { CreateProjectForm } from '~/components/createprojectform'
 import { performLogout } from '~/lib/auth-form'
 import type { Environment, Org, Project } from '~/lib/schema'
 
@@ -37,6 +40,9 @@ export type DashboardShellProps = {
 export function DashboardShell({ orgs, orgId, projects, projectId, environments, envId }: DashboardShellProps) {
   const navigate = useNavigate()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [creating, setCreating] = useState<'org' | 'project' | null>(null)
+
+  const currentOrg = orgs.find((o) => o.id === orgId)
 
   const orgOptions = useMemo(() => {
     return orgs.map((org) => ({ value: org.id, label: org.name }))
@@ -90,9 +96,9 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 variant="crumb"
                 disabled={orgOptions.length === 0}
                 action={
-                  <Link to="/orgs/new" aria-label="Create new organization">
+                  <button type="button" onClick={() => setCreating('org')} aria-label="Create new organization">
                     + New org
-                  </Link>
+                  </button>
                 }
                 optionAction={(option) => (
                   <Link
@@ -114,9 +120,9 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
                 disabled={!orgId}
                 action={
-                  <Link to="/projects/new" search={{ orgId }} aria-label="Create new project">
+                  <button type="button" onClick={() => setCreating('project')} aria-label="Create new project">
                     + New project
-                  </Link>
+                  </button>
                 }
                 optionAction={(option) => (
                   <Link
@@ -173,6 +179,40 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
           ))}
         </div>
       </main>
+
+      {creating === 'org' && (
+        <Modal
+          title="Create organization"
+          subtitle="Shared orgs let you invite teammates and collaborate on projects."
+          onClose={() => setCreating(null)}
+        >
+          <CreateOrgForm
+            onCreated={(org) => {
+              setCreating(null)
+              void navigate({ to: '/dashboard/$orgId', params: { orgId: org.id } })
+            }}
+          />
+        </Modal>
+      )}
+
+      {creating === 'project' && currentOrg && (
+        <Modal
+          title="Create project"
+          subtitle="Projects group the environments your secrets live in."
+          onClose={() => setCreating(null)}
+        >
+          <CreateProjectForm
+            org={currentOrg}
+            onCreated={(project) => {
+              setCreating(null)
+              void navigate({
+                to: '/dashboard/$orgId/$projectId',
+                params: { orgId: currentOrg.id, projectId: project.id },
+              })
+            }}
+          />
+        </Modal>
+      )}
     </div>
   )
 }

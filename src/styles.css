@@ -365,6 +365,38 @@ a:hover { text-decoration: underline; }
 }
 [data-theme="light"] .card { box-shadow: var(--shadow-sm); }
 
+/* ─── Modal ─────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+}
+.modal {
+  width: 100%; max-width: 420px;
+  padding: var(--space-8, 32px);
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.modal-title {
+  font: 600 var(--text-lg)/var(--leading-snug) var(--font-family-display);
+  color: var(--text-primary);
+}
+.modal-close {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; padding: 0;
+  background: transparent; border: none; border-radius: var(--radius-sm);
+  color: var(--text-tertiary); cursor: pointer;
+}
+.modal-close:hover { background: var(--accent-subtle); color: var(--text-primary); }
+.modal-subtitle {
+  margin-bottom: 24px;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+
 /* ─── Redaction pattern background ──────────────── */
 /* Thin horizontal bars of varying width — marketing/docs heroes only. */
 .hero-texture {

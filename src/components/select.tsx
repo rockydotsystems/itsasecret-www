@@ -83,7 +83,11 @@ export function Select({
               )}
             </li>
           ))}
-          {action && <li className="select-action">{action}</li>}
+          {action && (
+            <li className="select-action" onClick={() => setOpen(false)}>
+              {action}
+            </li>
+          )}
         </ul>
       )}
     </div>
