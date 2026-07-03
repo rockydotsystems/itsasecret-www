@@ -1,9 +1,10 @@
+import { createId } from '@paralleldrive/cuid2'
 import { eq } from 'drizzle-orm'
 import { db } from './db'
 import * as schema from './schema'
 
 export function generateId(): string {
-  return crypto.randomUUID()
+  return createId()
 }
 
 export async function softDeleteOrg(id: string): Promise<void> {

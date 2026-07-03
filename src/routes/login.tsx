@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
@@ -22,7 +22,12 @@ function LoginPage() {
   const { redirect } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
   const redirectTo = getRedirectPath(redirect, typeof window !== 'undefined' ? window.location.origin : undefined)
+
+  useEffect(() => {
+    if (formRef.current) formRef.current.dataset.reactManaged = 'true'
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -55,7 +60,7 @@ function LoginPage() {
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Enter your master password to decrypt your vault.</p>
 
-        <form id="login-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form id="login-form" ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
           <Input name="password" type="password" label="Master password" placeholder="••••••••••••" required />
           <span data-auth-form-error className="input-error">{error}</span>

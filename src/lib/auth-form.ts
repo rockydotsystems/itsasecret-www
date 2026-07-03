@@ -62,6 +62,9 @@ export function storeAuthFormNativeListener(
   if (!form || !(form instanceof HTMLFormElement)) return
 
   form.addEventListener('submit', (e) => {
+    // Once React hydrates it owns the form; this direct listener fires before
+    // React's delegated handler, so defaultPrevented alone can't detect that.
+    if (form.dataset.reactManaged === 'true') return
     if (e.defaultPrevented) return
     e.preventDefault()
 

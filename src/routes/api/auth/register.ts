@@ -19,6 +19,11 @@ const registerSchema = z.object({
   clientPubkey: z.string(),
 })
 
+function isDuplicateEmailError(err: unknown): boolean {
+  const cause = (err as { cause?: { code?: string; constraint_name?: string } })?.cause
+  return cause?.code === '23505' && cause?.constraint_name === 'users_email_unique'
+}
+
 function isSecureRequest(request: Request): boolean {
   const url = new URL(request.url)
   const forwardedProto = request.headers.get('x-forwarded-proto')
@@ -107,6 +112,11 @@ export const Route = createFileRoute('/api/auth/register')({
 
           return Response.json({ token, serverPubkey, orgKeys }, { status: 201, headers })
         } catch (err) {
+          // Concurrent registrations can both pass the pre-insert email check;
+          // the loser hits the unique constraint instead.
+          if (isDuplicateEmailError(err)) {
+            return Response.json({ error: 'Email already registered' }, { status: 409 })
+          }
           return errorResponse(err)
         }
       },
