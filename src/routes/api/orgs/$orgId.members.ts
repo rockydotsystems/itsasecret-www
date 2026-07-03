@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgMembers } from '~/lib/schema'
+import { orgMembers, users } from '~/lib/schema'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 
@@ -16,10 +16,13 @@ export const Route = createFileRoute('/api/orgs/$orgId/members')({
           const rows = await db.select({
             org_id: orgMembers.org_id,
             user_id: orgMembers.user_id,
+            email: users.email,
             role: orgMembers.role,
             invited_by: orgMembers.invited_by,
             created_at: orgMembers.created_at,
-          }).from(orgMembers).where(eq(orgMembers.org_id, orgId))
+          }).from(orgMembers)
+            .innerJoin(users, eq(users.id, orgMembers.user_id))
+            .where(eq(orgMembers.org_id, orgId))
           return Response.json(rows, { status: 200 })
         } catch (err) {
           return errorResponse(err)

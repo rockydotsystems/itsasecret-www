@@ -1,13 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
 import { deriveKey, verifyPassword, isLegacyPasswordHash, verifyLegacyPasswordHash, hashPassword } from '~/lib/crypto/kdf'
 import type { KdfParams } from '~/lib/crypto/kdf'
-import { unwrapKey, encrypt } from '~/lib/crypto/envelope'
+import { unwrapKey, wrapKey, encrypt } from '~/lib/crypto/envelope'
+import { isPendingOrgKey, unwrapPendingOrgKey } from '~/lib/pending-org-key'
 import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
 import { base64Decode, base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
@@ -81,7 +82,17 @@ export const Route = createFileRoute('/api/auth/login')({
 
           const orgKeys: Record<string, string> = {}
           for (const member of memberRows) {
-            const orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
+            let orgKey: Uint8Array
+            if (isPendingOrgKey(member.wrapped_org_key)) {
+              // Invited member logging in for the first time since the invite:
+              // finish the re-key by wrapping the org key under their master key.
+              orgKey = await unwrapPendingOrgKey(member.wrapped_org_key)
+              await db.update(orgMembers)
+                .set({ wrapped_org_key: await wrapKey(derivedKey, orgKey) })
+                .where(and(eq(orgMembers.org_id, member.org_id), eq(orgMembers.user_id, user.id)))
+            } else {
+              orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
+            }
             orgKeys[member.org_id] = await encrypt(sessionKey, base64Encode(orgKey))
           }
 

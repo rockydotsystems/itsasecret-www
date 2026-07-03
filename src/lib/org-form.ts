@@ -1,8 +1,8 @@
 import { base64Encode, base64Decode } from './crypto/base64'
 import { deriveKey, type KdfParams } from './crypto/kdf'
-import { deriveSessionKey } from './crypto/ecdh'
 import { generateKey, wrapKey, encrypt } from './crypto/envelope'
 import { getCurrentUser } from './auth-form'
+import { getClientSessionKey } from './client-session'
 import type { Org } from './schema'
 
 export interface CreateOrgResult {
@@ -14,11 +14,7 @@ export async function createOrganization(name: string, password: string): Promis
   const token = localStorage.getItem('sessionToken')
   if (!token) throw new Error('Not authenticated')
 
-  const ecdhPrivKeyB64 = localStorage.getItem('ecdhPrivKey')
-  if (!ecdhPrivKeyB64) throw new Error('Session key not available')
-
-  const serverPubkey = localStorage.getItem('serverPubkey')
-  if (!serverPubkey) throw new Error('Session key not available')
+  const sessionKey = await getClientSessionKey()
 
   const user = await getCurrentUser()
   if (!user) throw new Error('Not authenticated')
@@ -30,15 +26,6 @@ export async function createOrganization(name: string, password: string): Promis
   const orgKey = generateKey()
   const wrappedOrgKey = await wrapKey(masterKey, orgKey)
 
-  const rawPriv = base64Decode(ecdhPrivKeyB64)
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    rawPriv as BufferSource,
-    { name: 'ECDH', namedCurve: 'P-256' },
-    false,
-    ['deriveBits']
-  )
-  const sessionKey = await deriveSessionKey(privateKey, serverPubkey)
   const encryptedOrgKey = await encrypt(sessionKey, base64Encode(orgKey))
 
   const resp = await fetch('/api/orgs/', {

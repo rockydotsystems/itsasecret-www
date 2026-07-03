@@ -40,6 +40,8 @@ docker compose up -d           # start Postgres 17
 - **No MFA in v1** — master-password auth first; TOTP/passkeys later.
 - **Password hash is independent from the KDF-derived key** — the online authentication hash uses its own Argon2id salt/parameters so it cannot leak the master key that wraps organization keys.
 - **Login/register endpoints have per-IP rate limiting and timing-attack mitigations** — failed logins burn a dummy password hash so response times do not reveal whether an email is registered.
+- **Invites use a server-side pending re-key** (interim, see docs/open-questions.md #3) — an inviter cannot wrap the org key for the invitee's master key, so `/api/orgs/:id/invite` (owner/admin, shared orgs only) recovers the org key via the caller's `X-Session-Key`, stores it in `org_members.wrapped_org_key` with a `pending:` prefix wrapped under `SERVER_WRAP_SECRET` (env var, required in production), and the invitee's next login re-wraps it under their master key (`src/lib/pending-org-key.ts`).
+- **Removing an org member revokes all their sessions** — their sessions carry the org key; other-org access is re-established on next login.
 - **API routes are TanStack Start server routes** — the Go CLI calls these as raw HTTP endpoints (not server functions).
 - **Route guards use `beforeLoad` with server-side cookie check** — protected pages redirect to `/login?redirect=<origin>`; logged-in users hitting `/login` or `/register` are redirected to `/dashboard`.
 

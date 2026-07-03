@@ -48,7 +48,13 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
             await db.update(orgs).set({ name: body.name }).where(eq(orgs.id, orgId))
           }
 
-          if (body.ownerUserId) {
+          if (body.ownerUserId && body.ownerUserId !== org.owner_user_id) {
+            if (org.owner_user_id !== user.id) {
+              return Response.json({ error: 'Only the org owner can transfer ownership' }, { status: 403 })
+            }
+            if (org.kind === 'personal') {
+              return Response.json({ error: 'Personal organizations cannot be transferred' }, { status: 403 })
+            }
             const newOwnerRows = await db.select().from(orgMembers)
               .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, body.ownerUserId)))
               .limit(1)
@@ -76,6 +82,14 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
           const { user } = await requireAuth(request)
           await requireOrgRole(params, user.id, [ORG_ROLE_OWNER])
           const orgId = params.orgId!
+          const orgRows = await db.select().from(orgs)
+            .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
+            .limit(1)
+          const org = orgRows[0] ?? null
+          if (!org) return Response.json({ error: 'Org not found' }, { status: 404 })
+          if (org.kind === 'personal') {
+            return Response.json({ error: 'Personal organizations cannot be deleted' }, { status: 403 })
+          }
           await softDeleteOrg(orgId)
           await auditLog({ orgId, actorUserId: user.id, action: 'org.delete', targetType: 'org', targetId: orgId })
           return new Response(null, { status: 204 })

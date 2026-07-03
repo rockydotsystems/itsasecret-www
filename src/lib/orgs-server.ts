@@ -3,7 +3,7 @@ import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgs, orgMembers, projects, environments, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
+import { users, orgs, orgMembers, projects, environments, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import type { Org, Project, Environment } from '~/lib/schema'
@@ -145,6 +145,54 @@ export const getOrgViewFn = createServerFn({ method: 'POST' })
     const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
 
     return { orgs: userOrgs, projects: orgProjects, projectId }
+  })
+
+export type OrgMemberView = {
+  user_id: string
+  email: string
+  role: string
+  created_at: Date
+}
+
+export type OrgSettingsView = OrgView & {
+  org: Org
+  members: OrgMemberView[]
+  currentUserId: string
+  currentUserRole: string
+}
+
+// Loads everything the org settings page needs: the top-bar org/project data
+// plus the org row, its member list (with emails), and the caller's role.
+export const getOrgSettingsFn = createServerFn({ method: 'POST' })
+  .validator(z.object({ orgId: z.string() }))
+  .handler(async ({ data }): Promise<OrgSettingsView> => {
+    const request = buildAuthRequest()
+    if (!request) throw new Error('Not authenticated')
+    const { user } = await requireAuth(request)
+    const { orgId } = data
+
+    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+
+    const [userOrgs, orgProjects, lastProjectId, members] = await Promise.all([
+      listOrgsForUser(user.id),
+      listProjectsForOrg(orgId),
+      lastProjectIdForOrg(user.id, orgId),
+      db.select({
+        user_id: orgMembers.user_id,
+        email: users.email,
+        role: orgMembers.role,
+        created_at: orgMembers.created_at,
+      }).from(orgMembers)
+        .innerJoin(users, eq(users.id, orgMembers.user_id))
+        .where(eq(orgMembers.org_id, orgId)),
+    ])
+
+    const org = userOrgs.find((o) => o.id === orgId)
+    if (!org) throw new Error('Org not found')
+    const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
+    const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
+
+    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, currentUserId: user.id, currentUserRole }
   })
 
 // Loads the project-level dashboard view and records org + project (and, when
