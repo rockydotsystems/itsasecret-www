@@ -113,6 +113,30 @@ export const sessions = pgTable('sessions', {
   index('idx_sessions_expires').on(t.expires_at),
 ])
 
+export const userLastOrg = pgTable('user_last_org', {
+  user_id: text().primaryKey().references(() => users.id),
+  org_id: text().notNull().references(() => orgs.id),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+})
+
+export const userLastProject = pgTable('user_last_project', {
+  user_id: text().notNull().references(() => users.id),
+  org_id: text().notNull().references(() => orgs.id),
+  project_id: text().notNull().references(() => projects.id),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  primaryKey({ columns: [t.user_id, t.org_id] }),
+])
+
+export const userLastEnv = pgTable('user_last_env', {
+  user_id: text().notNull().references(() => users.id),
+  project_id: text().notNull().references(() => projects.id),
+  env_id: text().notNull().references(() => environments.id),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  primaryKey({ columns: [t.user_id, t.project_id] }),
+])
+
 export const auditLog = pgTable('audit_log', {
   id: text().primaryKey(),
   org_id: text().references(() => orgs.id),
@@ -136,3 +160,6 @@ export type Secret = typeof secrets.$inferSelect
 export type EnvPermission = typeof envPermissions.$inferSelect
 export type Session = typeof sessions.$inferSelect
 export type AuditLog = typeof auditLog.$inferSelect
+export type UserLastOrg = typeof userLastOrg.$inferSelect
+export type UserLastProject = typeof userLastProject.$inferSelect
+export type UserLastEnv = typeof userLastEnv.$inferSelect

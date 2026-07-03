@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { requireAuthBeforeLoad } from '~/lib/route-guards'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
@@ -8,8 +8,9 @@ import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { Select } from '~/components/select'
 import { performLogout } from '~/lib/auth-form'
-import { getOrgsFn, getProjectsFn } from '~/lib/orgs-server'
-import type { Org, Project } from '~/lib/schema'
+import { getDashboardStateFn, visitOrgFn, visitProjectFn, visitEnvFn } from '~/lib/orgs-server'
+import type { DashboardState } from '~/lib/orgs-server'
+import type { Environment, Project } from '~/lib/schema'
 
 const SECRETS = [
   { name: 'STRIPE_SECRET_KEY', value: 'sk_live_••••••••••••••••', lastSynced: '2m ago' },
@@ -17,8 +18,6 @@ const SECRETS = [
   { name: 'JWT_SIGNING_KEY', value: '-----BEGIN ••••••••', lastSynced: '3h ago' },
   { name: 'ANTHROPIC_API_KEY', value: 'sk-ant-••••••••••••', lastSynced: 'yesterday' },
 ]
-
-const ENVIRONMENTS = ['production', 'staging', 'preview-pr-42']
 
 function SettingsIcon() {
   return (
@@ -31,24 +30,25 @@ function SettingsIcon() {
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: requireAuthBeforeLoad,
-  loader: async () => {
-    const orgs = await getOrgsFn()
-    return { orgs }
-  },
+  loader: async (): Promise<DashboardState> => getDashboardStateFn(),
   component: DashboardPage,
 })
 
 function DashboardPage() {
-  const { orgs: initialOrgs } = Route.useLoaderData() as { orgs: Org[] }
+  const initial = Route.useLoaderData() as DashboardState
   const [loggingOut, setLoggingOut] = useState(false)
-  const [orgId, setOrgId] = useState<string>(initialOrgs[0]?.id ?? '')
-  const [projectId, setProjectId] = useState<string>('')
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loadingProjects, setLoadingProjects] = useState(false)
+  const [orgId, setOrgId] = useState<string>(initial.orgId)
+  const [projects, setProjects] = useState<Project[]>(initial.projects)
+  const [projectId, setProjectId] = useState<string>(initial.projectId)
+  const [environments, setEnvironments] = useState<Environment[]>(initial.environments)
+  const [envId, setEnvId] = useState<string>(initial.envId)
+  const [switching, setSwitching] = useState(false)
+  // Guards against out-of-order responses when switching quickly.
+  const switchSeq = useRef(0)
 
   const orgOptions = useMemo(() => {
-    return initialOrgs.map((org) => ({ value: org.id, label: org.name }))
-  }, [initialOrgs])
+    return initial.orgs.map((org) => ({ value: org.id, label: org.name }))
+  }, [initial.orgs])
 
   const projectOptions = useMemo(() => {
     return projects.map((project) => ({ value: project.id, label: project.name }))
@@ -57,33 +57,58 @@ function DashboardPage() {
   const selectedProject = projects.find((p) => p.id === projectId)
   const projectName = selectedProject?.name || projectOptions[0]?.label || 'Select project'
 
-  useEffect(() => {
-    if (!orgId) {
-      setProjects([])
-      setProjectId('')
-      return
-    }
-    let cancelled = false
-    setLoadingProjects(true)
-    getProjectsFn({ data: { orgId } })
-      .then((rows) => {
-        if (cancelled) return
-        setProjects(rows)
-        setProjectId(rows[0]?.id ?? '')
+  function handleOrgChange(nextOrgId: string) {
+    if (nextOrgId === orgId) return
+    const seq = ++switchSeq.current
+    setOrgId(nextOrgId)
+    setSwitching(true)
+    visitOrgFn({ data: { orgId: nextOrgId } })
+      .then((state) => {
+        if (seq !== switchSeq.current) return
+        setProjects(state.projects)
+        setProjectId(state.projectId)
+        setEnvironments(state.environments)
+        setEnvId(state.envId)
       })
       .catch(() => {
-        if (cancelled) return
+        if (seq !== switchSeq.current) return
         setProjects([])
         setProjectId('')
+        setEnvironments([])
+        setEnvId('')
       })
       .finally(() => {
-        if (!cancelled) setLoadingProjects(false)
+        if (seq === switchSeq.current) setSwitching(false)
       })
-    return () => { cancelled = true }
-  }, [orgId])
+  }
 
-  function handleOrgChange(nextOrgId: string) {
-    setOrgId(nextOrgId)
+  function handleProjectChange(nextProjectId: string) {
+    if (nextProjectId === projectId) return
+    const seq = ++switchSeq.current
+    setProjectId(nextProjectId)
+    setSwitching(true)
+    visitProjectFn({ data: { projectId: nextProjectId } })
+      .then((state) => {
+        if (seq !== switchSeq.current) return
+        setEnvironments(state.environments)
+        setEnvId(state.envId)
+      })
+      .catch(() => {
+        if (seq !== switchSeq.current) return
+        setEnvironments([])
+        setEnvId('')
+      })
+      .finally(() => {
+        if (seq === switchSeq.current) setSwitching(false)
+      })
+  }
+
+  function handleEnvChange(nextEnvId: string) {
+    if (nextEnvId === envId) return
+    setEnvId(nextEnvId)
+    visitEnvFn({ data: { envId: nextEnvId } }).catch(() => {
+      // Recording the visit is best-effort; the selection still applies locally.
+    })
   }
 
   async function handleLogout() {
@@ -107,7 +132,7 @@ function DashboardPage() {
                 options={orgOptions}
                 onChange={handleOrgChange}
                 variant="crumb"
-                disabled={orgOptions.length === 0}
+                disabled={switching || orgOptions.length === 0}
                 action={
                   <Link to="/orgs/new" aria-label="Create new organization">
                     + New org
@@ -128,10 +153,10 @@ function DashboardPage() {
               <Select
                 value={projectId}
                 options={projectOptions}
-                onChange={setProjectId}
+                onChange={handleProjectChange}
                 variant="crumb"
                 placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
-                disabled={loadingProjects || !orgId}
+                disabled={switching || !orgId}
                 action={
                   <Link to="/projects/new" search={{ orgId }} aria-label="Create new project">
                     + New project
@@ -174,8 +199,13 @@ function DashboardPage() {
 
         <div className="app-actions">
           <div style={{ display: 'flex', gap: '8px' }}>
-            {ENVIRONMENTS.map((env, i) => (
-              <EnvironmentTag key={env} name={env} active={i === 0} href={`/dashboard?env=${env}`} />
+            {environments.map((env) => (
+              <EnvironmentTag
+                key={env.id}
+                name={env.name}
+                active={env.id === envId}
+                onClick={() => handleEnvChange(env.id)}
+              />
             ))}
           </div>
           <Button variant="primary" size="md">Add secret</Button>
