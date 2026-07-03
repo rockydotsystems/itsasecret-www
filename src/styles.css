@@ -310,11 +310,23 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px;
   z-index: 50; max-height: 240px; overflow-y: auto; list-style: none;
 }
+.select-row { display: flex; align-items: center; gap: 6px; }
 .select-option {
+  display: block; flex: 1; min-width: 0;
   padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-sm);
   color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .select-option:hover { background: var(--accent-subtle); color: var(--text-primary); }
+.select-option-action { display: inline-flex; flex-shrink: 0; align-self: stretch; }
+.select-option-action a {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+.select-option-action a:hover {
+  background: var(--accent-subtle); color: var(--text-primary);
+}
 .select-option.selected { color: var(--text-brand); }
 .select-action {
   margin-top: 4px;

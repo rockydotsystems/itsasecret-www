@@ -17,6 +17,8 @@ import { Route as ProjectsNewRouteImport } from './routes/projects/new'
 import { Route as OrgsNewRouteImport } from './routes/orgs/new'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
+import { Route as ProjectsProjectIdSettingsRouteImport } from './routes/projects/$projectId/settings'
+import { Route as OrgsOrgIdSettingsRouteImport } from './routes/orgs/$orgId/settings'
 import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/$projectId'
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
@@ -76,6 +78,17 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
 const ApiOrgsIndexRoute = ApiOrgsIndexRouteImport.update({
   id: '/api/orgs/',
   path: '/api/orgs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsProjectIdSettingsRoute =
+  ProjectsProjectIdSettingsRouteImport.update({
+    id: '/projects/$projectId/settings',
+    path: '/projects/$projectId/settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const OrgsOrgIdSettingsRoute = OrgsOrgIdSettingsRouteImport.update({
+  id: '/orgs/$orgId/settings',
+  path: '/orgs/$orgId/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProjectsProjectIdRoute = ApiProjectsProjectIdRouteImport.update({
@@ -199,6 +212,8 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
+  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
@@ -229,6 +244,8 @@ export interface FileRoutesByTo {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
+  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs': typeof ApiOrgsIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
@@ -260,6 +277,8 @@ export interface FileRoutesById {
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
+  '/orgs/$orgId/settings': typeof OrgsOrgIdSettingsRoute
+  '/projects/$projectId/settings': typeof ProjectsProjectIdSettingsRoute
   '/api/orgs/': typeof ApiOrgsIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
@@ -292,6 +311,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/orgs/$orgId/settings'
+    | '/projects/$projectId/settings'
     | '/api/orgs/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
@@ -322,6 +343,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/orgs/$orgId/settings'
+    | '/projects/$projectId/settings'
     | '/api/orgs'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
@@ -352,6 +375,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
+    | '/orgs/$orgId/settings'
+    | '/projects/$projectId/settings'
     | '/api/orgs/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
@@ -383,6 +408,8 @@ export interface RootRouteChildren {
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
   ApiProjectsProjectIdRoute: typeof ApiProjectsProjectIdRouteWithChildren
+  OrgsOrgIdSettingsRoute: typeof OrgsOrgIdSettingsRoute
+  ProjectsProjectIdSettingsRoute: typeof ProjectsProjectIdSettingsRoute
   ApiOrgsIndexRoute: typeof ApiOrgsIndexRoute
 }
 
@@ -442,6 +469,20 @@ declare module '@tanstack/react-router' {
       path: '/api/orgs'
       fullPath: '/api/orgs/'
       preLoaderRoute: typeof ApiOrgsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/$projectId/settings': {
+      id: '/projects/$projectId/settings'
+      path: '/projects/$projectId/settings'
+      fullPath: '/projects/$projectId/settings'
+      preLoaderRoute: typeof ProjectsProjectIdSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orgs/$orgId/settings': {
+      id: '/orgs/$orgId/settings'
+      path: '/orgs/$orgId/settings'
+      fullPath: '/orgs/$orgId/settings'
+      preLoaderRoute: typeof OrgsOrgIdSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/projects/$projectId': {
@@ -710,6 +751,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,
   ApiProjectsProjectIdRoute: ApiProjectsProjectIdRouteWithChildren,
+  OrgsOrgIdSettingsRoute: OrgsOrgIdSettingsRoute,
+  ProjectsProjectIdSettingsRoute: ProjectsProjectIdSettingsRoute,
   ApiOrgsIndexRoute: ApiOrgsIndexRoute,
 }
 export const routeTree = rootRouteImport

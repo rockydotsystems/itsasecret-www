@@ -11,6 +11,7 @@ export type SelectProps = {
   disabled?: boolean
   variant?: 'default' | 'crumb'
   action?: React.ReactNode
+  optionAction?: (option: SelectOption) => React.ReactNode
   className?: string
   style?: React.CSSProperties
 }
@@ -24,6 +25,7 @@ export function Select({
   disabled = false,
   variant = 'default',
   action,
+  optionAction,
   className,
   style,
 }: SelectProps) {
@@ -62,17 +64,23 @@ export function Select({
       {open && (
         <ul className="select-menu" role="listbox">
           {options.map((option) => (
-            <li
-              key={option.value}
-              className={`select-option ${option.value === value ? 'selected' : ''}`}
-              role="option"
-              aria-selected={option.value === value}
-              onClick={() => {
-                onChange(option.value)
-                setOpen(false)
-              }}
-            >
-              {option.label}
+            <li key={option.value} className="select-row" role="presentation">
+              <span
+                className={`select-option ${option.value === value ? 'selected' : ''}`}
+                role="option"
+                aria-selected={option.value === value}
+                onClick={() => {
+                  onChange(option.value)
+                  setOpen(false)
+                }}
+              >
+                {option.label}
+              </span>
+              {optionAction && (
+                <span className="select-option-action" onClick={() => setOpen(false)}>
+                  {optionAction(option)}
+                </span>
+              )}
             </li>
           ))}
           {action && <li className="select-action">{action}</li>}
