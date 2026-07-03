@@ -167,6 +167,19 @@ a:hover { text-decoration: underline; }
 .btn-danger:hover { background: #B93832; text-decoration: none; }
 .btn-danger:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--red-700); }
 
+/* ─── Loading dots ──────────────────────────────── */
+.loading-dots { display: inline-flex; align-items: center; gap: 5px; }
+.loading-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  animation: dot-jump 0.9s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes dot-jump {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
 /* ─── Badge ─────────────────────────────────────── */
 .badge {
   display: inline-flex; align-items: center; gap: 6px;

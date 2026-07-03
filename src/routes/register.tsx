@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
+import { LoadingDots } from '~/components/loadingdots'
 import { submitAuthForm, getRedirectPath } from '~/lib/auth-form'
 import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
@@ -66,7 +67,7 @@ function RegisterPage() {
           />
           <span data-auth-form-error className="input-error">{error}</span>
           <Button type="submit" size="lg" disabled={loading}>
-            {loading ? '...' : 'Create account'}
+            {loading ? <LoadingDots /> : 'Create account'}
           </Button>
         </form>
 
