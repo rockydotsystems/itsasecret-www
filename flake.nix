@@ -18,13 +18,25 @@
             shellHook = ''
               echo ""
               echo "itsasecret-www dev shell"
-              echo "  pnpm install        # first-time setup"
-              echo "  pnpm dev            # vite dev (local)"
-              echo "  pnpm test           # vitest"
-              echo "  pnpm typecheck      # tsc --noEmit"
-              echo "  pnpm db:push        # push schema to Postgres"
-              echo "  pnpm db:migrate     # run drizzle-kit migrations"
-              echo "  pnpm db:generate    # generate drizzle-kit migrations"
+              echo ""
+              echo "pnpm:"
+              echo "  pnpm install             # first-time setup"
+              echo "  pnpm dev                 # vite dev (local)"
+              echo "  pnpm test                # vitest"
+              echo "  pnpm typecheck           # tsc --noEmit"
+              echo "  pnpm db:push             # push schema to Postgres"
+              echo "  pnpm db:migrate          # run drizzle-kit migrations"
+              echo "  pnpm db:generate         # generate drizzle-kit migrations"
+              echo ""
+              echo "nix apps:"
+              echo "  nix run .#db             # start Postgres (docker compose up -d)"
+              echo "  nix run .#db-stop        # stop Postgres"
+              echo "  nix run .#dev            # vite dev"
+              echo "  nix run .#test           # vitest"
+              echo "  nix run .#typecheck      # tsc --noEmit"
+              echo "  nix run .#db-push        # drizzle-kit push"
+              echo "  nix run .#db-migrate     # drizzle-kit migrate"
+              echo "  nix run .#db-generate    # drizzle-kit generate"
               echo ""
             '';
           };
@@ -43,7 +55,31 @@
               exec ${cmd}
             '');
           };
+          rawApp = name: cmd: {
+            type = "app";
+            program = toString (pkgs.writeShellScript name ''
+              exec ${cmd}
+            '');
+          };
+          dbApp = {
+            type = "app";
+            program = toString (pkgs.writeShellScript "db" ''
+              docker compose up -d postgres "$@"
+              echo "waiting for postgres to be ready..."
+              for _ in $(seq 1 30); do
+                if docker compose exec postgres pg_isready -U itsasecret -d itsasecret >/dev/null 2>&1; then
+                  echo "postgres is ready"
+                  exit 0
+                fi
+                sleep 1
+              done
+              echo "postgres did not become ready within 30s" >&2
+              exit 1
+            '');
+          };
         in {
+          db = dbApp;
+          db-stop = rawApp "db-stop" ''docker compose down "$@"'';
           dev = app "dev" ''pnpm exec vite dev "$@"'';
           test = app "test" ''pnpm exec vitest run "$@"'';
           typecheck = app "typecheck" ''pnpm exec tsc --noEmit'';
