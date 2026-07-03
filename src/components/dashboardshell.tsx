@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
@@ -36,7 +36,6 @@ export type DashboardShellProps = {
 
 export function DashboardShell({ orgs, orgId, projects, projectId, environments, envId }: DashboardShellProps) {
   const navigate = useNavigate()
-  const isNavigating = useRouterState({ select: (s) => s.status === 'pending' })
   const [loggingOut, setLoggingOut] = useState(false)
 
   const orgOptions = useMemo(() => {
@@ -89,7 +88,7 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 options={orgOptions}
                 onChange={handleOrgChange}
                 variant="crumb"
-                disabled={isNavigating || orgOptions.length === 0}
+                disabled={orgOptions.length === 0}
                 action={
                   <Link to="/orgs/new" aria-label="Create new organization">
                     + New org
@@ -113,7 +112,7 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 onChange={handleProjectChange}
                 variant="crumb"
                 placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
-                disabled={isNavigating || !orgId}
+                disabled={!orgId}
                 action={
                   <Link to="/projects/new" search={{ orgId }} aria-label="Create new project">
                     + New project
