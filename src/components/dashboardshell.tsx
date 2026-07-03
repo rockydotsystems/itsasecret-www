@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Button } from '~/components/button'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
+import { EnvNameModal } from '~/components/envnamemodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
+import { createEnvironment } from '~/lib/project-settings-form'
 import type { Environment, Org, Project } from '~/lib/schema'
 
 const SECRETS = [
@@ -19,12 +22,24 @@ export type DashboardShellProps = {
   projectId: string
   environments: Environment[]
   envId: string
+  currentUserRole?: string
 }
 
-export function DashboardShell({ orgs, orgId, projects, projectId, environments, envId }: DashboardShellProps) {
+export function DashboardShell({
+  orgs,
+  orgId,
+  projects,
+  projectId,
+  environments,
+  envId,
+  currentUserRole = '',
+}: DashboardShellProps) {
   const navigate = useNavigate()
+  const [creatingEnv, setCreatingEnv] = useState(false)
 
   const projectName = projects.find((p) => p.id === projectId)?.name || 'Select project'
+  // Only org owners and admins can create environments from scratch.
+  const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
 
   function handleEnvChange(nextEnvId: string) {
     if (nextEnvId === envId) return
@@ -55,6 +70,16 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
                 onClick={() => handleEnvChange(env.id)}
               />
             ))}
+            {canCreateEnv && (
+              <button
+                type="button"
+                className="env-tag env-tag-add"
+                onClick={() => setCreatingEnv(true)}
+                aria-label="Create new environment"
+              >
+                + new
+              </button>
+            )}
           </div>
           <Button variant="primary" size="md">Add secret</Button>
         </div>
@@ -65,6 +90,25 @@ export function DashboardShell({ orgs, orgId, projects, projectId, environments,
           ))}
         </div>
       </main>
+
+      {creatingEnv && (
+        <EnvNameModal
+          title="New environment"
+          subtitle="Creates an empty environment in this project. To branch an existing one instead, fork it from project settings."
+          submitLabel="Create environment"
+          placeholder="e.g. staging"
+          onClose={() => setCreatingEnv(false)}
+          onSubmit={async (name) => {
+            const env = await createEnvironment(projectId, name)
+            setCreatingEnv(false)
+            void navigate({
+              to: '/dashboard/$orgId/$projectId',
+              params: { orgId, projectId },
+              search: { env: env.id },
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

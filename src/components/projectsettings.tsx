@@ -4,6 +4,7 @@ import { Avatar } from '~/components/avatar'
 import { Badge } from '~/components/badge'
 import { Button } from '~/components/button'
 import { EnvironmentTag } from '~/components/environmenttag'
+import { EnvNameModal } from '~/components/envnamemodal'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
@@ -11,7 +12,6 @@ import { Select } from '~/components/select'
 import {
   renameProject,
   deleteProject,
-  createEnvironment,
   forkEnvironment,
   deleteEnvironment,
   grantEnvPermission,
@@ -160,7 +160,6 @@ function EnvironmentsSection({
   myEnvRole: (envId: string) => string
   onChanged: () => Promise<void>
 }) {
-  const [creating, setCreating] = useState(false)
   const [forkingEnvId, setForkingEnvId] = useState('')
   const [managingEnvId, setManagingEnvId] = useState('')
   const [deletingEnvId, setDeletingEnvId] = useState('')
@@ -177,14 +176,10 @@ function EnvironmentsSection({
           <h2 className="settings-section-title">Environments</h2>
           <p className="settings-section-desc">
             Each environment is its own set of vars and secrets. Fork one to branch production into staging or a
-            per-developer setup — you get full access on your fork.
+            per-developer setup — you get full access on your fork. New environments are created from the project
+            dashboard.
           </p>
         </div>
-        {canManage && (
-          <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
-            New environment
-          </Button>
-        )}
       </div>
 
       <div className="member-list">
@@ -230,21 +225,6 @@ function EnvironmentsSection({
         )}
       </div>
 
-      {creating && (
-        <EnvNameModal
-          title="New environment"
-          subtitle="Creates an empty environment in this project. Only org owners and admins can create environments from scratch."
-          submitLabel="Create environment"
-          placeholder="e.g. staging"
-          onClose={() => setCreating(false)}
-          onSubmit={async (name) => {
-            await createEnvironment(project.id, name)
-            setCreating(false)
-            await onChanged()
-          }}
-        />
-      )}
-
       {forkingEnv && (
         <EnvNameModal
           title={`Fork ${forkingEnv.name}`}
@@ -281,51 +261,6 @@ function EnvironmentsSection({
         />
       )}
     </section>
-  )
-}
-
-function EnvNameModal({
-  title,
-  subtitle,
-  submitLabel,
-  placeholder,
-  onClose,
-  onSubmit,
-}: {
-  title: string
-  subtitle: string
-  submitLabel: string
-  placeholder: string
-  onClose: () => void
-  onSubmit: (name: string) => Promise<void>
-}) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    const name = (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value.trim()
-    try {
-      if (!name) throw new Error('Name cannot be empty')
-      await onSubmit(name)
-    } catch (err) {
-      setError((err as Error).message || 'Something went wrong')
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Modal title={title} subtitle={subtitle} onClose={onClose}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Input name="name" label="Environment name" placeholder={placeholder} mono required />
-        {error && <span className="input-error">{error}</span>}
-        <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : submitLabel}
-        </Button>
-      </form>
-    </Modal>
   )
 }
 

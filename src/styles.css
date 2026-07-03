@@ -284,6 +284,8 @@ a:hover { text-decoration: underline; }
 .env-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-400); }
 .env-tag.active { border-color: var(--signal-400); background: var(--accent-subtle); color: var(--text-brand); }
 .env-tag.active .env-tag-dot { background: var(--signal-400); }
+.env-tag-add { border-style: dashed; color: var(--text-tertiary); background: transparent; }
+.env-tag-add:hover { border-color: var(--signal-400); color: var(--text-brand); }
 
 /* ─── Select ────────────────────────────────────── */
 .select { position: relative; display: inline-flex; flex-direction: column; gap: 4px; }

@@ -33,6 +33,7 @@ export type ProjectView = {
   projects: Project[]
   environments: Environment[]
   envId: string
+  currentUserRole: string
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -281,9 +282,12 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
 
     await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
 
-    const [userOrgs, orgProjects] = await Promise.all([
+    const [userOrgs, orgProjects, memberRows] = await Promise.all([
       listOrgsForUser(user.id),
       listProjectsForOrg(orgId),
+      db.select({ role: orgMembers.role }).from(orgMembers)
+        .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, user.id)))
+        .limit(1),
     ])
     if (!orgProjects.some((p) => p.id === projectId)) {
       throw new Error('Project not found in organization')
@@ -303,5 +307,11 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
     }
 
-    return { orgs: userOrgs, projects: orgProjects, environments: envs, envId }
+    return {
+      orgs: userOrgs,
+      projects: orgProjects,
+      environments: envs,
+      envId,
+      currentUserRole: memberRows[0]?.role ?? '',
+    }
   })
