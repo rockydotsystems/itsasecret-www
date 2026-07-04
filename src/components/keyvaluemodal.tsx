@@ -10,6 +10,9 @@ export type KeyValueModalProps = {
   submitLabel: string
   keyPlaceholder: string
   valuePlaceholder: string
+  // Edit mode: pre-fills and locks the key so only the value can change.
+  initialKey?: string
+  initialValue?: string
   onClose: () => void
   onSubmit: (key: string, value: string) => Promise<void>
 }
@@ -20,6 +23,8 @@ export function KeyValueModal({
   submitLabel,
   keyPlaceholder,
   valuePlaceholder,
+  initialKey,
+  initialValue,
   onClose,
   onSubmit,
 }: KeyValueModalProps) {
@@ -31,7 +36,7 @@ export function KeyValueModal({
     setLoading(true)
     setError('')
     const form = e.currentTarget
-    const key = (form.elements.namedItem('key') as HTMLInputElement).value.trim()
+    const key = initialKey ?? (form.elements.namedItem('key') as HTMLInputElement).value.trim()
     const value = (form.elements.namedItem('value') as HTMLTextAreaElement).value
     try {
       if (!key) throw new Error('Key cannot be empty')
@@ -45,7 +50,15 @@ export function KeyValueModal({
   return (
     <Modal title={title} subtitle={subtitle} onClose={onClose}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Input name="key" label="Key" placeholder={keyPlaceholder} mono required />
+        <Input
+          name="key"
+          label="Key"
+          placeholder={keyPlaceholder}
+          mono
+          required
+          value={initialKey}
+          disabled={initialKey !== undefined}
+        />
         <div className="input-group">
           <label className="input-label" htmlFor="value">Value</label>
           <textarea
@@ -54,6 +67,7 @@ export function KeyValueModal({
             className="input-field input-mono kv-value-field"
             placeholder={valuePlaceholder}
             rows={3}
+            defaultValue={initialValue}
           />
         </div>
         {error && <span className="input-error">{error}</span>}

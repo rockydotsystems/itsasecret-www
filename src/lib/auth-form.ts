@@ -1,4 +1,5 @@
 import { base64Encode } from './crypto/base64'
+import { lockVault, seedVaultFromLogin } from './vault'
 
 export interface AuthFormResult {
   token: string
@@ -37,6 +38,14 @@ export async function submitAuthForm(
   localStorage.setItem('sessionToken', data.token)
   localStorage.setItem('serverPubkey', data.serverPubkey)
   localStorage.setItem('orgKeys', JSON.stringify(data.orgKeys))
+
+  try {
+    // The master password is in hand: derive and cache the master key now so
+    // the dashboard doesn't have to re-prompt for it in this tab.
+    await seedVaultFromLogin(password)
+  } catch {
+    // Best-effort — the dashboard prompts for the master password when needed.
+  }
 
   return data
 }
@@ -107,6 +116,7 @@ export async function performLogout(): Promise<void> {
   localStorage.removeItem('sessionToken')
   localStorage.removeItem('serverPubkey')
   localStorage.removeItem('orgKeys')
+  lockVault()
   window.location.href = '/login'
 }
 
@@ -115,6 +125,7 @@ export interface CurrentUser {
   email: string
   kdf_salt: string
   kdf_params: string
+  email_verified: boolean
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {

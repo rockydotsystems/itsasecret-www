@@ -7,9 +7,15 @@ import { generateId, auditLog, softDeleteSecret } from '~/lib/db-utils'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { encrypt, decrypt } from '~/lib/crypto/envelope'
+import { recordSecretHistory } from '~/lib/history'
 
+// cipher 'session': value is encrypted under the ECDH transport key and the
+// server re-encrypts it under the org key (CLI flow). cipher 'org': value is
+// already encrypted under the org key in the client and is stored verbatim —
+// the server never sees the plaintext (web E2E flow).
 const upsertSchema = z.object({
   encryptedValue: z.string(),
+  cipher: z.enum(['session', 'org']).optional().default('session'),
 })
 
 export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
@@ -48,13 +54,17 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
-          const { encryptedValue } = upsertSchema.parse(await request.json())
+          const { encryptedValue, cipher } = upsertSchema.parse(await request.json())
 
-          const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
-          const orgKey = await getOrgKey(session, sessionKey, orgId)
-
-          const plaintext = await decrypt(sessionKey, encryptedValue)
-          const storedEncrypted = await encrypt(orgKey, plaintext)
+          let storedEncrypted: string
+          if (cipher === 'org') {
+            storedEncrypted = encryptedValue
+          } else {
+            const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
+            const orgKey = await getOrgKey(session, sessionKey, orgId)
+            const plaintext = await decrypt(sessionKey, encryptedValue)
+            storedEncrypted = await encrypt(orgKey, plaintext)
+          }
 
           const existingRows = await db.select().from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
@@ -62,6 +72,14 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const existing = existingRows[0] ?? null
 
           if (existing) {
+            await recordSecretHistory({
+              secretId: existing.id,
+              envId,
+              key,
+              encryptedValue: existing.encrypted_value,
+              changeType: 'update',
+              changedBy: user.id,
+            })
             await db.update(secrets)
               .set({ encrypted_value: storedEncrypted, updated_at: new Date() })
               .where(eq(secrets.id, existing.id))
@@ -109,12 +127,20 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const envId = params.envId!
           const key = params.key!
 
-          const existingRows = await db.select({ id: secrets.id }).from(secrets)
+          const existingRows = await db.select().from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
             .limit(1)
           const existing = existingRows[0] ?? null
           if (!existing) return Response.json({ error: 'Secret not found' }, { status: 404 })
 
+          await recordSecretHistory({
+            secretId: existing.id,
+            envId,
+            key,
+            encryptedValue: existing.encrypted_value,
+            changeType: 'delete',
+            changedBy: user.id,
+          })
           await softDeleteSecret(existing.id)
           await auditLog({ orgId, actorUserId: user.id, action: 'secret.delete', targetType: 'secret', targetId: key, metadata: { envId } })
           return new Response(null, { status: 204 })

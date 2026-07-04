@@ -1,12 +1,18 @@
 import { lte } from 'drizzle-orm'
 import { db } from './db'
-import { envVars, secrets, environments, projects } from './schema'
+import { envVars, secrets, environments, projects, secretHistory, envVarHistory } from './schema'
 
 const PURGE_INTERVAL = 24 * 60 * 60 * 1000
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
 
 async function purgeExpired(): Promise<void> {
   const cutoff = new Date(Date.now() - NINETY_DAYS_MS)
+  const historyCutoff = new Date(Date.now() - SEVEN_DAYS_MS)
+
+  // History first: rows reference secrets/env_vars and there is no CASCADE.
+  await db.delete(secretHistory).where(lte(secretHistory.created_at, historyCutoff))
+  await db.delete(envVarHistory).where(lte(envVarHistory.created_at, historyCutoff))
 
   await db.delete(envVars).where(lte(envVars.deleted_at, cutoff))
   await db.delete(secrets).where(lte(secrets.deleted_at, cutoff))

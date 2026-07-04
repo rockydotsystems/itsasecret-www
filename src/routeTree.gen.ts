@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,6 +21,8 @@ import { Route as DashboardOrgIdSettingsRouteImport } from './routes/dashboard/$
 import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/$projectId'
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
+import { Route as ApiAuthVerifyEmailRouteImport } from './routes/api/auth/verify-email'
+import { Route as ApiAuthResendVerificationRouteImport } from './routes/api/auth/resend-verification'
 import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
@@ -29,6 +32,7 @@ import { Route as DashboardOrgIdProjectIdSettingsRouteImport } from './routes/da
 import { Route as ApiProjectsProjectIdEnvsRouteImport } from './routes/api/projects/$projectId.envs'
 import { Route as ApiOrgsOrgIdProjectsRouteImport } from './routes/api/orgs/$orgId.projects'
 import { Route as ApiOrgsOrgIdMembersRouteImport } from './routes/api/orgs/$orgId.members'
+import { Route as ApiOrgsOrgIdKeyRouteImport } from './routes/api/orgs/$orgId.key'
 import { Route as ApiOrgsOrgIdInviteRouteImport } from './routes/api/orgs/$orgId.invite'
 import { Route as ApiEnvsEnvIdVarsRouteImport } from './routes/api/envs/$envId.vars'
 import { Route as ApiEnvsEnvIdSecretsRouteImport } from './routes/api/envs/$envId.secrets'
@@ -39,7 +43,13 @@ import { Route as ApiEnvsEnvIdSecretsKeyRouteImport } from './routes/api/envs/$e
 import { Route as ApiEnvsEnvIdPermissionsUserIdRouteImport } from './routes/api/envs/$envId.permissions.$userId'
 import { Route as ApiProjectsProjectIdEnvsEnvNamePullRouteImport } from './routes/api/projects/$projectId.envs.$envName.pull'
 import { Route as ApiProjectsProjectIdEnvsEnvIdForkRouteImport } from './routes/api/projects/$projectId.envs.$envId.fork'
+import { Route as ApiEnvsEnvIdSecretsKeyEncryptedRouteImport } from './routes/api/envs/$envId.secrets.$key.encrypted'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -95,6 +105,17 @@ const ApiEnvsEnvIdRoute = ApiEnvsEnvIdRouteImport.update({
   path: '/api/envs/$envId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthVerifyEmailRoute = ApiAuthVerifyEmailRouteImport.update({
+  id: '/api/auth/verify-email',
+  path: '/api/auth/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthResendVerificationRoute =
+  ApiAuthResendVerificationRouteImport.update({
+    id: '/api/auth/resend-verification',
+    path: '/api/auth/resend-verification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthRegisterRoute = ApiAuthRegisterRouteImport.update({
   id: '/api/auth/register',
   path: '/api/auth/register',
@@ -141,6 +162,11 @@ const ApiOrgsOrgIdProjectsRoute = ApiOrgsOrgIdProjectsRouteImport.update({
 const ApiOrgsOrgIdMembersRoute = ApiOrgsOrgIdMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => ApiOrgsOrgIdRoute,
+} as any)
+const ApiOrgsOrgIdKeyRoute = ApiOrgsOrgIdKeyRouteImport.update({
+  id: '/key',
+  path: '/key',
   getParentRoute: () => ApiOrgsOrgIdRoute,
 } as any)
 const ApiOrgsOrgIdInviteRoute = ApiOrgsOrgIdInviteRouteImport.update({
@@ -197,17 +223,26 @@ const ApiProjectsProjectIdEnvsEnvIdForkRoute =
     path: '/$envId/fork',
     getParentRoute: () => ApiProjectsProjectIdEnvsRoute,
   } as any)
+const ApiEnvsEnvIdSecretsKeyEncryptedRoute =
+  ApiEnvsEnvIdSecretsKeyEncryptedRouteImport.update({
+    id: '/encrypted',
+    path: '/encrypted',
+    getParentRoute: () => ApiEnvsEnvIdSecretsKeyRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
+  '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
@@ -218,15 +253,17 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
+  '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
-  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
+  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -234,12 +271,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
+  '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
@@ -250,15 +290,17 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
+  '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
-  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
+  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -267,12 +309,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
+  '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
+  '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
@@ -283,15 +328,17 @@ export interface FileRoutesById {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
+  '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
-  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRoute
+  '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -301,12 +348,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/api/health'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
     | '/api/auth/register'
+    | '/api/auth/resend-verification'
+    | '/api/auth/verify-email'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
@@ -317,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
+    | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
@@ -326,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   fileRoutesByTo: FileRoutesByTo
@@ -333,12 +385,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/api/health'
     | '/dashboard'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
     | '/api/auth/register'
+    | '/api/auth/resend-verification'
+    | '/api/auth/verify-email'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
@@ -349,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
+    | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
@@ -358,6 +414,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   id:
@@ -365,12 +422,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/api/health'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
     | '/api/auth/register'
+    | '/api/auth/resend-verification'
+    | '/api/auth/verify-email'
     | '/api/envs/$envId'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
@@ -381,6 +441,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
+    | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
     | '/api/projects/$projectId/envs'
@@ -390,6 +451,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   fileRoutesById: FileRoutesById
@@ -398,12 +460,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   ApiHealthRoute: typeof ApiHealthRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
+  ApiAuthResendVerificationRoute: typeof ApiAuthResendVerificationRoute
+  ApiAuthVerifyEmailRoute: typeof ApiAuthVerifyEmailRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
   ApiProjectsProjectIdRoute: typeof ApiProjectsProjectIdRouteWithChildren
@@ -416,6 +481,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -493,6 +565,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEnvsEnvIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/verify-email': {
+      id: '/api/auth/verify-email'
+      path: '/api/auth/verify-email'
+      fullPath: '/api/auth/verify-email'
+      preLoaderRoute: typeof ApiAuthVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/resend-verification': {
+      id: '/api/auth/resend-verification'
+      path: '/api/auth/resend-verification'
+      fullPath: '/api/auth/resend-verification'
+      preLoaderRoute: typeof ApiAuthResendVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/register': {
       id: '/api/auth/register'
       path: '/api/auth/register'
@@ -554,6 +640,13 @@ declare module '@tanstack/react-router' {
       path: '/members'
       fullPath: '/api/orgs/$orgId/members'
       preLoaderRoute: typeof ApiOrgsOrgIdMembersRouteImport
+      parentRoute: typeof ApiOrgsOrgIdRoute
+    }
+    '/api/orgs/$orgId/key': {
+      id: '/api/orgs/$orgId/key'
+      path: '/key'
+      fullPath: '/api/orgs/$orgId/key'
+      preLoaderRoute: typeof ApiOrgsOrgIdKeyRouteImport
       parentRoute: typeof ApiOrgsOrgIdRoute
     }
     '/api/orgs/$orgId/invite': {
@@ -626,6 +719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsProjectIdEnvsEnvIdForkRouteImport
       parentRoute: typeof ApiProjectsProjectIdEnvsRoute
     }
+    '/api/envs/$envId/secrets/$key/encrypted': {
+      id: '/api/envs/$envId/secrets/$key/encrypted'
+      path: '/encrypted'
+      fullPath: '/api/envs/$envId/secrets/$key/encrypted'
+      preLoaderRoute: typeof ApiEnvsEnvIdSecretsKeyEncryptedRouteImport
+      parentRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
+    }
   }
 }
 
@@ -643,12 +743,26 @@ const ApiEnvsEnvIdPermissionsRouteWithChildren =
     ApiEnvsEnvIdPermissionsRouteChildren,
   )
 
+interface ApiEnvsEnvIdSecretsKeyRouteChildren {
+  ApiEnvsEnvIdSecretsKeyEncryptedRoute: typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+}
+
+const ApiEnvsEnvIdSecretsKeyRouteChildren: ApiEnvsEnvIdSecretsKeyRouteChildren =
+  {
+    ApiEnvsEnvIdSecretsKeyEncryptedRoute: ApiEnvsEnvIdSecretsKeyEncryptedRoute,
+  }
+
+const ApiEnvsEnvIdSecretsKeyRouteWithChildren =
+  ApiEnvsEnvIdSecretsKeyRoute._addFileChildren(
+    ApiEnvsEnvIdSecretsKeyRouteChildren,
+  )
+
 interface ApiEnvsEnvIdSecretsRouteChildren {
-  ApiEnvsEnvIdSecretsKeyRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
+  ApiEnvsEnvIdSecretsKeyRoute: typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
 }
 
 const ApiEnvsEnvIdSecretsRouteChildren: ApiEnvsEnvIdSecretsRouteChildren = {
-  ApiEnvsEnvIdSecretsKeyRoute: ApiEnvsEnvIdSecretsKeyRoute,
+  ApiEnvsEnvIdSecretsKeyRoute: ApiEnvsEnvIdSecretsKeyRouteWithChildren,
 }
 
 const ApiEnvsEnvIdSecretsRouteWithChildren =
@@ -694,12 +808,14 @@ const ApiOrgsOrgIdMembersRouteWithChildren =
 
 interface ApiOrgsOrgIdRouteChildren {
   ApiOrgsOrgIdInviteRoute: typeof ApiOrgsOrgIdInviteRoute
+  ApiOrgsOrgIdKeyRoute: typeof ApiOrgsOrgIdKeyRoute
   ApiOrgsOrgIdMembersRoute: typeof ApiOrgsOrgIdMembersRouteWithChildren
   ApiOrgsOrgIdProjectsRoute: typeof ApiOrgsOrgIdProjectsRoute
 }
 
 const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
   ApiOrgsOrgIdInviteRoute: ApiOrgsOrgIdInviteRoute,
+  ApiOrgsOrgIdKeyRoute: ApiOrgsOrgIdKeyRoute,
   ApiOrgsOrgIdMembersRoute: ApiOrgsOrgIdMembersRouteWithChildren,
   ApiOrgsOrgIdProjectsRoute: ApiOrgsOrgIdProjectsRoute,
 }
@@ -741,12 +857,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   ApiHealthRoute: ApiHealthRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
+  ApiAuthResendVerificationRoute: ApiAuthResendVerificationRoute,
+  ApiAuthVerifyEmailRoute: ApiAuthVerifyEmailRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,
   ApiProjectsProjectIdRoute: ApiProjectsProjectIdRouteWithChildren,

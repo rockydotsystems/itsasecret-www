@@ -1,14 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { Button } from '~/components/button'
+import { Modal } from '~/components/modal'
 import { SecretRow } from '~/components/secretrow'
 import { VarRow } from '~/components/varrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { EnvNameModal } from '~/components/envnamemodal'
 import { KeyValueModal } from '~/components/keyvaluemodal'
+import { MasterPassModal } from '~/components/masterpassmodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { createEnvironment } from '~/lib/project-settings-form'
-import { setSecret, setVar } from '~/lib/env-items-form'
+import { setSecret, setVar, deleteSecret, deleteVar, revealSecret } from '~/lib/env-items-form'
+import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
 import type { SecretSummary, VarSummary } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
 
@@ -24,6 +27,10 @@ export type DashboardShellProps = {
   envSecrets?: SecretSummary[]
   envVars?: VarSummary[]
 }
+
+type EditingItem = { type: 'secret' | 'var'; itemKey: string; initialValue: string }
+type DeletingItem = { type: 'secret' | 'var'; itemKey: string }
+type UnlockRequest = { resolve: () => void; reject: (err: Error) => void }
 
 function formatUpdated(date: Date | string): string {
   return `updated ${new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
@@ -76,6 +83,12 @@ export function DashboardShell({
   const router = useRouter()
   const [creatingEnv, setCreatingEnv] = useState(false)
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
+  const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [actionError, setActionError] = useState('')
+  const [unlockRequest, setUnlockRequest] = useState<UnlockRequest | null>(null)
+  const unlockPromiseRef = useRef<Promise<void> | null>(null)
 
   const projectName = projects.find((p) => p.id === projectId)?.name || 'Select project'
   const envName = environments.find((e) => e.id === envId)?.name ?? ''
@@ -83,6 +96,70 @@ export function DashboardShell({
   const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
   const canWrite = envRole === 'write' || envRole === 'admin'
   const envIsEmpty = envSecrets.length === 0 && envVars.length === 0
+
+  // Resolves once the vault is unlocked, prompting for the master password
+  // when needed. Rejects when the user dismisses the prompt. Concurrent
+  // callers share one prompt — a second request must not replace the first
+  // one's resolve/reject and leave it hanging.
+  async function ensureUnlocked(): Promise<void> {
+    if (await isVaultUnlocked()) return
+    if (!unlockPromiseRef.current) {
+      const prompt = new Promise<void>((resolve, reject) => {
+        setUnlockRequest({ resolve, reject })
+      })
+      unlockPromiseRef.current = prompt
+      void prompt.catch(() => {}).then(() => {
+        unlockPromiseRef.current = null
+      })
+    }
+    return unlockPromiseRef.current
+  }
+
+  async function revealValueFor(key: string): Promise<string> {
+    await ensureUnlocked()
+    try {
+      return await revealSecret(orgId, envId, key)
+    } catch (err) {
+      // Cached master key went stale (e.g. password changed): prompt and retry.
+      if (err instanceof VaultLockedError) {
+        await ensureUnlocked()
+        return revealSecret(orgId, envId, key)
+      }
+      throw err
+    }
+  }
+
+  async function startEditSecret(key: string) {
+    setActionError('')
+    try {
+      await ensureUnlocked()
+      const currentValue = await revealSecret(orgId, envId, key)
+      setEditingItem({ type: 'secret', itemKey: key, initialValue: currentValue })
+    } catch (err) {
+      const message = (err as Error).message || 'Failed to open secret'
+      if (message !== 'Unlock cancelled') setActionError(message)
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deletingItem) return
+    setDeleteBusy(true)
+    setActionError('')
+    try {
+      if (deletingItem.type === 'secret') {
+        await deleteSecret(envId, deletingItem.itemKey)
+      } else {
+        await deleteVar(envId, deletingItem.itemKey)
+      }
+      setDeletingItem(null)
+      await router.invalidate()
+    } catch (err) {
+      setActionError((err as Error).message || 'Failed to delete')
+      setDeletingItem(null)
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
 
   function handleEnvChange(nextEnvId: string) {
     if (nextEnvId === envId) return
@@ -194,6 +271,7 @@ export function DashboardShell({
               <span className="app-subtitle">{subtitle}</span>
             </div>
             {envTagRow}
+            {actionError && <span className="input-error">{actionError}</span>}
 
             <div className="env-section">
               <div className="env-section-header">
@@ -207,7 +285,14 @@ export function DashboardShell({
               {envSecrets.length > 0 ? (
                 <div className="env-section-rows">
                   {envSecrets.map((s) => (
-                    <SecretRow key={s.key} name={s.key} meta={formatUpdated(s.updated_at)} />
+                    <SecretRow
+                      key={s.key}
+                      name={s.key}
+                      meta={formatUpdated(s.updated_at)}
+                      onReveal={() => revealValueFor(s.key)}
+                      onEdit={canWrite ? () => void startEditSecret(s.key) : undefined}
+                      onDelete={canWrite ? () => setDeletingItem({ type: 'secret', itemKey: s.key }) : undefined}
+                    />
                   ))}
                 </div>
               ) : (
@@ -227,7 +312,14 @@ export function DashboardShell({
               {envVars.length > 0 ? (
                 <div className="env-section-rows">
                   {envVars.map((v) => (
-                    <VarRow key={v.key} name={v.key} value={v.value} meta={formatUpdated(v.updated_at)} />
+                    <VarRow
+                      key={v.key}
+                      name={v.key}
+                      value={v.value}
+                      meta={formatUpdated(v.updated_at)}
+                      onEdit={canWrite ? () => setEditingItem({ type: 'var', itemKey: v.key, initialValue: v.value }) : undefined}
+                      onDelete={canWrite ? () => setDeletingItem({ type: 'var', itemKey: v.key }) : undefined}
+                    />
                   ))}
                 </div>
               ) : (
@@ -260,13 +352,14 @@ export function DashboardShell({
       {creatingItem === 'secret' && (
         <KeyValueModal
           title="New secret"
-          subtitle={`Encrypted in your browser before it's sent, then stored under ${envName}'s org key.`}
+          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent — the server never sees the value.`}
           submitLabel="Save secret"
           keyPlaceholder="e.g. STRIPE_SECRET_KEY"
           valuePlaceholder="sk_live_..."
           onClose={() => setCreatingItem(null)}
           onSubmit={async (key, value) => {
-            await setSecret(envId, key, value)
+            await ensureUnlocked()
+            await setSecret(orgId, envId, key, value)
             setCreatingItem(null)
             await router.invalidate()
           }}
@@ -285,6 +378,74 @@ export function DashboardShell({
             await setVar(envId, key, value)
             setCreatingItem(null)
             await router.invalidate()
+          }}
+        />
+      )}
+
+      {editingItem?.type === 'secret' && (
+        <KeyValueModal
+          title="Edit secret"
+          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent — the server never sees the value.`}
+          submitLabel="Save secret"
+          keyPlaceholder=""
+          valuePlaceholder="sk_live_..."
+          initialKey={editingItem.itemKey}
+          initialValue={editingItem.initialValue}
+          onClose={() => setEditingItem(null)}
+          onSubmit={async (key, value) => {
+            await ensureUnlocked()
+            await setSecret(orgId, envId, key, value)
+            setEditingItem(null)
+            await router.invalidate()
+          }}
+        />
+      )}
+
+      {editingItem?.type === 'var' && (
+        <KeyValueModal
+          title="Edit variable"
+          subtitle={`Plain, unencrypted value in ${envName} — for config that isn't sensitive.`}
+          submitLabel="Save variable"
+          keyPlaceholder=""
+          valuePlaceholder="debug"
+          initialKey={editingItem.itemKey}
+          initialValue={editingItem.initialValue}
+          onClose={() => setEditingItem(null)}
+          onSubmit={async (key, value) => {
+            await setVar(envId, key, value)
+            setEditingItem(null)
+            await router.invalidate()
+          }}
+        />
+      )}
+
+      {deletingItem && (
+        <Modal
+          title={deletingItem.type === 'secret' ? 'Delete secret' : 'Delete variable'}
+          subtitle={`${deletingItem.itemKey} will be removed from ${envName}. Its encrypted history is kept for 7 days.`}
+          onClose={() => setDeletingItem(null)}
+        >
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <Button variant="secondary" size="md" onClick={() => setDeletingItem(null)} disabled={deleteBusy}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="md" onClick={() => void confirmDelete()} disabled={deleteBusy}>
+              {deletingItem.type === 'secret' ? 'Delete secret' : 'Delete variable'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {unlockRequest && (
+        <MasterPassModal
+          orgId={orgId}
+          onUnlocked={() => {
+            unlockRequest.resolve()
+            setUnlockRequest(null)
+          }}
+          onClose={() => {
+            unlockRequest.reject(new Error('Unlock cancelled'))
+            setUnlockRequest(null)
           }}
         />
       )}

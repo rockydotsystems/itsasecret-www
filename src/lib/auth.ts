@@ -12,7 +12,10 @@ export interface AuthContext {
   orgId?: string
 }
 
-export async function requireAuth(request: Request): Promise<AuthContext> {
+export async function requireAuth(
+  request: Request,
+  opts: { allowUnverified?: boolean } = {}
+): Promise<AuthContext> {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw jsonError('Missing or invalid Authorization header', 401)
@@ -46,6 +49,13 @@ export async function requireAuth(request: Request): Promise<AuthContext> {
   const user = userRows[0] ?? null
   if (!user) {
     throw jsonError('User not found', 401)
+  }
+
+  // Lock the app to verified accounts. Every protected endpoint funnels through
+  // requireAuth, so this one check gates the whole API by default. Endpoints
+  // that must stay reachable while unverified (me, logout, resend) opt out.
+  if (!opts.allowUnverified && user.email_verified_at === null) {
+    throw jsonError('Email not verified. Check your inbox for a verification link.', 403)
   }
 
   return { user, session }
@@ -83,7 +93,9 @@ export function jsonError(message: string, status: number): HttpError {
 
 export async function getCurrentUserFromRequest(request: Request): Promise<User | null> {
   try {
-    const { user } = await requireAuth(request)
+    // Identity lookup only — verification is enforced by callers/route guards
+    // so this can still resolve who an unverified user is.
+    const { user } = await requireAuth(request, { allowUnverified: true })
     return user
   } catch {
     return null

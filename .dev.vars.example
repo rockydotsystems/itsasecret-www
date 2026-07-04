@@ -1,2 +1,11 @@
 # Copy to .dev.vars for local development. Never commit .dev.vars.
 APP_ENV=development
+
+# Transactional email (Resend). Leave RESEND_API_KEY unset in dev: the
+# verification link is printed to the server terminal instead of emailed.
+# RESEND_API_KEY=re_xxxxxxxx
+# EMAIL_FROM=itsasecret <onboarding@resend.dev>
+
+# Public origin used to build verification links. Falls back to the request
+# origin when unset (needed when the app runs behind a reverse proxy).
+# APP_URL=http://localhost:3000

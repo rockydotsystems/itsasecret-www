@@ -1,11 +1,15 @@
+import { CopyIcon, PencilIcon, TrashIcon } from '~/components/secretrow'
+
 export type VarRowProps = {
   name: string
   value: string
   meta?: string
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
-// Plain (non-secret) env var: value is shown in the clear, copy only.
-export function VarRow({ name, value, meta }: VarRowProps) {
+// Plain (non-secret) env var: value is shown in the clear.
+export function VarRow({ name, value, meta, onEdit, onDelete }: VarRowProps) {
   return (
     <div className="secret-row">
       <div className="secret-row-info">
@@ -20,11 +24,18 @@ export function VarRow({ name, value, meta }: VarRowProps) {
           onClick={() => navigator.clipboard.writeText(value)}
           title="Copy value"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="9" y="9" width="12" height="12" rx="2" />
-            <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
-          </svg>
+          {CopyIcon}
         </button>
+        {onEdit && (
+          <button type="button" className="secret-action" onClick={onEdit} title="Edit variable">
+            {PencilIcon}
+          </button>
+        )}
+        {onDelete && (
+          <button type="button" className="secret-action secret-action-danger" onClick={onDelete} title="Delete variable">
+            {TrashIcon}
+          </button>
+        )}
       </div>
     </div>
   )

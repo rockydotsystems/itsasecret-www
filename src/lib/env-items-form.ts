@@ -1,5 +1,5 @@
-import { encrypt } from './crypto/envelope'
-import { getClientSessionKey, getSessionKeyHeader } from './client-session'
+import { encrypt, decrypt } from './crypto/envelope'
+import { getOrgKeyClient } from './vault'
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('sessionToken')
@@ -33,19 +33,43 @@ export async function setVar(envId: string, key: string, value: string): Promise
   if (!resp.ok) await throwResponseError(resp, 'Failed to save variable')
 }
 
-// The value is encrypted with the per-session transport key before it leaves
-// the browser; the server re-encrypts it under the org key at rest.
-export async function setSecret(envId: string, key: string, value: string): Promise<void> {
+export async function deleteVar(envId: string, key: string): Promise<void> {
+  const resp = await fetch(`/api/envs/${envId}/vars/${encodeURIComponent(key)}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!resp.ok && resp.status !== 404) await throwResponseError(resp, 'Failed to delete variable')
+}
+
+// E2E: the value is encrypted under the org key in the browser (vault must be
+// unlocked) and stored verbatim — the server never sees the plaintext.
+export async function setSecret(orgId: string, envId: string, key: string, value: string): Promise<void> {
   validateItemKey(key)
-  const sessionKey = await getClientSessionKey()
-  const encryptedValue = await encrypt(sessionKey, value)
+  const orgKey = await getOrgKeyClient(orgId)
+  const encryptedValue = await encrypt(orgKey, value)
   const resp = await fetch(`/api/envs/${envId}/secrets/${encodeURIComponent(key)}`, {
     method: 'PUT',
-    headers: {
-      ...authHeaders(),
-      'X-Session-Key': getSessionKeyHeader(sessionKey),
-    },
-    body: JSON.stringify({ encryptedValue }),
+    headers: authHeaders(),
+    body: JSON.stringify({ encryptedValue, cipher: 'org' }),
   })
   if (!resp.ok) await throwResponseError(resp, 'Failed to save secret')
+}
+
+// E2E: fetches the stored org-key ciphertext and decrypts it locally.
+export async function revealSecret(orgId: string, envId: string, key: string): Promise<string> {
+  const orgKey = await getOrgKeyClient(orgId)
+  const resp = await fetch(`/api/envs/${envId}/secrets/${encodeURIComponent(key)}/encrypted`, {
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to fetch secret')
+  const data = (await resp.json()) as { encryptedValue: string }
+  return decrypt(orgKey, data.encryptedValue)
+}
+
+export async function deleteSecret(envId: string, key: string): Promise<void> {
+  const resp = await fetch(`/api/envs/${envId}/secrets/${encodeURIComponent(key)}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!resp.ok && resp.status !== 404) await throwResponseError(resp, 'Failed to delete secret')
 }

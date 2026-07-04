@@ -9,7 +9,8 @@ export const Route = createFileRoute('/api/auth/logout')({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const { user, session } = await requireAuth(request)
+          // Unverified users must still be able to log out.
+          const { user, session } = await requireAuth(request, { allowUnverified: true })
           await revokeSession(session.id)
           await auditLog({ actorUserId: user.id, action: 'user.logout' })
 

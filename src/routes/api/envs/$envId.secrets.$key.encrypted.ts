@@ -1,0 +1,37 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { eq, and, isNull } from 'drizzle-orm'
+import { db } from '~/lib/db'
+import { secrets } from '~/lib/schema'
+import { auditLog } from '~/lib/db-utils'
+import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+
+// Returns the stored org-key ciphertext verbatim for client-side decryption
+// (web E2E flow). The server never handles the plaintext or the org key here;
+// the caller unwraps the org key locally with their master password.
+export const Route = createFileRoute('/api/envs/$envId/secrets/$key/encrypted')({
+  server: {
+    handlers: {
+      GET: async ({ request, params }) => {
+        try {
+          const { user } = await requireAuth(request)
+          const orgId = await requireEnvRole(params, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
+          const envId = params.envId!
+          const key = params.key!
+
+          const secretRows = await db.select({ encrypted_value: secrets.encrypted_value }).from(secrets)
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+            .limit(1)
+          const secret = secretRows[0] ?? null
+          if (!secret) return Response.json({ error: 'Secret not found' }, { status: 404 })
+
+          await auditLog({ orgId, actorUserId: user.id, action: 'secret.reveal', targetType: 'secret', targetId: key, metadata: { envId, mode: 'e2e' } })
+
+          return Response.json({ key, encryptedValue: secret.encrypted_value }, { status: 200 })
+        } catch (err) {
+          return errorResponse(err)
+        }
+      },
+    },
+  },
+})

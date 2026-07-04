@@ -6,6 +6,7 @@ import { envVars } from '~/lib/schema'
 import { generateId, auditLog, softDeleteEnvVar } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+import { recordVarHistory } from '~/lib/history'
 
 const upsertSchema = z.object({
   value: z.string(),
@@ -28,6 +29,14 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
           const existing = existingRows[0] ?? null
 
           if (existing) {
+            await recordVarHistory({
+              varId: existing.id,
+              envId,
+              key,
+              value: existing.value,
+              changeType: 'update',
+              changedBy: user.id,
+            })
             await db.update(envVars)
               .set({ value, updated_at: new Date() })
               .where(eq(envVars.id, existing.id))
@@ -68,12 +77,20 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
           const envId = params.envId!
           const key = params.key!
 
-          const existingRows = await db.select({ id: envVars.id }).from(envVars)
+          const existingRows = await db.select().from(envVars)
             .where(and(eq(envVars.env_id, envId), eq(envVars.key, key), isNull(envVars.deleted_at)))
             .limit(1)
           const existing = existingRows[0] ?? null
           if (!existing) return Response.json({ error: 'Var not found' }, { status: 404 })
 
+          await recordVarHistory({
+            varId: existing.id,
+            envId,
+            key,
+            value: existing.value,
+            changeType: 'delete',
+            changedBy: user.id,
+          })
           await softDeleteEnvVar(existing.id)
           await auditLog({ orgId, actorUserId: user.id, action: 'var.delete', targetType: 'env_var', targetId: key, metadata: { envId } })
           return new Response(null, { status: 204 })

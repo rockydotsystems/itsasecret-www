@@ -12,6 +12,8 @@ import { base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
 import { createSessionCookieHeader } from '~/lib/session-cookie'
 import { getClientIP, isRateLimited } from '~/lib/rate-limit'
+import { createEmailVerification, verificationUrl } from '~/lib/email-verification'
+import { sendVerificationEmail } from '~/lib/email'
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -97,6 +99,18 @@ export const Route = createFileRoute('/api/auth/register')({
           const orgKeys: Record<string, string> = { [orgId]: encryptedOrgKey }
 
           const { token } = await createSession(userId, serverPubkey, orgKeys)
+
+          // New accounts start unverified (users.email_verified_at is null).
+          // Issue a single-use token and email the verification link.
+          const { token: verifyToken } = await createEmailVerification(userId)
+          const verifyUrl = verificationUrl(request, verifyToken)
+          // Best-effort: the account already exists, so a mail hiccup must not
+          // fail signup — the user can re-request verification later.
+          try {
+            await sendVerificationEmail({ to: email, verifyUrl })
+          } catch (mailErr) {
+            console.error('[email] verification send threw:', mailErr)
+          }
 
           await auditLog({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId })
           await auditLog({ orgId, actorUserId: userId, action: 'org.create', targetType: 'org', targetId: orgId })

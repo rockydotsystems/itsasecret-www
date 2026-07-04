@@ -20,5 +20,6 @@ export const getCurrentUserFn = createServerFn({ method: 'GET' })
       email: user.email,
       kdf_salt: user.kdf_salt,
       kdf_params: user.kdf_params,
+      email_verified: user.email_verified_at !== null,
     }
   })

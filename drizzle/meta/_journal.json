@@ -15,6 +15,20 @@
       "when": 1783117000502,
       "tag": "0001_salty_the_enforcers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783126518778,
+      "tag": "0002_groovy_fabian_cortez",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783128307591,
+      "tag": "0003_lively_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }
