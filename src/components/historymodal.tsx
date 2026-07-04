@@ -158,7 +158,7 @@ export function HistoryModal({ itemKey, kind, loadEntries, onClose }: HistoryMod
     : 'Previous values from the last 7 days. Older history is purged.'
 
   return (
-    <Modal title={`History — ${itemKey}`} subtitle={subtitle} onClose={onClose}>
+    <Modal title={`History — ${itemKey}`} subtitle={subtitle} wide onClose={onClose}>
       {error ? (
         <span className="input-error">{error}</span>
       ) : entries === null ? (
