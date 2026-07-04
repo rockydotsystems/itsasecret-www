@@ -49,8 +49,9 @@ function ProjectDashboardPage() {
       environments={view.environments}
       envId={view.envId}
       currentUserRole={view.currentUserRole}
+      envRole={view.envRole}
       envSecrets={view.envSecrets}
-      envVarCount={view.envVarCount}
+      envVars={view.envVars}
     />
   )
 }

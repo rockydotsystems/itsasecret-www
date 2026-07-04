@@ -33,14 +33,22 @@ export type SecretSummary = {
   updated_at: Date
 }
 
+export type VarSummary = {
+  key: string
+  value: string
+  updated_at: Date
+}
+
 export type ProjectView = {
   orgs: Org[]
   projects: Project[]
   environments: Environment[]
   envId: string
   currentUserRole: string
+  // Caller's effective role on the selected environment ('' = no access).
+  envRole: string
   envSecrets: SecretSummary[]
-  envVarCount: number
+  envVars: VarSummary[]
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -314,17 +322,26 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envId = envs.find((e) => e.id === lastEnvId)?.id ?? envs[0]?.id ?? ''
     }
 
+    const currentUserRole = memberRows[0]?.role ?? ''
+
     let envSecrets: SecretSummary[] = []
-    let envVarCount = 0
+    let envVarList: VarSummary[] = []
+    let envRole = ''
     if (envId) {
-      const [secretRows, varRows] = await Promise.all([
+      const [secretRows, varRows, permRows] = await Promise.all([
         db.select({ key: secrets.key, updated_at: secrets.updated_at }).from(secrets)
           .where(and(eq(secrets.env_id, envId), isNull(secrets.deleted_at))),
-        db.select({ id: envVars.id }).from(envVars)
+        db.select({ key: envVars.key, value: envVars.value, updated_at: envVars.updated_at }).from(envVars)
           .where(and(eq(envVars.env_id, envId), isNull(envVars.deleted_at))),
+        db.select({ role: envPermissions.role }).from(envPermissions)
+          .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, user.id)))
+          .limit(1),
       ])
       envSecrets = secretRows
-      envVarCount = varRows.length
+      envVarList = varRows
+      envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
+        ? 'admin'
+        : permRows[0]?.role ?? ''
     }
 
     return {
@@ -332,8 +349,9 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       projects: orgProjects,
       environments: envs,
       envId,
-      currentUserRole: memberRows[0]?.role ?? '',
+      currentUserRole,
+      envRole,
       envSecrets,
-      envVarCount,
+      envVars: envVarList,
     }
   })

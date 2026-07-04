@@ -309,7 +309,31 @@ a:hover { text-decoration: underline; }
   margin-bottom: var(--space-4);
 }
 .env-empty-hint { font-size: var(--text-sm); color: var(--text-tertiary); }
+.env-empty-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; }
 .env-no-secrets { font-size: var(--text-sm); color: var(--text-tertiary); }
+
+.env-section { margin-bottom: var(--space-8); }
+.env-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.env-section-title {
+  font: 600 var(--text-lg)/var(--leading-snug) var(--font-family-display);
+  color: var(--text-primary);
+}
+.env-section-rows { display: flex; flex-direction: column; gap: 12px; }
+.var-row-plain {
+  font-family: var(--font-family-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kv-value-field { resize: vertical; height: auto; min-height: 72px; padding: 10px 12px; }
 
 /* ─── Select ────────────────────────────────────── */
 .select { position: relative; display: inline-flex; flex-direction: column; gap: 4px; }

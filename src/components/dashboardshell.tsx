@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 import { Button } from '~/components/button'
 import { SecretRow } from '~/components/secretrow'
+import { VarRow } from '~/components/varrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { EnvNameModal } from '~/components/envnamemodal'
+import { KeyValueModal } from '~/components/keyvaluemodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { createEnvironment } from '~/lib/project-settings-form'
-import type { SecretSummary } from '~/lib/orgs-server'
+import { setSecret, setVar } from '~/lib/env-items-form'
+import type { SecretSummary, VarSummary } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
 
 export type DashboardShellProps = {
@@ -17,8 +20,9 @@ export type DashboardShellProps = {
   environments: Environment[]
   envId: string
   currentUserRole?: string
+  envRole?: string
   envSecrets?: SecretSummary[]
-  envVarCount?: number
+  envVars?: VarSummary[]
 }
 
 function formatUpdated(date: Date | string): string {
@@ -64,15 +68,21 @@ export function DashboardShell({
   environments,
   envId,
   currentUserRole = '',
+  envRole = '',
   envSecrets = [],
-  envVarCount = 0,
+  envVars = [],
 }: DashboardShellProps) {
   const navigate = useNavigate()
+  const router = useRouter()
   const [creatingEnv, setCreatingEnv] = useState(false)
+  const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
 
   const projectName = projects.find((p) => p.id === projectId)?.name || 'Select project'
+  const envName = environments.find((e) => e.id === envId)?.name ?? ''
   // Only org owners and admins can create environments from scratch.
   const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
+  const canWrite = envRole === 'write' || envRole === 'admin'
+  const envIsEmpty = envSecrets.length === 0 && envVars.length === 0
 
   function handleEnvChange(nextEnvId: string) {
     if (nextEnvId === envId) return
@@ -85,9 +95,34 @@ export function DashboardShell({
 
   const subtitle = [
     `${envSecrets.length} ${envSecrets.length === 1 ? 'secret' : 'secrets'}`,
-    `${envVarCount} ${envVarCount === 1 ? 'var' : 'vars'}`,
+    `${envVars.length} ${envVars.length === 1 ? 'var' : 'vars'}`,
     `${environments.length} ${environments.length === 1 ? 'environment' : 'environments'}`,
   ].join(' · ')
+
+  const envTagRow = (
+    <div className="app-actions">
+      <div style={{ display: 'flex', gap: '8px' }}>
+        {environments.map((env) => (
+          <EnvironmentTag
+            key={env.id}
+            name={env.name}
+            active={env.id === envId}
+            onClick={() => handleEnvChange(env.id)}
+          />
+        ))}
+        {canCreateEnv && (
+          <button
+            type="button"
+            className="env-tag env-tag-add"
+            onClick={() => setCreatingEnv(true)}
+            aria-label="Create new environment"
+          >
+            + new
+          </button>
+        )}
+      </div>
+    </div>
+  )
 
   return (
     <div className="app-shell">
@@ -124,45 +159,81 @@ export function DashboardShell({
               )}
             </div>
           </>
+        ) : envIsEmpty ? (
+          <>
+            <div className="app-meta">
+              <h1 className="app-title">{projectName}</h1>
+              <span className="app-subtitle">{subtitle}</span>
+            </div>
+            {envTagRow}
+            <div className="env-empty">
+              <EmptyEnvGraphic />
+              <h2 className="env-empty-title">Nothing in {envName} yet</h2>
+              <p className="env-empty-desc">
+                Secrets are encrypted end-to-end; plain variables are stored as-is. The CLI pulls both into your shell
+                or .env file.
+              </p>
+              {canWrite ? (
+                <div className="env-empty-actions">
+                  <Button size="lg" onClick={() => setCreatingItem('secret')}>
+                    Create your first secret
+                  </Button>
+                  <Button size="lg" variant="secondary" onClick={() => setCreatingItem('var')}>
+                    Create your first variable
+                  </Button>
+                </div>
+              ) : (
+                <p className="env-empty-hint">You have read-only access to this environment.</p>
+              )}
+            </div>
+          </>
         ) : (
           <>
             <div className="app-meta">
               <h1 className="app-title">{projectName}</h1>
               <span className="app-subtitle">{subtitle}</span>
             </div>
+            {envTagRow}
 
-            <div className="app-actions">
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {environments.map((env) => (
-                  <EnvironmentTag
-                    key={env.id}
-                    name={env.name}
-                    active={env.id === envId}
-                    onClick={() => handleEnvChange(env.id)}
-                  />
-                ))}
-                {canCreateEnv && (
-                  <button
-                    type="button"
-                    className="env-tag env-tag-add"
-                    onClick={() => setCreatingEnv(true)}
-                    aria-label="Create new environment"
-                  >
-                    + new
-                  </button>
+            <div className="env-section">
+              <div className="env-section-header">
+                <h2 className="env-section-title">Secrets</h2>
+                {canWrite && (
+                  <Button size="sm" variant="secondary" onClick={() => setCreatingItem('secret')}>
+                    New secret
+                  </Button>
                 )}
               </div>
+              {envSecrets.length > 0 ? (
+                <div className="env-section-rows">
+                  {envSecrets.map((s) => (
+                    <SecretRow key={s.key} name={s.key} meta={formatUpdated(s.updated_at)} />
+                  ))}
+                </div>
+              ) : (
+                <p className="env-no-secrets">No secrets in this environment yet.</p>
+              )}
             </div>
 
-            {envSecrets.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {envSecrets.map((s) => (
-                  <SecretRow key={s.key} name={s.key} meta={formatUpdated(s.updated_at)} />
-                ))}
+            <div className="env-section">
+              <div className="env-section-header">
+                <h2 className="env-section-title">Variables</h2>
+                {canWrite && (
+                  <Button size="sm" variant="secondary" onClick={() => setCreatingItem('var')}>
+                    New variable
+                  </Button>
+                )}
               </div>
-            ) : (
-              <p className="env-no-secrets">No secrets in this environment yet.</p>
-            )}
+              {envVars.length > 0 ? (
+                <div className="env-section-rows">
+                  {envVars.map((v) => (
+                    <VarRow key={v.key} name={v.key} value={v.value} meta={formatUpdated(v.updated_at)} />
+                  ))}
+                </div>
+              ) : (
+                <p className="env-no-secrets">No plain variables in this environment yet.</p>
+              )}
+            </div>
           </>
         )}
       </main>
@@ -182,6 +253,38 @@ export function DashboardShell({
               params: { orgId, projectId },
               search: { env: env.id },
             })
+          }}
+        />
+      )}
+
+      {creatingItem === 'secret' && (
+        <KeyValueModal
+          title="New secret"
+          subtitle={`Encrypted in your browser before it's sent, then stored under ${envName}'s org key.`}
+          submitLabel="Save secret"
+          keyPlaceholder="e.g. STRIPE_SECRET_KEY"
+          valuePlaceholder="sk_live_..."
+          onClose={() => setCreatingItem(null)}
+          onSubmit={async (key, value) => {
+            await setSecret(envId, key, value)
+            setCreatingItem(null)
+            await router.invalidate()
+          }}
+        />
+      )}
+
+      {creatingItem === 'var' && (
+        <KeyValueModal
+          title="New variable"
+          subtitle={`Plain, unencrypted value in ${envName} — for config that isn't sensitive.`}
+          submitLabel="Save variable"
+          keyPlaceholder="e.g. LOG_LEVEL"
+          valuePlaceholder="debug"
+          onClose={() => setCreatingItem(null)}
+          onSubmit={async (key, value) => {
+            await setVar(envId, key, value)
+            setCreatingItem(null)
+            await router.invalidate()
           }}
         />
       )}
