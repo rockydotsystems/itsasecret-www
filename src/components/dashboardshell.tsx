@@ -286,7 +286,9 @@ export function DashboardShell({
                 <div className="env-section-rows">
                   {envSecrets.map((s) => (
                     <SecretRow
-                      key={s.key}
+                      // updated_at in the key remounts the row on edit, dropping
+                      // its cached decrypted value so reveal fetches the new one.
+                      key={`${s.key}:${new Date(s.updated_at).getTime()}`}
                       name={s.key}
                       meta={formatUpdated(s.updated_at)}
                       onReveal={() => revealValueFor(s.key)}
