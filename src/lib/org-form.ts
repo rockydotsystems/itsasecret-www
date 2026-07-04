@@ -4,113 +4,101 @@ import { generateKey, wrapKey, encrypt } from './crypto/envelope'
 import { getCurrentUser } from './auth-form'
 import { getClientSessionKey } from './client-session'
 import { getCachedMasterKey } from './vault'
-import type { Org } from './schema'
 
-export interface CreateOrgResult {
-  org: Org
-  encryptedOrgKey: string
-}
-
-export async function createOrganization(name: string, password: string): Promise<CreateOrgResult> {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
-
-  const sessionKey = await getClientSessionKey()
-
-  const user = await getCurrentUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const kdfParams: KdfParams = JSON.parse(user.kdf_params)
-  const kdfSalt = base64Decode(user.kdf_salt)
-  const masterKey = await deriveKey(password, kdfSalt, kdfParams)
-
-  const orgKey = generateKey()
-  const wrappedOrgKey = await wrapKey(masterKey, orgKey)
-
-  const encryptedOrgKey = await encrypt(sessionKey, base64Encode(orgKey))
-
-  const resp = await fetch('/api/orgs/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      name,
-      wrappedOrgKey,
-      encryptedOrgKey,
-    }),
-  })
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || 'Failed to create organization')
-  }
-
-  const org = (await resp.json()) as Org
-
-  const storedOrgKeys = localStorage.getItem('orgKeys')
-  const orgKeys: Record<string, string> = storedOrgKeys ? JSON.parse(storedOrgKeys) : {}
-  orgKeys[org.id] = encryptedOrgKey
-  localStorage.setItem('orgKeys', JSON.stringify(orgKeys))
-
-  return { org, encryptedOrgKey }
-}
-
-export interface OnboardingInput {
+export interface WorkspaceInput {
   orgName: string
   projectName: string
   envName: string
   // Fallback for when the vault is locked (e.g. the wizard runs in a fresh
-  // tab): derive the master key from the typed password, like CreateOrgForm.
+  // tab): derive the master key from the typed password.
   password?: string
 }
 
-export async function completeOnboarding(input: OnboardingInput): Promise<{ orgId: string; projectId: string }> {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
+export interface WorkspaceResult {
+  orgId: string
+  projectId: string
+}
 
+// Generates a fresh org key, wrapped under the master key (for org_members)
+// and encrypted under the session transport key (for the session row).
+async function buildOrgKeyMaterial(password?: string): Promise<{ wrappedOrgKey: string; encryptedOrgKey: string }> {
   const sessionKey = await getClientSessionKey()
 
   let masterKey = await getCachedMasterKey()
   if (!masterKey) {
-    if (!input.password) throw new Error('Master password required')
+    if (!password) throw new Error('Master password required')
     const user = await getCurrentUser()
     if (!user) throw new Error('Not authenticated')
     const kdfParams: KdfParams = JSON.parse(user.kdf_params)
-    masterKey = await deriveKey(input.password, base64Decode(user.kdf_salt), kdfParams)
+    masterKey = await deriveKey(password, base64Decode(user.kdf_salt), kdfParams)
   }
 
   const orgKey = generateKey()
   const wrappedOrgKey = await wrapKey(masterKey, orgKey)
   const encryptedOrgKey = await encrypt(sessionKey, base64Encode(orgKey))
+  return { wrappedOrgKey, encryptedOrgKey }
+}
 
-  const resp = await fetch('/api/onboarding', {
+function authToken(): string {
+  const token = localStorage.getItem('sessionToken')
+  if (!token) throw new Error('Not authenticated')
+  return token
+}
+
+function rememberOrgKey(orgId: string, encryptedOrgKey: string): void {
+  const storedOrgKeys = localStorage.getItem('orgKeys')
+  const orgKeys: Record<string, string> = storedOrgKeys ? JSON.parse(storedOrgKeys) : {}
+  orgKeys[orgId] = encryptedOrgKey
+  localStorage.setItem('orgKeys', JSON.stringify(orgKeys))
+}
+
+async function postJson(url: string, token: string, body: unknown, fallbackError: string): Promise<any> {
+  const resp = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({
-      orgName: input.orgName,
-      projectName: input.projectName,
-      envName: input.envName,
-      wrappedOrgKey,
-      encryptedOrgKey,
-    }),
+    body: JSON.stringify(body),
   })
-
   if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || 'Failed to set up your workspace')
+    const err = await resp.json().catch(() => ({ error: fallbackError }))
+    throw new Error(err.error || fallbackError)
   }
+  return resp.json()
+}
 
-  const result = (await resp.json()) as { orgId: string; projectId: string }
+// First-workspace setup after email verification: personal org + first
+// project + first environment via the one-shot onboarding endpoint.
+export async function completeOnboarding(input: WorkspaceInput): Promise<WorkspaceResult> {
+  const token = authToken()
+  const { wrappedOrgKey, encryptedOrgKey } = await buildOrgKeyMaterial(input.password)
 
-  const storedOrgKeys = localStorage.getItem('orgKeys')
-  const orgKeys: Record<string, string> = storedOrgKeys ? JSON.parse(storedOrgKeys) : {}
-  orgKeys[result.orgId] = encryptedOrgKey
-  localStorage.setItem('orgKeys', JSON.stringify(orgKeys))
+  const result = (await postJson('/api/onboarding', token, {
+    orgName: input.orgName,
+    projectName: input.projectName,
+    envName: input.envName,
+    wrappedOrgKey,
+    encryptedOrgKey,
+  }, 'Failed to set up your workspace')) as WorkspaceResult
 
+  rememberOrgKey(result.orgId, encryptedOrgKey)
   return result
+}
+
+// "+ New org" from the dashboard: shared org + its first project/environment.
+export async function createOrgWorkspace(input: WorkspaceInput): Promise<WorkspaceResult> {
+  const token = authToken()
+  const { wrappedOrgKey, encryptedOrgKey } = await buildOrgKeyMaterial(input.password)
+
+  const result = (await postJson('/api/orgs/', token, {
+    name: input.orgName,
+    projectName: input.projectName,
+    envName: input.envName,
+    wrappedOrgKey,
+    encryptedOrgKey,
+  }, 'Failed to create organization')) as { org: { id: string }; projectId: string }
+
+  rememberOrgKey(result.org.id, encryptedOrgKey)
+  return { orgId: result.org.id, projectId: result.projectId }
 }

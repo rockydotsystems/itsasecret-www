@@ -571,7 +571,12 @@ a:hover { text-decoration: underline; }
 .auth-banner-success { color: var(--status-success-fg); background: var(--status-success-bg); border-color: var(--status-success-border); }
 .auth-banner-danger { color: var(--status-danger-fg); background: var(--status-danger-bg); border-color: var(--status-danger-border); }
 
-/* ─── Onboarding wizard ─────────────────────────── */
+/* ─── Workspace wizard (onboarding page + new-org modal) ── */
+/* Compact step headings for the modal variant; the onboarding page uses
+   auth-title/auth-subtitle instead. */
+.wizard-title { font: 600 var(--text-lg)/var(--leading-snug) var(--font-family-display); color: var(--text-primary); margin-bottom: var(--space-2); }
+.wizard-subtitle { font-size: var(--text-sm); color: var(--text-secondary); }
+
 .onboarding-steps { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-6); }
 .onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
 .onboarding-dot-active { background: var(--signal-400); }

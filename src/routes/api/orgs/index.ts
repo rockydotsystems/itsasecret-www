@@ -3,14 +3,19 @@ import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { orgs, orgMembers, sessions } from '~/lib/schema'
-import { generateId, auditLog } from '~/lib/db-utils'
+import { generateId, auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
 
 const createOrgSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
   wrappedOrgKey: z.string(),
   encryptedOrgKey: z.string(),
+  // The "+ New org" wizard sets up the org's first project + environment in
+  // the same request; both are optional so the endpoint can also create a
+  // bare org.
+  projectName: z.string().min(1).max(100).optional(),
+  envName: z.string().min(1).max(100).optional(),
 })
 
 export const Route = createFileRoute('/api/orgs/')({
@@ -39,7 +44,7 @@ export const Route = createFileRoute('/api/orgs/')({
         try {
           const { user, session } = await requireAuth(request)
           const body = createOrgSchema.parse(await request.json())
-          const { name, wrappedOrgKey, encryptedOrgKey } = body
+          const { name, wrappedOrgKey, encryptedOrgKey, projectName, envName } = body
 
           const orgId = generateId()
           await db.insert(orgs).values({
@@ -56,8 +61,10 @@ export const Route = createFileRoute('/api/orgs/')({
             wrapped_org_key: wrappedOrgKey,
           })
 
-          // New orgs start empty — the dashboard's "No projects yet" state and
-          // "+ New project" cover the first project.
+          const projectId = projectName
+            ? await createProjectWithEnv(orgId, projectName, user.id, envName ?? 'production')
+            : null
+
           const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
           encryptedOrgKeys[orgId] = encryptedOrgKey
           await db.update(sessions)
@@ -65,9 +72,12 @@ export const Route = createFileRoute('/api/orgs/')({
             .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
+          if (projectId) {
+            await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })
+          }
 
           const orgRows = await db.select().from(orgs).where(eq(orgs.id, orgId)).limit(1)
-          return Response.json(orgRows[0], { status: 201 })
+          return Response.json({ org: orgRows[0], projectId }, { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }

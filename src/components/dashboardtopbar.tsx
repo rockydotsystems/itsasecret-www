@@ -5,7 +5,7 @@ import { Avatar } from '~/components/avatar'
 import { LogoMark } from '~/components/logo'
 import { Select } from '~/components/select'
 import { Modal } from '~/components/modal'
-import { CreateOrgForm } from '~/components/createorgform'
+import { WorkspaceWizard } from '~/components/workspacewizard'
 import { CreateProjectForm } from '~/components/createprojectform'
 import { performLogout } from '~/lib/auth-form'
 import type { Org, Project } from '~/lib/schema'
@@ -132,15 +132,15 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
       </nav>
 
       {creating === 'org' && (
-        <Modal
-          title="Create organization"
-          subtitle="Shared orgs let you invite teammates and collaborate on projects."
-          onClose={() => setCreating(null)}
-        >
-          <CreateOrgForm
-            onCreated={(org) => {
+        <Modal title="Create organization" onClose={() => setCreating(null)}>
+          <WorkspaceWizard
+            mode="org"
+            onComplete={({ orgId: newOrgId, projectId: newProjectId }) => {
               setCreating(null)
-              void navigate({ to: '/dashboard/$orgId', params: { orgId: org.id } })
+              void navigate({
+                to: '/dashboard/$orgId/$projectId',
+                params: { orgId: newOrgId, projectId: newProjectId },
+              })
             }}
           />
         </Modal>
