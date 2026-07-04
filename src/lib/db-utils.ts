@@ -7,11 +7,13 @@ export function generateId(): string {
   return createId()
 }
 
-// Every project starts with a production environment (product spec).
-export async function createProjectWithProductionEnv(
+// Every project starts with one environment — 'production' by default
+// (product spec); onboarding lets the user name their first one.
+export async function createProjectWithEnv(
   orgId: string,
   name: string,
-  createdBy: string
+  createdBy: string,
+  envName = 'production'
 ): Promise<string> {
   const projectId = generateId()
   await db.insert(schema.projects).values({
@@ -22,7 +24,7 @@ export async function createProjectWithProductionEnv(
   await db.insert(schema.environments).values({
     id: generateId(),
     project_id: projectId,
-    name: 'production',
+    name: envName,
     created_by: createdBy,
   })
   return projectId

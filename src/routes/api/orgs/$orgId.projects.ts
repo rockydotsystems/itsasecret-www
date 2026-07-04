@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { projects } from '~/lib/schema'
-import { auditLog, createProjectWithProductionEnv } from '~/lib/db-utils'
+import { auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 
@@ -38,7 +38,7 @@ export const Route = createFileRoute('/api/orgs/$orgId/projects')({
             .limit(1)
           if (existingRows[0]) return Response.json({ error: 'Project name already exists' }, { status: 409 })
 
-          const projectId = await createProjectWithProductionEnv(orgId, name, user.id)
+          const projectId = await createProjectWithEnv(orgId, name, user.id)
 
           await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })
 

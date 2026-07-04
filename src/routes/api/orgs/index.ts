@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { orgs, orgMembers, sessions } from '~/lib/schema'
-import { generateId, auditLog, createProjectWithProductionEnv } from '~/lib/db-utils'
+import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
 
@@ -56,8 +56,8 @@ export const Route = createFileRoute('/api/orgs/')({
             wrapped_org_key: wrappedOrgKey,
           })
 
-          const projectId = await createProjectWithProductionEnv(orgId, 'default', user.id)
-
+          // New orgs start empty — the dashboard's "No projects yet" state and
+          // "+ New project" cover the first project.
           const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
           encryptedOrgKeys[orgId] = encryptedOrgKey
           await db.update(sessions)
@@ -65,7 +65,6 @@ export const Route = createFileRoute('/api/orgs/')({
             .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
-          await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })
 
           const orgRows = await db.select().from(orgs).where(eq(orgs.id, orgId)).limit(1)
           return Response.json(orgRows[0], { status: 201 })

@@ -10,6 +10,10 @@ import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
+  // Set by GET /api/auth/verify-email: 1 = verified, 0 = bad/expired link.
+  // The router JSON-parses search values, so `?verified=1` arrives as the
+  // number 1; junk values must not error the page, hence the catch.
+  verified: z.union([z.literal(1), z.literal(0)]).optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/login')({
@@ -19,7 +23,7 @@ export const Route = createFileRoute('/login')({
 })
 
 function LoginPage() {
-  const { redirect } = Route.useSearch()
+  const { redirect, verified } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
@@ -59,6 +63,17 @@ function LoginPage() {
         </div>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Enter your master password to decrypt your vault.</p>
+
+        {verified === 1 && (
+          <div className="auth-banner auth-banner-success">
+            Email verified — log in to finish setting up your workspace.
+          </div>
+        )}
+        {verified === 0 && (
+          <div className="auth-banner auth-banner-danger">
+            That verification link is invalid or has expired. Log in to request a new one.
+          </div>
+        )}
 
         <form id="login-form" ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <Input name="email" type="email" label="Email" placeholder="you@example.com" required />

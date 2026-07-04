@@ -567,6 +567,18 @@ a:hover { text-decoration: underline; }
 .auth-subtitle { color: var(--text-secondary); margin-bottom: var(--space-8); }
 .auth-footer { text-align: center; margin-top: var(--space-6); font-size: var(--text-sm); color: var(--text-secondary); }
 
+.auth-banner { padding: var(--space-3) var(--space-4); border-radius: 8px; font-size: var(--text-sm); margin-bottom: var(--space-6); border: 1px solid; }
+.auth-banner-success { color: var(--status-success-fg); background: var(--status-success-bg); border-color: var(--status-success-border); }
+.auth-banner-danger { color: var(--status-danger-fg); background: var(--status-danger-bg); border-color: var(--status-danger-border); }
+
+/* ─── Onboarding wizard ─────────────────────────── */
+.onboarding-steps { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-6); }
+.onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+.onboarding-dot-active { background: var(--signal-400); }
+.onboarding-step-label { margin-left: auto; font-size: var(--text-xs); color: var(--text-tertiary); }
+.onboarding-actions { display: flex; justify-content: space-between; gap: var(--space-3); }
+.onboarding-actions > button:last-child { flex: 1; }
+
 /* ─── Marketing ─────────────────────────────────── */
 .navbar {
   background: var(--bg-base);

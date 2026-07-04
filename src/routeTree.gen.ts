@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ApiOnboardingRouteImport } from './routes/api/onboarding'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as DashboardOrgIdIndexRouteImport } from './routes/dashboard/$orgId/index'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
@@ -61,6 +63,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -74,6 +81,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/dashboard/',
   path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOnboardingRoute = ApiOnboardingRouteImport.update({
+  id: '/api/onboarding',
+  path: '/api/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -274,9 +286,11 @@ const ApiEnvsEnvIdSecretsKeyEncryptedRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/onboarding': typeof ApiOnboardingRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -317,9 +331,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/onboarding': typeof ApiOnboardingRoute
   '/dashboard': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -361,9 +377,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/onboarding': typeof ApiOnboardingRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
@@ -406,9 +424,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/onboarding'
     | '/register'
     | '/verify-email'
     | '/api/health'
+    | '/api/onboarding'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -449,9 +469,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/onboarding'
     | '/register'
     | '/verify-email'
     | '/api/health'
+    | '/api/onboarding'
     | '/dashboard'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -492,9 +514,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/onboarding'
     | '/register'
     | '/verify-email'
     | '/api/health'
+    | '/api/onboarding'
     | '/dashboard/'
     | '/api/auth/login'
     | '/api/auth/logout'
@@ -536,9 +560,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
   RegisterRoute: typeof RegisterRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiOnboardingRoute: typeof ApiOnboardingRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
@@ -572,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -591,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/onboarding': {
+      id: '/api/onboarding'
+      path: '/api/onboarding'
+      fullPath: '/api/onboarding'
+      preLoaderRoute: typeof ApiOnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -996,9 +1036,11 @@ const ApiProjectsProjectIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
   RegisterRoute: RegisterRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiOnboardingRoute: ApiOnboardingRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,

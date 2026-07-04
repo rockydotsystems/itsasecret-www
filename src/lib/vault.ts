@@ -114,6 +114,13 @@ export async function isVaultUnlocked(): Promise<boolean> {
   return (await getMasterKey()) !== null
 }
 
+// The cached master key (seeded at login), or null when the vault is locked.
+// Lets onboarding wrap the first org key without re-prompting for the
+// password in the tab the user just logged in from.
+export async function getCachedMasterKey(): Promise<Uint8Array | null> {
+  return getMasterKey()
+}
+
 function authHeader(): Record<string, string> {
   const token = localStorage.getItem('sessionToken')
   if (!token) throw new Error('Not authenticated')

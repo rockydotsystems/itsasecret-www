@@ -2,12 +2,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers } from '~/lib/schema'
-import { generateId, auditLog, createProjectWithProductionEnv } from '~/lib/db-utils'
+import { users } from '~/lib/schema'
+import { generateId, auditLog } from '~/lib/db-utils'
 import { createSession } from '~/lib/sessions'
-import { deriveKey, hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
-import { generateKey, wrapKey, encrypt } from '~/lib/crypto/envelope'
-import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
+import { hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
+import { generateKeyPair } from '~/lib/crypto/ecdh'
 import { base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
 import { createSessionCookieHeader } from '~/lib/session-cookie'
@@ -48,7 +47,7 @@ export const Route = createFileRoute('/api/auth/register')({
           }
 
           const body = registerSchema.parse(await request.json())
-          const { email, password, clientPubkey } = body
+          const { email, password } = body
 
           const existingRows = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
           if (existingRows[0]) {
@@ -61,10 +60,6 @@ export const Route = createFileRoute('/api/auth/register')({
           const kdfSaltB64 = base64Encode(kdfSalt)
 
           const passwordHash = await hashPassword(password)
-          const derivedKey = await deriveKey(password, kdfSalt)
-
-          const orgKey = generateKey()
-          const wrappedOrgKey = await wrapKey(derivedKey, orgKey)
 
           const userId = generateId()
           await db.insert(users).values({
@@ -75,28 +70,11 @@ export const Route = createFileRoute('/api/auth/register')({
             kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
           })
 
-          const orgId = generateId()
-          await db.insert(orgs).values({
-            id: orgId,
-            name: `${email}'s org`,
-            kind: 'personal',
-            owner_user_id: userId,
-          })
-
-          await db.insert(orgMembers).values({
-            org_id: orgId,
-            user_id: userId,
-            role: 'owner',
-            wrapped_org_key: wrappedOrgKey,
-          })
-
-          const projectId = await createProjectWithProductionEnv(orgId, 'default', userId)
-
-          const { publicKey: serverPubkey, privateKey } = await generateKeyPair()
-          const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
-
-          const encryptedOrgKey = await encrypt(sessionKey, base64Encode(orgKey))
-          const orgKeys: Record<string, string> = { [orgId]: encryptedOrgKey }
+          // No orgs/projects are provisioned at signup — the onboarding wizard
+          // creates the personal org (with a client-wrapped key), first project,
+          // and first environment after email verification.
+          const { publicKey: serverPubkey } = await generateKeyPair()
+          const orgKeys: Record<string, string> = {}
 
           const { token } = await createSession(userId, serverPubkey, orgKeys)
 
@@ -113,8 +91,6 @@ export const Route = createFileRoute('/api/auth/register')({
           }
 
           await auditLog({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId })
-          await auditLog({ orgId, actorUserId: userId, action: 'org.create', targetType: 'org', targetId: orgId })
-          await auditLog({ orgId, actorUserId: userId, action: 'project.create', targetType: 'project', targetId: projectId })
 
           const headers = new Headers()
           headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
