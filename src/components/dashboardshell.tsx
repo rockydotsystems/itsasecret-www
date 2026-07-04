@@ -8,9 +8,14 @@ import { EnvironmentTag } from '~/components/environmenttag'
 import { EnvNameModal } from '~/components/envnamemodal'
 import { KeyValueModal } from '~/components/keyvaluemodal'
 import { MasterPassModal } from '~/components/masterpassmodal'
+import { HistoryModal } from '~/components/historymodal'
+import type { HistoryModalEntry } from '~/components/historymodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { createEnvironment } from '~/lib/project-settings-form'
-import { setSecret, setVar, deleteSecret, deleteVar, revealSecret } from '~/lib/env-items-form'
+import {
+  setSecret, setVar, deleteSecret, deleteVar, revealSecret,
+  fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue,
+} from '~/lib/env-items-form'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
 import type { SecretSummary, VarSummary } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
@@ -30,6 +35,7 @@ export type DashboardShellProps = {
 
 type EditingItem = { type: 'secret' | 'var'; itemKey: string; initialValue: string }
 type DeletingItem = { type: 'secret' | 'var'; itemKey: string }
+type HistoryItem = { type: 'secret' | 'var'; itemKey: string }
 type UnlockRequest = { resolve: () => void; reject: (err: Error) => void }
 
 function formatUpdated(date: Date | string): string {
@@ -85,6 +91,7 @@ export function DashboardShell({
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
+  const [historyItem, setHistoryItem] = useState<HistoryItem | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const [unlockRequest, setUnlockRequest] = useState<UnlockRequest | null>(null)
@@ -115,18 +122,46 @@ export function DashboardShell({
     return unlockPromiseRef.current
   }
 
-  async function revealValueFor(key: string): Promise<string> {
+  // Runs a client-side decrypt after making sure the vault is unlocked; if the
+  // cached master key went stale (e.g. password changed), prompt and retry.
+  async function withVaultRetry<T>(fn: () => Promise<T>): Promise<T> {
     await ensureUnlocked()
     try {
-      return await revealSecret(orgId, envId, key)
+      return await fn()
     } catch (err) {
-      // Cached master key went stale (e.g. password changed): prompt and retry.
       if (err instanceof VaultLockedError) {
         await ensureUnlocked()
-        return revealSecret(orgId, envId, key)
+        return fn()
       }
       throw err
     }
+  }
+
+  function revealValueFor(key: string): Promise<string> {
+    return withVaultRetry(() => revealSecret(orgId, envId, key))
+  }
+
+  // History entries for the modal: secrets decrypt per-entry in the browser,
+  // vars arrive as plaintext (same trust level as their live values).
+  async function loadHistoryEntries(item: HistoryItem): Promise<HistoryModalEntry[]> {
+    if (item.type === 'secret') {
+      const entries = await fetchSecretHistory(envId, item.itemKey)
+      return entries.map((e) => ({
+        id: e.id,
+        changeType: e.change_type,
+        changedBy: e.changed_by,
+        createdAt: e.created_at,
+        reveal: () => withVaultRetry(() => decryptSecretHistoryValue(orgId, e.encrypted_value)),
+      }))
+    }
+    const entries = await fetchVarHistory(envId, item.itemKey)
+    return entries.map((e) => ({
+      id: e.id,
+      changeType: e.change_type,
+      changedBy: e.changed_by,
+      createdAt: e.created_at,
+      value: e.value,
+    }))
   }
 
   async function startEditSecret(key: string) {
@@ -292,6 +327,7 @@ export function DashboardShell({
                       name={s.key}
                       meta={formatUpdated(s.updated_at)}
                       onReveal={() => revealValueFor(s.key)}
+                      onHistory={() => setHistoryItem({ type: 'secret', itemKey: s.key })}
                       onEdit={canWrite ? () => void startEditSecret(s.key) : undefined}
                       onDelete={canWrite ? () => setDeletingItem({ type: 'secret', itemKey: s.key }) : undefined}
                     />
@@ -319,6 +355,7 @@ export function DashboardShell({
                       name={v.key}
                       value={v.value}
                       meta={formatUpdated(v.updated_at)}
+                      onHistory={() => setHistoryItem({ type: 'var', itemKey: v.key })}
                       onEdit={canWrite ? () => setEditingItem({ type: 'var', itemKey: v.key, initialValue: v.value }) : undefined}
                       onDelete={canWrite ? () => setDeletingItem({ type: 'var', itemKey: v.key }) : undefined}
                     />
@@ -436,6 +473,15 @@ export function DashboardShell({
             </Button>
           </div>
         </Modal>
+      )}
+
+      {historyItem && (
+        <HistoryModal
+          itemKey={historyItem.itemKey}
+          kind={historyItem.type}
+          loadEntries={() => loadHistoryEntries(historyItem)}
+          onClose={() => setHistoryItem(null)}
+        />
       )}
 
       {unlockRequest && (

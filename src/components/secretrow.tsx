@@ -9,16 +9,17 @@ export type SecretRowProps = {
   onReveal?: () => Promise<string>
   onEdit?: () => void
   onDelete?: () => void
+  onHistory?: () => void
 }
 
-const EyeIcon = (
+export const EyeIcon = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
 )
 
-const EyeOffIcon = (
+export const EyeOffIcon = (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 3l18 18" />
     <path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.4 4.3M6.6 6.6C4 8.3 2 12 2 12s3.6 7 10 7c1.4 0 2.6-.3 3.7-.8" />
@@ -49,7 +50,28 @@ export const TrashIcon = (
   </svg>
 )
 
-export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, onDelete }: SecretRowProps) {
+export const ClockIcon = (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 3" />
+  </svg>
+)
+
+export function MaskedDots() {
+  return (
+    <span className="secret-masked">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <span className="secret-masked-group" key={i}>
+          {Array.from({ length: 4 }).map((_, j) => (
+            <span className="secret-masked-dot" key={j} />
+          ))}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, onDelete, onHistory }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const [value, setValue] = useState<string | null>(staticValue ?? null)
   const [busy, setBusy] = useState(false)
@@ -97,15 +119,7 @@ export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, on
         {revealed && value !== null ? (
           <span>{value}</span>
         ) : (
-          <span className="secret-masked">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <span className="secret-masked-group" key={i}>
-                {Array.from({ length: 4 }).map((_, j) => (
-                  <span className="secret-masked-dot" key={j} />
-                ))}
-              </span>
-            ))}
-          </span>
+          <MaskedDots />
         )}
         {(onReveal || staticValue !== undefined) && (
           <>
@@ -128,6 +142,11 @@ export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, on
               {CopyIcon}
             </button>
           </>
+        )}
+        {onHistory && (
+          <button type="button" className="secret-action" onClick={onHistory} title="View history">
+            {ClockIcon}
+          </button>
         )}
         {onEdit && (
           <button type="button" className="secret-action" onClick={onEdit} title="Edit secret">

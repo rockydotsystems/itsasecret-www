@@ -276,6 +276,22 @@ a:hover { text-decoration: underline; }
 .secret-action:disabled { opacity: 0.5; cursor: default; }
 .secret-action-danger:hover { color: var(--status-danger-fg); }
 
+/* ─── HistoryModal ──────────────────────────────── */
+.history-list { display: flex; flex-direction: column; gap: 14px; max-height: 55vh; overflow-y: auto; }
+.history-row { display: flex; flex-direction: column; gap: 6px; }
+.history-row-meta { display: flex; align-items: center; gap: 8px; }
+.history-change {
+  font-family: var(--font-family-mono); font-size: 11px; padding: 1px 8px;
+  border-radius: var(--radius-full); border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+.history-change-delete {
+  color: var(--status-danger-fg); border-color: var(--status-danger-border);
+  background: var(--status-danger-bg);
+}
+.history-row-who { font-size: var(--text-xs); color: var(--text-tertiary); }
+.history-loading { display: flex; justify-content: center; padding: 20px 0; }
+
 /* ─── EnvironmentTag ────────────────────────────── */
 .env-tag {
   display: inline-flex; align-items: center; gap: 7px;

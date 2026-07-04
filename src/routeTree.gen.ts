@@ -43,6 +43,8 @@ import { Route as ApiEnvsEnvIdSecretsKeyRouteImport } from './routes/api/envs/$e
 import { Route as ApiEnvsEnvIdPermissionsUserIdRouteImport } from './routes/api/envs/$envId.permissions.$userId'
 import { Route as ApiProjectsProjectIdEnvsEnvNamePullRouteImport } from './routes/api/projects/$projectId.envs.$envName.pull'
 import { Route as ApiProjectsProjectIdEnvsEnvIdForkRouteImport } from './routes/api/projects/$projectId.envs.$envId.fork'
+import { Route as ApiEnvsEnvIdVarsKeyHistoryRouteImport } from './routes/api/envs/$envId.vars.$key.history'
+import { Route as ApiEnvsEnvIdSecretsKeyHistoryRouteImport } from './routes/api/envs/$envId.secrets.$key.history'
 import { Route as ApiEnvsEnvIdSecretsKeyEncryptedRouteImport } from './routes/api/envs/$envId.secrets.$key.encrypted'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -223,6 +225,18 @@ const ApiProjectsProjectIdEnvsEnvIdForkRoute =
     path: '/$envId/fork',
     getParentRoute: () => ApiProjectsProjectIdEnvsRoute,
   } as any)
+const ApiEnvsEnvIdVarsKeyHistoryRoute =
+  ApiEnvsEnvIdVarsKeyHistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => ApiEnvsEnvIdVarsKeyRoute,
+  } as any)
+const ApiEnvsEnvIdSecretsKeyHistoryRoute =
+  ApiEnvsEnvIdSecretsKeyHistoryRouteImport.update({
+    id: '/history',
+    path: '/history',
+    getParentRoute: () => ApiEnvsEnvIdSecretsKeyRoute,
+  } as any)
 const ApiEnvsEnvIdSecretsKeyEncryptedRoute =
   ApiEnvsEnvIdSecretsKeyEncryptedRouteImport.update({
     id: '/encrypted',
@@ -261,9 +275,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
-  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
+  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
+  '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -298,9 +314,11 @@ export interface FileRoutesByTo {
   '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
-  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
+  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
+  '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -336,9 +354,11 @@ export interface FileRoutesById {
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
-  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRoute
+  '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
+  '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
 }
@@ -378,6 +398,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/history'
+    | '/api/envs/$envId/vars/$key/history'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   fileRoutesByTo: FileRoutesByTo
@@ -415,6 +437,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/history'
+    | '/api/envs/$envId/vars/$key/history'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   id:
@@ -452,6 +476,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/history'
+    | '/api/envs/$envId/vars/$key/history'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
   fileRoutesById: FileRoutesById
@@ -719,6 +745,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectsProjectIdEnvsEnvIdForkRouteImport
       parentRoute: typeof ApiProjectsProjectIdEnvsRoute
     }
+    '/api/envs/$envId/vars/$key/history': {
+      id: '/api/envs/$envId/vars/$key/history'
+      path: '/history'
+      fullPath: '/api/envs/$envId/vars/$key/history'
+      preLoaderRoute: typeof ApiEnvsEnvIdVarsKeyHistoryRouteImport
+      parentRoute: typeof ApiEnvsEnvIdVarsKeyRoute
+    }
+    '/api/envs/$envId/secrets/$key/history': {
+      id: '/api/envs/$envId/secrets/$key/history'
+      path: '/history'
+      fullPath: '/api/envs/$envId/secrets/$key/history'
+      preLoaderRoute: typeof ApiEnvsEnvIdSecretsKeyHistoryRouteImport
+      parentRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
+    }
     '/api/envs/$envId/secrets/$key/encrypted': {
       id: '/api/envs/$envId/secrets/$key/encrypted'
       path: '/encrypted'
@@ -745,11 +785,13 @@ const ApiEnvsEnvIdPermissionsRouteWithChildren =
 
 interface ApiEnvsEnvIdSecretsKeyRouteChildren {
   ApiEnvsEnvIdSecretsKeyEncryptedRoute: typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  ApiEnvsEnvIdSecretsKeyHistoryRoute: typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
 }
 
 const ApiEnvsEnvIdSecretsKeyRouteChildren: ApiEnvsEnvIdSecretsKeyRouteChildren =
   {
     ApiEnvsEnvIdSecretsKeyEncryptedRoute: ApiEnvsEnvIdSecretsKeyEncryptedRoute,
+    ApiEnvsEnvIdSecretsKeyHistoryRoute: ApiEnvsEnvIdSecretsKeyHistoryRoute,
   }
 
 const ApiEnvsEnvIdSecretsKeyRouteWithChildren =
@@ -768,12 +810,23 @@ const ApiEnvsEnvIdSecretsRouteChildren: ApiEnvsEnvIdSecretsRouteChildren = {
 const ApiEnvsEnvIdSecretsRouteWithChildren =
   ApiEnvsEnvIdSecretsRoute._addFileChildren(ApiEnvsEnvIdSecretsRouteChildren)
 
+interface ApiEnvsEnvIdVarsKeyRouteChildren {
+  ApiEnvsEnvIdVarsKeyHistoryRoute: typeof ApiEnvsEnvIdVarsKeyHistoryRoute
+}
+
+const ApiEnvsEnvIdVarsKeyRouteChildren: ApiEnvsEnvIdVarsKeyRouteChildren = {
+  ApiEnvsEnvIdVarsKeyHistoryRoute: ApiEnvsEnvIdVarsKeyHistoryRoute,
+}
+
+const ApiEnvsEnvIdVarsKeyRouteWithChildren =
+  ApiEnvsEnvIdVarsKeyRoute._addFileChildren(ApiEnvsEnvIdVarsKeyRouteChildren)
+
 interface ApiEnvsEnvIdVarsRouteChildren {
-  ApiEnvsEnvIdVarsKeyRoute: typeof ApiEnvsEnvIdVarsKeyRoute
+  ApiEnvsEnvIdVarsKeyRoute: typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
 }
 
 const ApiEnvsEnvIdVarsRouteChildren: ApiEnvsEnvIdVarsRouteChildren = {
-  ApiEnvsEnvIdVarsKeyRoute: ApiEnvsEnvIdVarsKeyRoute,
+  ApiEnvsEnvIdVarsKeyRoute: ApiEnvsEnvIdVarsKeyRouteWithChildren,
 }
 
 const ApiEnvsEnvIdVarsRouteWithChildren =

@@ -1,4 +1,4 @@
-import { CopyIcon, PencilIcon, TrashIcon } from '~/components/secretrow'
+import { ClockIcon, CopyIcon, PencilIcon, TrashIcon } from '~/components/secretrow'
 
 export type VarRowProps = {
   name: string
@@ -6,10 +6,11 @@ export type VarRowProps = {
   meta?: string
   onEdit?: () => void
   onDelete?: () => void
+  onHistory?: () => void
 }
 
 // Plain (non-secret) env var: value is shown in the clear.
-export function VarRow({ name, value, meta, onEdit, onDelete }: VarRowProps) {
+export function VarRow({ name, value, meta, onEdit, onDelete, onHistory }: VarRowProps) {
   return (
     <div className="secret-row">
       <div className="secret-row-info">
@@ -26,6 +27,11 @@ export function VarRow({ name, value, meta, onEdit, onDelete }: VarRowProps) {
         >
           {CopyIcon}
         </button>
+        {onHistory && (
+          <button type="button" className="secret-action" onClick={onHistory} title="View history">
+            {ClockIcon}
+          </button>
+        )}
         {onEdit && (
           <button type="button" className="secret-action" onClick={onEdit} title="Edit variable">
             {PencilIcon}

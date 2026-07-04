@@ -66,6 +66,44 @@ export async function revealSecret(orgId: string, envId: string, key: string): P
   return decrypt(orgKey, data.encryptedValue)
 }
 
+export type SecretHistoryEntry = {
+  id: string
+  change_type: string
+  changed_by: string
+  created_at: string
+  encrypted_value: string
+}
+
+export type VarHistoryEntry = {
+  id: string
+  change_type: string
+  changed_by: string
+  created_at: string
+  value: string
+}
+
+// Entries carry org-key ciphertexts; decrypt each with decryptSecretHistoryValue.
+export async function fetchSecretHistory(envId: string, key: string): Promise<SecretHistoryEntry[]> {
+  const resp = await fetch(`/api/envs/${envId}/secrets/${encodeURIComponent(key)}/history`, {
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to fetch history')
+  return (await resp.json()) as SecretHistoryEntry[]
+}
+
+export async function decryptSecretHistoryValue(orgId: string, encryptedValue: string): Promise<string> {
+  const orgKey = await getOrgKeyClient(orgId)
+  return decrypt(orgKey, encryptedValue)
+}
+
+export async function fetchVarHistory(envId: string, key: string): Promise<VarHistoryEntry[]> {
+  const resp = await fetch(`/api/envs/${envId}/vars/${encodeURIComponent(key)}/history`, {
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to fetch history')
+  return (await resp.json()) as VarHistoryEntry[]
+}
+
 export async function deleteSecret(envId: string, key: string): Promise<void> {
   const resp = await fetch(`/api/envs/${envId}/secrets/${encodeURIComponent(key)}`, {
     method: 'DELETE',
