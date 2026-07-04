@@ -121,3 +121,14 @@ export async function restoreDeletedItem(kind: 'secret' | 'var', envId: string, 
   })
   if (!resp.ok) await throwResponseError(resp, 'Failed to restore')
 }
+
+// "Perma delete": hides a soft-deleted item from the UI. The data is still
+// retained until the 90-day purge per the retention policy.
+export async function hideDeletedItem(kind: 'secret' | 'var', envId: string, key: string): Promise<void> {
+  const path = kind === 'secret' ? 'secrets' : 'vars'
+  const resp = await fetch(`/api/envs/${envId}/${path}/${encodeURIComponent(key)}/hide`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to delete permanently')
+}

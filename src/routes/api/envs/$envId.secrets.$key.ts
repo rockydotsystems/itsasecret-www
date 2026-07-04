@@ -91,7 +91,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
 
             if (deleted) {
               await db.update(secrets)
-                .set({ encrypted_value: storedEncrypted, deleted_at: null, updated_at: new Date() })
+                .set({ encrypted_value: storedEncrypted, deleted_at: null, hidden_at: null, updated_at: new Date() })
                 .where(eq(secrets.id, deleted.id))
             } else {
               const secretId = generateId()

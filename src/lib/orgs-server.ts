@@ -344,9 +344,9 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
         db.select({ key: envVars.key, value: envVars.value, updated_at: envVars.updated_at }).from(envVars)
           .where(and(eq(envVars.env_id, envId), isNull(envVars.deleted_at))),
         db.select({ key: secrets.key, deleted_at: secrets.deleted_at }).from(secrets)
-          .where(and(eq(secrets.env_id, envId), isNotNull(secrets.deleted_at))),
+          .where(and(eq(secrets.env_id, envId), isNotNull(secrets.deleted_at), isNull(secrets.hidden_at))),
         db.select({ key: envVars.key, deleted_at: envVars.deleted_at }).from(envVars)
-          .where(and(eq(envVars.env_id, envId), isNotNull(envVars.deleted_at))),
+          .where(and(eq(envVars.env_id, envId), isNotNull(envVars.deleted_at), isNull(envVars.hidden_at))),
         db.select({ role: envPermissions.role }).from(envPermissions)
           .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, user.id)))
           .limit(1),

@@ -45,8 +45,10 @@ import { Route as ApiProjectsProjectIdEnvsEnvNamePullRouteImport } from './route
 import { Route as ApiProjectsProjectIdEnvsEnvIdForkRouteImport } from './routes/api/projects/$projectId.envs.$envId.fork'
 import { Route as ApiEnvsEnvIdVarsKeyRestoreRouteImport } from './routes/api/envs/$envId.vars.$key.restore'
 import { Route as ApiEnvsEnvIdVarsKeyHistoryRouteImport } from './routes/api/envs/$envId.vars.$key.history'
+import { Route as ApiEnvsEnvIdVarsKeyHideRouteImport } from './routes/api/envs/$envId.vars.$key.hide'
 import { Route as ApiEnvsEnvIdSecretsKeyRestoreRouteImport } from './routes/api/envs/$envId.secrets.$key.restore'
 import { Route as ApiEnvsEnvIdSecretsKeyHistoryRouteImport } from './routes/api/envs/$envId.secrets.$key.history'
+import { Route as ApiEnvsEnvIdSecretsKeyHideRouteImport } from './routes/api/envs/$envId.secrets.$key.hide'
 import { Route as ApiEnvsEnvIdSecretsKeyEncryptedRouteImport } from './routes/api/envs/$envId.secrets.$key.encrypted'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -239,6 +241,11 @@ const ApiEnvsEnvIdVarsKeyHistoryRoute =
     path: '/history',
     getParentRoute: () => ApiEnvsEnvIdVarsKeyRoute,
   } as any)
+const ApiEnvsEnvIdVarsKeyHideRoute = ApiEnvsEnvIdVarsKeyHideRouteImport.update({
+  id: '/hide',
+  path: '/hide',
+  getParentRoute: () => ApiEnvsEnvIdVarsKeyRoute,
+} as any)
 const ApiEnvsEnvIdSecretsKeyRestoreRoute =
   ApiEnvsEnvIdSecretsKeyRestoreRouteImport.update({
     id: '/restore',
@@ -249,6 +256,12 @@ const ApiEnvsEnvIdSecretsKeyHistoryRoute =
   ApiEnvsEnvIdSecretsKeyHistoryRouteImport.update({
     id: '/history',
     path: '/history',
+    getParentRoute: () => ApiEnvsEnvIdSecretsKeyRoute,
+  } as any)
+const ApiEnvsEnvIdSecretsKeyHideRoute =
+  ApiEnvsEnvIdSecretsKeyHideRouteImport.update({
+    id: '/hide',
+    path: '/hide',
     getParentRoute: () => ApiEnvsEnvIdSecretsKeyRoute,
   } as any)
 const ApiEnvsEnvIdSecretsKeyEncryptedRoute =
@@ -292,8 +305,10 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
   '/api/envs/$envId/secrets/$key/restore': typeof ApiEnvsEnvIdSecretsKeyRestoreRoute
+  '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
@@ -333,8 +348,10 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
   '/api/envs/$envId/secrets/$key/restore': typeof ApiEnvsEnvIdSecretsKeyRestoreRoute
+  '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
@@ -375,8 +392,10 @@ export interface FileRoutesById {
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
   '/api/envs/$envId/secrets/$key/restore': typeof ApiEnvsEnvIdSecretsKeyRestoreRoute
+  '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
@@ -418,8 +437,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
     | '/api/envs/$envId/secrets/$key/restore'
+    | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
     | '/api/projects/$projectId/envs/$envId/fork'
@@ -459,8 +480,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
     | '/api/envs/$envId/secrets/$key/restore'
+    | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
     | '/api/projects/$projectId/envs/$envId/fork'
@@ -500,8 +523,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/envs/$envId/secrets/$key/encrypted'
+    | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
     | '/api/envs/$envId/secrets/$key/restore'
+    | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
     | '/api/projects/$projectId/envs/$envId/fork'
@@ -785,6 +810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEnvsEnvIdVarsKeyHistoryRouteImport
       parentRoute: typeof ApiEnvsEnvIdVarsKeyRoute
     }
+    '/api/envs/$envId/vars/$key/hide': {
+      id: '/api/envs/$envId/vars/$key/hide'
+      path: '/hide'
+      fullPath: '/api/envs/$envId/vars/$key/hide'
+      preLoaderRoute: typeof ApiEnvsEnvIdVarsKeyHideRouteImport
+      parentRoute: typeof ApiEnvsEnvIdVarsKeyRoute
+    }
     '/api/envs/$envId/secrets/$key/restore': {
       id: '/api/envs/$envId/secrets/$key/restore'
       path: '/restore'
@@ -797,6 +829,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/api/envs/$envId/secrets/$key/history'
       preLoaderRoute: typeof ApiEnvsEnvIdSecretsKeyHistoryRouteImport
+      parentRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
+    }
+    '/api/envs/$envId/secrets/$key/hide': {
+      id: '/api/envs/$envId/secrets/$key/hide'
+      path: '/hide'
+      fullPath: '/api/envs/$envId/secrets/$key/hide'
+      preLoaderRoute: typeof ApiEnvsEnvIdSecretsKeyHideRouteImport
       parentRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
     }
     '/api/envs/$envId/secrets/$key/encrypted': {
@@ -825,6 +864,7 @@ const ApiEnvsEnvIdPermissionsRouteWithChildren =
 
 interface ApiEnvsEnvIdSecretsKeyRouteChildren {
   ApiEnvsEnvIdSecretsKeyEncryptedRoute: typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
+  ApiEnvsEnvIdSecretsKeyHideRoute: typeof ApiEnvsEnvIdSecretsKeyHideRoute
   ApiEnvsEnvIdSecretsKeyHistoryRoute: typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
   ApiEnvsEnvIdSecretsKeyRestoreRoute: typeof ApiEnvsEnvIdSecretsKeyRestoreRoute
 }
@@ -832,6 +872,7 @@ interface ApiEnvsEnvIdSecretsKeyRouteChildren {
 const ApiEnvsEnvIdSecretsKeyRouteChildren: ApiEnvsEnvIdSecretsKeyRouteChildren =
   {
     ApiEnvsEnvIdSecretsKeyEncryptedRoute: ApiEnvsEnvIdSecretsKeyEncryptedRoute,
+    ApiEnvsEnvIdSecretsKeyHideRoute: ApiEnvsEnvIdSecretsKeyHideRoute,
     ApiEnvsEnvIdSecretsKeyHistoryRoute: ApiEnvsEnvIdSecretsKeyHistoryRoute,
     ApiEnvsEnvIdSecretsKeyRestoreRoute: ApiEnvsEnvIdSecretsKeyRestoreRoute,
   }
@@ -853,11 +894,13 @@ const ApiEnvsEnvIdSecretsRouteWithChildren =
   ApiEnvsEnvIdSecretsRoute._addFileChildren(ApiEnvsEnvIdSecretsRouteChildren)
 
 interface ApiEnvsEnvIdVarsKeyRouteChildren {
+  ApiEnvsEnvIdVarsKeyHideRoute: typeof ApiEnvsEnvIdVarsKeyHideRoute
   ApiEnvsEnvIdVarsKeyHistoryRoute: typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   ApiEnvsEnvIdVarsKeyRestoreRoute: typeof ApiEnvsEnvIdVarsKeyRestoreRoute
 }
 
 const ApiEnvsEnvIdVarsKeyRouteChildren: ApiEnvsEnvIdVarsKeyRouteChildren = {
+  ApiEnvsEnvIdVarsKeyHideRoute: ApiEnvsEnvIdVarsKeyHideRoute,
   ApiEnvsEnvIdVarsKeyHistoryRoute: ApiEnvsEnvIdVarsKeyHistoryRoute,
   ApiEnvsEnvIdVarsKeyRestoreRoute: ApiEnvsEnvIdVarsKeyRestoreRoute,
 }

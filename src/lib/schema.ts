@@ -82,6 +82,9 @@ export const envVars = pgTable('env_vars', {
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
+  // "Perma delete": hides the row from the recently-deleted UI. Retention is
+  // unchanged — the 90-day purge still runs off deleted_at.
+  hidden_at: timestamp('hidden_at', { withTimezone: true }),
 }, (t) => [
   unique().on(t.env_id, t.key),
   index('idx_env_vars_env').on(t.env_id),
@@ -96,6 +99,9 @@ export const secrets = pgTable('secrets', {
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
+  // "Perma delete": hides the row from the recently-deleted UI. Retention is
+  // unchanged — the 90-day purge still runs off deleted_at.
+  hidden_at: timestamp('hidden_at', { withTimezone: true }),
 }, (t) => [
   unique().on(t.env_id, t.key),
   index('idx_secrets_env').on(t.env_id),

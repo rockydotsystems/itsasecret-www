@@ -48,7 +48,7 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
 
             if (deleted) {
               await db.update(envVars)
-                .set({ value, deleted_at: null, updated_at: new Date() })
+                .set({ value, deleted_at: null, hidden_at: null, updated_at: new Date() })
                 .where(eq(envVars.id, deleted.id))
             } else {
               const varId = generateId()

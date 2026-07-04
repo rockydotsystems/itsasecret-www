@@ -14,9 +14,9 @@ import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { createEnvironment } from '~/lib/project-settings-form'
 import {
   setSecret, setVar, deleteSecret, deleteVar, revealSecret,
-  fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue, restoreDeletedItem,
+  fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue, restoreDeletedItem, hideDeletedItem,
 } from '~/lib/env-items-form'
-import { ClockIcon, RestoreIcon } from '~/components/secretrow'
+import { ClockIcon, RestoreIcon, TrashIcon } from '~/components/secretrow'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
 import type { SecretSummary, VarSummary, DeletedItemSummary } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
@@ -46,12 +46,13 @@ function formatUpdated(date: Date | string): string {
 }
 
 // Soft-deleted item: name plus history/restore actions, no value shown.
-function DeletedRow({ name, kind, deletedAt, onHistory, onRestore }: {
+function DeletedRow({ name, kind, deletedAt, onHistory, onRestore, onHide }: {
   name: string
   kind: 'secret' | 'var'
   deletedAt: Date | string
   onHistory: () => void
   onRestore?: () => void
+  onHide?: () => void
 }) {
   const when = new Date(deletedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
   return (
@@ -68,6 +69,11 @@ function DeletedRow({ name, kind, deletedAt, onHistory, onRestore }: {
         {onRestore && (
           <button type="button" className="secret-action" onClick={onRestore} title="Restore">
             {RestoreIcon}
+          </button>
+        )}
+        {onHide && (
+          <button type="button" className="secret-action secret-action-danger" onClick={onHide} title="Delete permanently">
+            {TrashIcon}
           </button>
         )}
       </div>
@@ -126,6 +132,7 @@ export function DashboardShell({
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
+  const [hidingItem, setHidingItem] = useState<DeletingItem | null>(null)
   const [historyItem, setHistoryItem] = useState<HistoryItem | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [actionError, setActionError] = useState('')
@@ -249,6 +256,22 @@ export function DashboardShell({
     } catch (err) {
       setActionError((err as Error).message || 'Failed to delete')
       setDeletingItem(null)
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
+
+  async function confirmHide() {
+    if (!hidingItem) return
+    setDeleteBusy(true)
+    setActionError('')
+    try {
+      await hideDeletedItem(hidingItem.type, envId, hidingItem.itemKey)
+      setHidingItem(null)
+      await router.invalidate()
+    } catch (err) {
+      setActionError((err as Error).message || 'Failed to delete permanently')
+      setHidingItem(null)
     } finally {
       setDeleteBusy(false)
     }
@@ -448,6 +471,7 @@ export function DashboardShell({
                       deletedAt={d.deleted_at}
                       onHistory={() => setHistoryItem({ type: 'secret', itemKey: d.key })}
                       onRestore={canWrite ? () => void restoreItem('secret', d.key) : undefined}
+                      onHide={canWrite ? () => setHidingItem({ type: 'secret', itemKey: d.key }) : undefined}
                     />
                   ))}
                   {deletedVars.map((d) => (
@@ -458,6 +482,7 @@ export function DashboardShell({
                       deletedAt={d.deleted_at}
                       onHistory={() => setHistoryItem({ type: 'var', itemKey: d.key })}
                       onRestore={canWrite ? () => void restoreItem('var', d.key) : undefined}
+                      onHide={canWrite ? () => setHidingItem({ type: 'var', itemKey: d.key }) : undefined}
                     />
                   ))}
                 </div>
@@ -568,6 +593,23 @@ export function DashboardShell({
             </Button>
             <Button variant="danger" size="md" onClick={() => void confirmDelete()} disabled={deleteBusy}>
               {deletingItem.type === 'secret' ? 'Delete secret' : 'Delete variable'}
+            </Button>
+          </div>
+        </Modal>
+      )}
+
+      {hidingItem && (
+        <Modal
+          title={hidingItem.type === 'secret' ? 'Permanently delete secret' : 'Permanently delete variable'}
+          subtitle={`${hidingItem.itemKey} will disappear from this list and can no longer be restored here. Per the retention policy, the encrypted data is kept for 90 days after deletion, then purged.`}
+          onClose={() => setHidingItem(null)}
+        >
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <Button variant="secondary" size="md" onClick={() => setHidingItem(null)} disabled={deleteBusy}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="md" onClick={() => void confirmHide()} disabled={deleteBusy}>
+              Delete permanently
             </Button>
           </div>
         </Modal>
