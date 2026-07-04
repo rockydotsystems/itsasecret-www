@@ -14,7 +14,7 @@
           node = pkgs.nodejs_22;
         in {
           default = pkgs.mkShell {
-            packages = [ node pkgs.pnpm pkgs.git ];
+            packages = [ node pkgs.pnpm pkgs.git pkgs.railway ];
             shellHook = ''
               echo ""
               echo "itsasecret-www dev shell"
@@ -38,6 +38,11 @@
               echo "  nix run .#db-migrate     # drizzle-kit migrate"
               echo "  nix run .#db-generate    # drizzle-kit generate"
               echo ""
+              echo "deploy (railway):"
+              echo "  railway login            # first-time auth (opens browser)"
+              echo "  nix run .#deploy         # railway up"
+              echo "  nix run .#migrate-prod   # railway run pnpm db:migrate"
+              echo ""
             '';
           };
         });
@@ -46,7 +51,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           node = pkgs.nodejs_22;
-          bin = pkgs.lib.makeBinPath [ node pkgs.pnpm ];
+          bin = pkgs.lib.makeBinPath [ node pkgs.pnpm pkgs.railway ];
           app = name: cmd: {
             type = "app";
             program = toString (pkgs.writeShellScript name ''
@@ -77,6 +82,18 @@
               exit 1
             '');
           };
+          # Own script (not the `app` helper) — the helper does `exec ${cmd}`,
+          # which only works for a single command, not this multi-line body.
+          migrateProdApp = {
+            type = "app";
+            program = toString (pkgs.writeShellScript "migrate-prod" ''
+              export PATH="${bin}:$PATH"
+              [ -d node_modules ] || pnpm install
+              DB="$(railway variables --service Postgres --kv | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const m=s.split(String.fromCharCode(10)).find(l=>l.startsWith("DATABASE_PUBLIC_URL="));process.stdout.write(m?m.slice(20):"")})')"
+              [ -n "$DB" ] || { echo "could not read DATABASE_PUBLIC_URL from Postgres service" >&2; exit 1; }
+              DATABASE_URL="$DB" pnpm exec drizzle-kit migrate
+            '');
+          };
         in {
           db = dbApp;
           db-stop = rawApp "db-stop" ''docker compose down "$@"'';
@@ -86,6 +103,13 @@
           db-push = app "db-push" ''pnpm exec drizzle-kit push "$@"'';
           db-migrate = app "db-migrate" ''pnpm exec drizzle-kit migrate "$@"'';
           db-generate = app "db-generate" ''pnpm exec drizzle-kit generate "$@"'';
+          deploy = app "deploy" ''railway up "$@"'';
+          # `railway run` injects the web service's DATABASE_URL, which is the
+          # INTERNAL domain (postgres.railway.internal) — unresolvable off
+          # Railway, so it hangs. migrateProdApp instead pulls the Postgres
+          # service's public proxy URL and hands it to drizzle-kit directly.
+          # No hardcoded creds; survives password rotation.
+          migrate-prod = migrateProdApp;
         });
     };
 }

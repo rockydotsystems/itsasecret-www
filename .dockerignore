@@ -1,0 +1,15 @@
+node_modules
+.output
+.git
+.jj
+.direnv
+.tanstack
+.dev.vars
+.dev.vars.example
+docker-compose.yml
+flake.nix
+flake.lock
+itsasecret.db
+*.log
+.wrangler
+worker-configuration.d.ts
