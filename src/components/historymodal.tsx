@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
-import { CopyIcon, EyeIcon, EyeOffIcon, MaskedDots } from '~/components/secretrow'
+import { CopyIcon, EyeIcon, EyeOffIcon, MaskedDots, RestoreIcon } from '~/components/secretrow'
 
 export type HistoryModalEntry = {
   id: string
@@ -11,6 +11,9 @@ export type HistoryModalEntry = {
   // Plain vars carry the value directly; secrets decrypt on demand client-side.
   value?: string
   reveal?: () => Promise<string>
+  // Reapplies this snapshot as the current value (write role only). The upsert
+  // snapshots the value being replaced, so a restore is itself undoable.
+  restore?: () => Promise<void>
 }
 
 export type HistoryModalProps = {
@@ -65,6 +68,18 @@ function HistoryRow({ entry }: { entry: HistoryModalEntry }) {
     if (plaintext !== null) await navigator.clipboard.writeText(plaintext)
   }
 
+  async function handleRestore() {
+    if (!entry.restore) return
+    setBusy(true)
+    setError('')
+    try {
+      await entry.restore()
+    } catch (err) {
+      setError((err as Error).message || 'Failed to restore')
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="history-row">
       <div className="history-row-meta">
@@ -100,6 +115,17 @@ function HistoryRow({ entry }: { entry: HistoryModalEntry }) {
         >
           {CopyIcon}
         </button>
+        {entry.restore && (
+          <button
+            type="button"
+            className="secret-action"
+            onClick={() => void handleRestore()}
+            disabled={busy}
+            title="Restore this value"
+          >
+            {RestoreIcon}
+          </button>
+        )}
       </div>
     </div>
   )

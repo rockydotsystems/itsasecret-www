@@ -143,7 +143,13 @@ export function DashboardShell({
 
   // History entries for the modal: secrets decrypt per-entry in the browser,
   // vars arrive as plaintext (same trust level as their live values).
+  // Restore reapplies a snapshot through the normal upsert, which snapshots
+  // the value being replaced — so a restore is itself undoable.
   async function loadHistoryEntries(item: HistoryItem): Promise<HistoryModalEntry[]> {
+    async function finishRestore() {
+      setHistoryItem(null)
+      await router.invalidate()
+    }
     if (item.type === 'secret') {
       const entries = await fetchSecretHistory(envId, item.itemKey)
       return entries.map((e) => ({
@@ -152,6 +158,15 @@ export function DashboardShell({
         changedBy: e.changed_by,
         createdAt: e.created_at,
         reveal: () => withVaultRetry(() => decryptSecretHistoryValue(orgId, e.encrypted_value)),
+        restore: canWrite
+          ? async () => {
+              await withVaultRetry(async () => {
+                const plaintext = await decryptSecretHistoryValue(orgId, e.encrypted_value)
+                await setSecret(orgId, envId, item.itemKey, plaintext)
+              })
+              await finishRestore()
+            }
+          : undefined,
       }))
     }
     const entries = await fetchVarHistory(envId, item.itemKey)
@@ -161,6 +176,12 @@ export function DashboardShell({
       changedBy: e.changed_by,
       createdAt: e.created_at,
       value: e.value,
+      restore: canWrite
+        ? async () => {
+            await setVar(envId, item.itemKey, e.value)
+            await finishRestore()
+          }
+        : undefined,
     }))
   }
 
