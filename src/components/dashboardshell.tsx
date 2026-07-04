@@ -14,10 +14,11 @@ import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { createEnvironment } from '~/lib/project-settings-form'
 import {
   setSecret, setVar, deleteSecret, deleteVar, revealSecret,
-  fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue,
+  fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue, restoreDeletedItem,
 } from '~/lib/env-items-form'
+import { ClockIcon, RestoreIcon } from '~/components/secretrow'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
-import type { SecretSummary, VarSummary } from '~/lib/orgs-server'
+import type { SecretSummary, VarSummary, DeletedItemSummary } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
 
 export type DashboardShellProps = {
@@ -31,6 +32,8 @@ export type DashboardShellProps = {
   envRole?: string
   envSecrets?: SecretSummary[]
   envVars?: VarSummary[]
+  deletedSecrets?: DeletedItemSummary[]
+  deletedVars?: DeletedItemSummary[]
 }
 
 type EditingItem = { type: 'secret' | 'var'; itemKey: string; initialValue: string }
@@ -40,6 +43,36 @@ type UnlockRequest = { resolve: () => void; reject: (err: Error) => void }
 
 function formatUpdated(date: Date | string): string {
   return `updated ${new Date(date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`
+}
+
+// Soft-deleted item: name plus history/restore actions, no value shown.
+function DeletedRow({ name, kind, deletedAt, onHistory, onRestore }: {
+  name: string
+  kind: 'secret' | 'var'
+  deletedAt: Date | string
+  onHistory: () => void
+  onRestore?: () => void
+}) {
+  const when = new Date(deletedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  return (
+    <div className="secret-row deleted-row">
+      <div className="secret-row-info">
+        <span className="secret-row-name">{name}</span>
+        <span className="secret-row-synced">{kind === 'secret' ? 'secret' : 'variable'} · deleted {when}</span>
+      </div>
+      <div className="secret-row-value">
+        <span className="deleted-row-note">restorable for 90 days after deletion</span>
+        <button type="button" className="secret-action" onClick={onHistory} title="View history">
+          {ClockIcon}
+        </button>
+        {onRestore && (
+          <button type="button" className="secret-action" onClick={onRestore} title="Restore">
+            {RestoreIcon}
+          </button>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // Redacted .env file, in the brand's redaction-bars motif.
@@ -84,6 +117,8 @@ export function DashboardShell({
   envRole = '',
   envSecrets = [],
   envVars = [],
+  deletedSecrets = [],
+  deletedVars = [],
 }: DashboardShellProps) {
   const navigate = useNavigate()
   const router = useRouter()
@@ -102,7 +137,9 @@ export function DashboardShell({
   // Only org owners and admins can create environments from scratch.
   const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
   const canWrite = envRole === 'write' || envRole === 'admin'
-  const envIsEmpty = envSecrets.length === 0 && envVars.length === 0
+  const hasDeleted = deletedSecrets.length > 0 || deletedVars.length > 0
+  // Deleted items keep the sections view alive so they stay reachable.
+  const envIsEmpty = envSecrets.length === 0 && envVars.length === 0 && !hasDeleted
 
   // Resolves once the vault is unlocked, prompting for the master password
   // when needed. Rejects when the user dismisses the prompt. Concurrent
@@ -214,6 +251,16 @@ export function DashboardShell({
       setDeletingItem(null)
     } finally {
       setDeleteBusy(false)
+    }
+  }
+
+  async function restoreItem(kind: 'secret' | 'var', key: string) {
+    setActionError('')
+    try {
+      await restoreDeletedItem(kind, envId, key)
+      await router.invalidate()
+    } catch (err) {
+      setActionError((err as Error).message || 'Failed to restore')
     }
   }
 
@@ -386,6 +433,36 @@ export function DashboardShell({
                 <p className="env-no-secrets">No plain variables in this environment yet.</p>
               )}
             </div>
+
+            {hasDeleted && (
+              <div className="env-section">
+                <div className="env-section-header">
+                  <h2 className="env-section-title">Recently deleted</h2>
+                </div>
+                <div className="env-section-rows">
+                  {deletedSecrets.map((d) => (
+                    <DeletedRow
+                      key={`secret-${d.key}`}
+                      name={d.key}
+                      kind="secret"
+                      deletedAt={d.deleted_at}
+                      onHistory={() => setHistoryItem({ type: 'secret', itemKey: d.key })}
+                      onRestore={canWrite ? () => void restoreItem('secret', d.key) : undefined}
+                    />
+                  ))}
+                  {deletedVars.map((d) => (
+                    <DeletedRow
+                      key={`var-${d.key}`}
+                      name={d.key}
+                      kind="var"
+                      deletedAt={d.deleted_at}
+                      onHistory={() => setHistoryItem({ type: 'var', itemKey: d.key })}
+                      onRestore={canWrite ? () => void restoreItem('var', d.key) : undefined}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

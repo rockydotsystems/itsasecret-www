@@ -52,6 +52,8 @@ function ProjectDashboardPage() {
       envRole={view.envRole}
       envSecrets={view.envSecrets}
       envVars={view.envVars}
+      deletedSecrets={view.deletedSecrets}
+      deletedVars={view.deletedVars}
     />
   )
 }

@@ -111,3 +111,13 @@ export async function deleteSecret(envId: string, key: string): Promise<void> {
   })
   if (!resp.ok && resp.status !== 404) await throwResponseError(resp, 'Failed to delete secret')
 }
+
+// Un-deletes a soft-deleted item in place; the stored value was never touched.
+export async function restoreDeletedItem(kind: 'secret' | 'var', envId: string, key: string): Promise<void> {
+  const path = kind === 'secret' ? 'secrets' : 'vars'
+  const resp = await fetch(`/api/envs/${envId}/${path}/${encodeURIComponent(key)}/restore`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to restore')
+}

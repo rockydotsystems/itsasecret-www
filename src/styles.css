@@ -305,6 +305,10 @@ a:hover { text-decoration: underline; }
 .history-row-who { font-size: var(--text-xs); color: var(--text-tertiary); }
 .history-loading { display: flex; justify-content: center; padding: 28px 0; }
 
+/* ─── Recently deleted ──────────────────────────── */
+.deleted-row .secret-row-name { color: var(--text-secondary); text-decoration: line-through; }
+.deleted-row-note { font-size: var(--text-xs); color: var(--text-tertiary); font-style: italic; }
+
 /* ─── EnvironmentTag ────────────────────────────── */
 .env-tag {
   display: inline-flex; align-items: center; gap: 7px;

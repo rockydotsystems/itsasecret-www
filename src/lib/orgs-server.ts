@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { eq, and, isNull, inArray } from 'drizzle-orm'
+import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgs, orgMembers, projects, environments, envPermissions, secrets, envVars, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
@@ -39,6 +39,12 @@ export type VarSummary = {
   updated_at: Date
 }
 
+// Soft-deleted item awaiting purge (90 days); restorable in place.
+export type DeletedItemSummary = {
+  key: string
+  deleted_at: Date
+}
+
 export type ProjectView = {
   orgs: Org[]
   projects: Project[]
@@ -49,6 +55,8 @@ export type ProjectView = {
   envRole: string
   envSecrets: SecretSummary[]
   envVars: VarSummary[]
+  deletedSecrets: DeletedItemSummary[]
+  deletedVars: DeletedItemSummary[]
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -326,19 +334,27 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
 
     let envSecrets: SecretSummary[] = []
     let envVarList: VarSummary[] = []
+    let deletedSecrets: DeletedItemSummary[] = []
+    let deletedVars: DeletedItemSummary[] = []
     let envRole = ''
     if (envId) {
-      const [secretRows, varRows, permRows] = await Promise.all([
+      const [secretRows, varRows, deletedSecretRows, deletedVarRows, permRows] = await Promise.all([
         db.select({ key: secrets.key, updated_at: secrets.updated_at }).from(secrets)
           .where(and(eq(secrets.env_id, envId), isNull(secrets.deleted_at))),
         db.select({ key: envVars.key, value: envVars.value, updated_at: envVars.updated_at }).from(envVars)
           .where(and(eq(envVars.env_id, envId), isNull(envVars.deleted_at))),
+        db.select({ key: secrets.key, deleted_at: secrets.deleted_at }).from(secrets)
+          .where(and(eq(secrets.env_id, envId), isNotNull(secrets.deleted_at))),
+        db.select({ key: envVars.key, deleted_at: envVars.deleted_at }).from(envVars)
+          .where(and(eq(envVars.env_id, envId), isNotNull(envVars.deleted_at))),
         db.select({ role: envPermissions.role }).from(envPermissions)
           .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, user.id)))
           .limit(1),
       ])
       envSecrets = secretRows
       envVarList = varRows
+      deletedSecrets = deletedSecretRows as DeletedItemSummary[]
+      deletedVars = deletedVarRows as DeletedItemSummary[]
       envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
         ? 'admin'
         : permRows[0]?.role ?? ''
@@ -353,5 +369,7 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envRole,
       envSecrets,
       envVars: envVarList,
+      deletedSecrets,
+      deletedVars,
     }
   })
