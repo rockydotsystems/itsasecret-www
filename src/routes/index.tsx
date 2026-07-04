@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Button } from '~/components/button'
 import { Badge } from '~/components/badge'
-import { LogoMark } from '~/components/logo'
 import { Navbar } from '~/components/navbar'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
@@ -141,10 +140,6 @@ function LandingPage() {
 
       <section className="hero hero-texture">
         <div className="hero-inner">
-          <div className="hero-badge">
-            <LogoMark size={14} />
-            cli alias: shh
-          </div>
           <h1 className="hero-title">
             Secrets, synced<span className="hero-title-flare">.</span>
           </h1>
