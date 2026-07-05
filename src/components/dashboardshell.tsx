@@ -11,7 +11,7 @@ import { MasterPassModal } from '~/components/masterpassmodal'
 import { HistoryModal } from '~/components/historymodal'
 import type { HistoryModalEntry } from '~/components/historymodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
-import { createEnvironment } from '~/lib/project-settings-form'
+import { createEnvironment, forkEnvironment } from '~/lib/project-settings-form'
 import {
   setSecret, setVar, deleteSecret, deleteVar, revealSecret,
   fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue, restoreDeletedItem, hideDeletedItem,
@@ -129,6 +129,7 @@ export function DashboardShell({
   const navigate = useNavigate()
   const router = useRouter()
   const [creatingEnv, setCreatingEnv] = useState(false)
+  const [forkingEnv, setForkingEnv] = useState(false)
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
@@ -143,6 +144,8 @@ export function DashboardShell({
   const envName = environments.find((e) => e.id === envId)?.name ?? ''
   // Only org owners and admins can create environments from scratch.
   const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
+  // Same rule as the fork API: org owners/admins, or anyone with a grant on the env.
+  const canFork = !!envId && (currentUserRole === 'owner' || currentUserRole === 'admin' || envRole !== '')
   const canWrite = envRole === 'write' || envRole === 'admin'
   const hasDeleted = deletedSecrets.length > 0 || deletedVars.length > 0
   // Deleted items keep the sections view alive so they stay reachable.
@@ -324,6 +327,11 @@ export function DashboardShell({
           </button>
         )}
       </div>
+      {canFork && (
+        <Button size="sm" variant="ghost" onClick={() => setForkingEnv(true)}>
+          Fork {envName}
+        </Button>
+      )}
     </div>
   )
 
@@ -495,13 +503,32 @@ export function DashboardShell({
       {creatingEnv && (
         <EnvNameModal
           title="New environment"
-          subtitle="Creates an empty environment in this project. To branch an existing one instead, fork it from project settings."
+          subtitle="Creates an empty environment in this project. To branch an existing one instead, select it and use Fork."
           submitLabel="Create environment"
           placeholder="e.g. production"
           onClose={() => setCreatingEnv(false)}
           onSubmit={async (name) => {
             const env = await createEnvironment(projectId, name)
             setCreatingEnv(false)
+            void navigate({
+              to: '/dashboard/$orgId/$projectId',
+              params: { orgId, projectId },
+              search: { env: env.id },
+            })
+          }}
+        />
+      )}
+
+      {forkingEnv && (
+        <EnvNameModal
+          title={`Fork ${envName}`}
+          subtitle="Copies every var and secret into a new environment. You get full access on the fork; the parent is untouched."
+          submitLabel="Fork environment"
+          placeholder={`e.g. ${envName}-dev`}
+          onClose={() => setForkingEnv(false)}
+          onSubmit={async (name) => {
+            const env = await forkEnvironment(projectId, envId, name)
+            setForkingEnv(false)
             void navigate({
               to: '/dashboard/$orgId/$projectId',
               params: { orgId, projectId },
