@@ -191,7 +191,7 @@ function LandingPage() {
           </p>
           <div className="vault-preview">
             <div className="vault-envs">
-              <EnvironmentTag name="production" active />
+              <EnvironmentTag name="production" active live />
               <EnvironmentTag name="staging" />
               <EnvironmentTag name="preview-pr-42" />
             </div>

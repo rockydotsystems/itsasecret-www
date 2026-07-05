@@ -322,6 +322,7 @@ export function DashboardShell({
             key={env.id}
             name={env.name}
             active={env.id === envId}
+            live={env.is_live}
             onClick={() => handleEnvChange(env.id)}
           />
         ))}

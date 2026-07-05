@@ -322,6 +322,20 @@ a:hover { text-decoration: underline; }
 .env-tag.active .env-tag-dot { background: var(--signal-400); }
 .env-tag-add { border-style: dashed; color: var(--text-tertiary); background: transparent; }
 .env-tag-add:hover { border-color: var(--signal-400); color: var(--text-brand); }
+/* Live environments: red pulsing dot + a small "live" label, on any tag state. */
+.env-tag.live .env-tag-dot {
+  background: var(--red-500);
+  animation: env-live-pulse 2s ease-out infinite;
+}
+.env-tag-live-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--status-danger-fg);
+}
+@keyframes env-live-pulse {
+  0% { box-shadow: 0 0 0 0 var(--status-danger-border); }
+  70% { box-shadow: 0 0 0 5px rgba(214, 69, 63, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(214, 69, 63, 0); }
+}
 
 .env-empty {
   display: flex;

@@ -13,6 +13,7 @@ import {
   deleteProject,
   forkEnvironment,
   deleteEnvironment,
+  setEnvironmentLive,
 } from '~/lib/project-settings-form'
 import type { EnvPermissionView, OrgMemberView, ProjectSettingsView } from '~/lib/orgs-server'
 import type { Environment } from '~/lib/schema'
@@ -181,7 +182,7 @@ function EnvironmentsSection({
             <div key={env.id} className="member-row">
               <div className="member-row-info">
                 <span className="member-row-email">
-                  <EnvironmentTag name={env.name} />
+                  <EnvironmentTag name={env.name} live={env.is_live} />
                   {parentName && <Badge variant="neutral">fork of {parentName}</Badge>}
                 </span>
                 <span className="member-row-meta">
@@ -197,6 +198,15 @@ function EnvironmentsSection({
                 )}
                 {canAdmin && (
                   <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        void setEnvironmentLive(env.id, !env.is_live).then(() => onChanged())
+                      }
+                    >
+                      {env.is_live ? 'Clear live marker' : 'Mark as live'}
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => setManagingEnvId(env.id)}>
                       Access
                     </Button>

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, timestamp, primaryKey, unique, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, primaryKey, unique, index } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: text().primaryKey(),
@@ -63,6 +63,9 @@ export const environments = pgTable('environments', {
   name: text().notNull(),
   parent_env_id: text().references(() => environmentsRef.id),
   created_by: text().notNull().references(() => users.id),
+  // Opt-in "this is live" marker: the UI shows a visual indicator on live
+  // environments so nobody edits one by accident.
+  is_live: boolean('is_live').notNull().default(false),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
 }, (t) => [

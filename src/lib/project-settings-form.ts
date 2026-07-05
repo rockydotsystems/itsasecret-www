@@ -53,6 +53,16 @@ export async function forkEnvironment(projectId: string, envId: string, name: st
   return resp.json()
 }
 
+export async function setEnvironmentLive(envId: string, isLive: boolean): Promise<Environment> {
+  const resp = await fetch(`/api/envs/${envId}`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ is_live: isLive }),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to update environment')
+  return resp.json()
+}
+
 export async function deleteEnvironment(envId: string): Promise<void> {
   const resp = await fetch(`/api/envs/${envId}`, {
     method: 'DELETE',

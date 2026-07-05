@@ -43,6 +43,13 @@
       "when": 1783241376297,
       "tag": "0005_salty_nightcrawler",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783253229438,
+      "tag": "0006_pretty_lockheed",
+      "breakpoints": true
     }
   ]
 }
