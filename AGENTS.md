@@ -38,6 +38,7 @@ docker compose up -d           # start Postgres 17
 - **Secrets and vars keep encrypted history for 7 days** - every update/delete snapshots the previous value into `secret_history` / `env_var_history` (`src/lib/history.ts`). Secret history stores the org-key ciphertext as-is (stays E2E); var history is encrypted at rest under `SERVER_WRAP_SECRET` (live var values are plaintext by design). The daily purge cron deletes history rows older than 7 days (before the 90-day parent purges - no CASCADE).
 - **Server-side sessions in Postgres** (not JWT) - need revocation for kicked users, password resets, org ownership transfer.
 - **RBAC roles at environment level**: `read`, `write`, `admin`. Forking an environment grants full (admin) to the forker on the fork only, not the parent.
+- **Teams are an authorization-only grouping of org members** (design: `../docs/teams-design.md`) - no per-team keys; the org key stays the sole crypto boundary. Grants attach to environments (`team_env_permissions`, managed by env admins) or whole projects (`team_project_permissions`, org owner/admin only - covers every current AND future env in the project, forks included). Effective env role for a plain member = max(direct grant, team env grants, team project grants), additive, no deny rules; computed ONLY by `memberEnvRole` in `src/lib/rbac.ts` (used by both `requireEnvRole` enforcement and dashboard display - never reimplement it). Teams soft-delete (`deleted_at`, partial unique name index) and the resolver filters deleted teams, so their grants die instantly. Removing an org member app-deletes their `team_members` rows (no CASCADE). Personal orgs reject teams. Managed in org settings UI; env/project grants in the Access dialog + project settings.
 - **Personal orgs stay single-member** - sharing only via explicitly-created shared orgs.
 - **No MFA in v1** - master-password auth first; TOTP/passkeys later.
 - **Password hash is independent from the KDF-derived key** - the online authentication hash uses its own Argon2id salt/parameters so it cannot leak the master key that wraps organization keys.
@@ -92,13 +93,14 @@ www/
       api/               # API server routes (HTTP endpoints for CLI + web)
     lib/
       db.ts              # Drizzle + postgres-js connection
-      schema.ts          # Drizzle pgTable definitions for all 10 tables
+      schema.ts          # Drizzle pgTable definitions for all tables
       db-utils.ts        # generateId, per-table softDelete, auditLog
       auth.ts            # requireAuth helper, session key utils, error handling, getCurrentUserFromRequest
       auth-server.ts     # getCurrentUserFn server function (reads session cookie)
       route-guards.ts    # requireAuthBeforeLoad / requireGuestBeforeLoad route guards
       session-cookie.ts  # session_token cookie helpers (Set-Cookie / read)
-      rbac.ts            # requireOrgRole, requireEnvRole helpers
+      rbac.ts            # requireOrgRole, requireEnvRole, memberEnvRole (teams-aware effective-role resolver)
+      teams.ts           # getLiveTeam, listOrgTeams helpers
       sessions.ts        # createSession, revokeSession
       crypto/            # envelope encryption (encrypt/decrypt/wrap/unwrap)
     components/          # React UI components

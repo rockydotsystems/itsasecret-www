@@ -39,20 +39,27 @@ import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
 import { Route as DashboardOrgIdProjectIdIndexRouteImport } from './routes/dashboard/$orgId/$projectId/index'
 import { Route as DashboardOrgIdProjectIdSettingsRouteImport } from './routes/dashboard/$orgId/$projectId/settings'
+import { Route as ApiProjectsProjectIdTeamPermissionsRouteImport } from './routes/api/projects/$projectId.team-permissions'
 import { Route as ApiProjectsProjectIdEnvsRouteImport } from './routes/api/projects/$projectId.envs'
+import { Route as ApiOrgsOrgIdTeamsRouteImport } from './routes/api/orgs/$orgId.teams'
 import { Route as ApiOrgsOrgIdProjectsRouteImport } from './routes/api/orgs/$orgId.projects'
 import { Route as ApiOrgsOrgIdMembersRouteImport } from './routes/api/orgs/$orgId.members'
 import { Route as ApiOrgsOrgIdKeyRouteImport } from './routes/api/orgs/$orgId.key'
 import { Route as ApiOrgsOrgIdInviteRouteImport } from './routes/api/orgs/$orgId.invite'
 import { Route as ApiEnvsEnvIdVarsRouteImport } from './routes/api/envs/$envId.vars'
+import { Route as ApiEnvsEnvIdTeamPermissionsRouteImport } from './routes/api/envs/$envId.team-permissions'
 import { Route as ApiEnvsEnvIdSecretsRouteImport } from './routes/api/envs/$envId.secrets'
 import { Route as ApiEnvsEnvIdPermissionsRouteImport } from './routes/api/envs/$envId.permissions'
+import { Route as ApiProjectsProjectIdTeamPermissionsTeamIdRouteImport } from './routes/api/projects/$projectId.team-permissions.$teamId'
+import { Route as ApiOrgsOrgIdTeamsTeamIdRouteImport } from './routes/api/orgs/$orgId.teams.$teamId'
 import { Route as ApiOrgsOrgIdMembersUserIdRouteImport } from './routes/api/orgs/$orgId.members.$userId'
 import { Route as ApiEnvsEnvIdVarsKeyRouteImport } from './routes/api/envs/$envId.vars.$key'
+import { Route as ApiEnvsEnvIdTeamPermissionsTeamIdRouteImport } from './routes/api/envs/$envId.team-permissions.$teamId'
 import { Route as ApiEnvsEnvIdSecretsKeyRouteImport } from './routes/api/envs/$envId.secrets.$key'
 import { Route as ApiEnvsEnvIdPermissionsUserIdRouteImport } from './routes/api/envs/$envId.permissions.$userId'
 import { Route as ApiProjectsProjectIdEnvsEnvNamePullRouteImport } from './routes/api/projects/$projectId.envs.$envName.pull'
 import { Route as ApiProjectsProjectIdEnvsEnvIdForkRouteImport } from './routes/api/projects/$projectId.envs.$envId.fork'
+import { Route as ApiOrgsOrgIdTeamsTeamIdMembersRouteImport } from './routes/api/orgs/$orgId.teams.$teamId.members'
 import { Route as ApiEnvsEnvIdVarsKeyRestoreRouteImport } from './routes/api/envs/$envId.vars.$key.restore'
 import { Route as ApiEnvsEnvIdVarsKeyHistoryRouteImport } from './routes/api/envs/$envId.vars.$key.history'
 import { Route as ApiEnvsEnvIdVarsKeyHideRouteImport } from './routes/api/envs/$envId.vars.$key.hide'
@@ -60,6 +67,7 @@ import { Route as ApiEnvsEnvIdSecretsKeyRestoreRouteImport } from './routes/api/
 import { Route as ApiEnvsEnvIdSecretsKeyHistoryRouteImport } from './routes/api/envs/$envId.secrets.$key.history'
 import { Route as ApiEnvsEnvIdSecretsKeyHideRouteImport } from './routes/api/envs/$envId.secrets.$key.hide'
 import { Route as ApiEnvsEnvIdSecretsKeyEncryptedRouteImport } from './routes/api/envs/$envId.secrets.$key.encrypted'
+import { Route as ApiOrgsOrgIdTeamsTeamIdMembersUserIdRouteImport } from './routes/api/orgs/$orgId.teams.$teamId.members.$userId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -214,12 +222,23 @@ const DashboardOrgIdProjectIdSettingsRoute =
     path: '/dashboard/$orgId/$projectId/settings',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiProjectsProjectIdTeamPermissionsRoute =
+  ApiProjectsProjectIdTeamPermissionsRouteImport.update({
+    id: '/team-permissions',
+    path: '/team-permissions',
+    getParentRoute: () => ApiProjectsProjectIdRoute,
+  } as any)
 const ApiProjectsProjectIdEnvsRoute =
   ApiProjectsProjectIdEnvsRouteImport.update({
     id: '/envs',
     path: '/envs',
     getParentRoute: () => ApiProjectsProjectIdRoute,
   } as any)
+const ApiOrgsOrgIdTeamsRoute = ApiOrgsOrgIdTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
+  getParentRoute: () => ApiOrgsOrgIdRoute,
+} as any)
 const ApiOrgsOrgIdProjectsRoute = ApiOrgsOrgIdProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -245,6 +264,12 @@ const ApiEnvsEnvIdVarsRoute = ApiEnvsEnvIdVarsRouteImport.update({
   path: '/vars',
   getParentRoute: () => ApiEnvsEnvIdRoute,
 } as any)
+const ApiEnvsEnvIdTeamPermissionsRoute =
+  ApiEnvsEnvIdTeamPermissionsRouteImport.update({
+    id: '/team-permissions',
+    path: '/team-permissions',
+    getParentRoute: () => ApiEnvsEnvIdRoute,
+  } as any)
 const ApiEnvsEnvIdSecretsRoute = ApiEnvsEnvIdSecretsRouteImport.update({
   id: '/secrets',
   path: '/secrets',
@@ -254,6 +279,17 @@ const ApiEnvsEnvIdPermissionsRoute = ApiEnvsEnvIdPermissionsRouteImport.update({
   id: '/permissions',
   path: '/permissions',
   getParentRoute: () => ApiEnvsEnvIdRoute,
+} as any)
+const ApiProjectsProjectIdTeamPermissionsTeamIdRoute =
+  ApiProjectsProjectIdTeamPermissionsTeamIdRouteImport.update({
+    id: '/$teamId',
+    path: '/$teamId',
+    getParentRoute: () => ApiProjectsProjectIdTeamPermissionsRoute,
+  } as any)
+const ApiOrgsOrgIdTeamsTeamIdRoute = ApiOrgsOrgIdTeamsTeamIdRouteImport.update({
+  id: '/$teamId',
+  path: '/$teamId',
+  getParentRoute: () => ApiOrgsOrgIdTeamsRoute,
 } as any)
 const ApiOrgsOrgIdMembersUserIdRoute =
   ApiOrgsOrgIdMembersUserIdRouteImport.update({
@@ -266,6 +302,12 @@ const ApiEnvsEnvIdVarsKeyRoute = ApiEnvsEnvIdVarsKeyRouteImport.update({
   path: '/$key',
   getParentRoute: () => ApiEnvsEnvIdVarsRoute,
 } as any)
+const ApiEnvsEnvIdTeamPermissionsTeamIdRoute =
+  ApiEnvsEnvIdTeamPermissionsTeamIdRouteImport.update({
+    id: '/$teamId',
+    path: '/$teamId',
+    getParentRoute: () => ApiEnvsEnvIdTeamPermissionsRoute,
+  } as any)
 const ApiEnvsEnvIdSecretsKeyRoute = ApiEnvsEnvIdSecretsKeyRouteImport.update({
   id: '/$key',
   path: '/$key',
@@ -288,6 +330,12 @@ const ApiProjectsProjectIdEnvsEnvIdForkRoute =
     id: '/$envId/fork',
     path: '/$envId/fork',
     getParentRoute: () => ApiProjectsProjectIdEnvsRoute,
+  } as any)
+const ApiOrgsOrgIdTeamsTeamIdMembersRoute =
+  ApiOrgsOrgIdTeamsTeamIdMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => ApiOrgsOrgIdTeamsTeamIdRoute,
   } as any)
 const ApiEnvsEnvIdVarsKeyRestoreRoute =
   ApiEnvsEnvIdVarsKeyRestoreRouteImport.update({
@@ -330,6 +378,12 @@ const ApiEnvsEnvIdSecretsKeyEncryptedRoute =
     path: '/encrypted',
     getParentRoute: () => ApiEnvsEnvIdSecretsKeyRoute,
   } as any)
+const ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute =
+  ApiOrgsOrgIdTeamsTeamIdMembersUserIdRouteImport.update({
+    id: '/$userId',
+    path: '/$userId',
+    getParentRoute: () => ApiOrgsOrgIdTeamsTeamIdMembersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -362,18 +416,24 @@ export interface FileRoutesByFullPath {
   '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
+  '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
+  '/api/orgs/$orgId/teams': typeof ApiOrgsOrgIdTeamsRouteWithChildren
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/api/projects/$projectId/team-permissions': typeof ApiProjectsProjectIdTeamPermissionsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
+  '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
+  '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
@@ -381,8 +441,10 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
+  '/api/orgs/$orgId/teams/$teamId/members': typeof ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
+  '/api/orgs/$orgId/teams/$teamId/members/$userId': typeof ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -415,18 +477,24 @@ export interface FileRoutesByTo {
   '/dashboard/$orgId': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
+  '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
+  '/api/orgs/$orgId/teams': typeof ApiOrgsOrgIdTeamsRouteWithChildren
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/api/projects/$projectId/team-permissions': typeof ApiProjectsProjectIdTeamPermissionsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
+  '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
+  '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
@@ -434,8 +502,10 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
+  '/api/orgs/$orgId/teams/$teamId/members': typeof ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
+  '/api/orgs/$orgId/teams/$teamId/members/$userId': typeof ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -469,18 +539,24 @@ export interface FileRoutesById {
   '/dashboard/$orgId/': typeof DashboardOrgIdIndexRoute
   '/api/envs/$envId/permissions': typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
+  '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
   '/api/orgs/$orgId/projects': typeof ApiOrgsOrgIdProjectsRoute
+  '/api/orgs/$orgId/teams': typeof ApiOrgsOrgIdTeamsRouteWithChildren
   '/api/projects/$projectId/envs': typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  '/api/projects/$projectId/team-permissions': typeof ApiProjectsProjectIdTeamPermissionsRouteWithChildren
   '/dashboard/$orgId/$projectId/settings': typeof DashboardOrgIdProjectIdSettingsRoute
   '/dashboard/$orgId/$projectId/': typeof DashboardOrgIdProjectIdIndexRoute
   '/api/envs/$envId/permissions/$userId': typeof ApiEnvsEnvIdPermissionsUserIdRoute
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
+  '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
+  '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
+  '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/secrets/$key/encrypted': typeof ApiEnvsEnvIdSecretsKeyEncryptedRoute
   '/api/envs/$envId/secrets/$key/hide': typeof ApiEnvsEnvIdSecretsKeyHideRoute
   '/api/envs/$envId/secrets/$key/history': typeof ApiEnvsEnvIdSecretsKeyHistoryRoute
@@ -488,8 +564,10 @@ export interface FileRoutesById {
   '/api/envs/$envId/vars/$key/hide': typeof ApiEnvsEnvIdVarsKeyHideRoute
   '/api/envs/$envId/vars/$key/history': typeof ApiEnvsEnvIdVarsKeyHistoryRoute
   '/api/envs/$envId/vars/$key/restore': typeof ApiEnvsEnvIdVarsKeyRestoreRoute
+  '/api/orgs/$orgId/teams/$teamId/members': typeof ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren
   '/api/projects/$projectId/envs/$envId/fork': typeof ApiProjectsProjectIdEnvsEnvIdForkRoute
   '/api/projects/$projectId/envs/$envName/pull': typeof ApiProjectsProjectIdEnvsEnvNamePullRoute
+  '/api/orgs/$orgId/teams/$teamId/members/$userId': typeof ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -524,18 +602,24 @@ export interface FileRouteTypes {
     | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
+    | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
+    | '/api/orgs/$orgId/teams'
     | '/api/projects/$projectId/envs'
+    | '/api/projects/$projectId/team-permissions'
     | '/dashboard/$orgId/$projectId/settings'
     | '/dashboard/$orgId/$projectId/'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
+    | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/orgs/$orgId/teams/$teamId'
+    | '/api/projects/$projectId/team-permissions/$teamId'
     | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
@@ -543,8 +627,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
+    | '/api/orgs/$orgId/teams/$teamId/members'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
+    | '/api/orgs/$orgId/teams/$teamId/members/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -577,18 +663,24 @@ export interface FileRouteTypes {
     | '/dashboard/$orgId'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
+    | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
+    | '/api/orgs/$orgId/teams'
     | '/api/projects/$projectId/envs'
+    | '/api/projects/$projectId/team-permissions'
     | '/dashboard/$orgId/$projectId/settings'
     | '/dashboard/$orgId/$projectId'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
+    | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/orgs/$orgId/teams/$teamId'
+    | '/api/projects/$projectId/team-permissions/$teamId'
     | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
@@ -596,8 +688,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
+    | '/api/orgs/$orgId/teams/$teamId/members'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
+    | '/api/orgs/$orgId/teams/$teamId/members/$userId'
   id:
     | '__root__'
     | '/'
@@ -630,18 +724,24 @@ export interface FileRouteTypes {
     | '/dashboard/$orgId/'
     | '/api/envs/$envId/permissions'
     | '/api/envs/$envId/secrets'
+    | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
     | '/api/orgs/$orgId/projects'
+    | '/api/orgs/$orgId/teams'
     | '/api/projects/$projectId/envs'
+    | '/api/projects/$projectId/team-permissions'
     | '/dashboard/$orgId/$projectId/settings'
     | '/dashboard/$orgId/$projectId/'
     | '/api/envs/$envId/permissions/$userId'
     | '/api/envs/$envId/secrets/$key'
+    | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
     | '/api/orgs/$orgId/members/$userId'
+    | '/api/orgs/$orgId/teams/$teamId'
+    | '/api/projects/$projectId/team-permissions/$teamId'
     | '/api/envs/$envId/secrets/$key/encrypted'
     | '/api/envs/$envId/secrets/$key/hide'
     | '/api/envs/$envId/secrets/$key/history'
@@ -649,8 +749,10 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/vars/$key/hide'
     | '/api/envs/$envId/vars/$key/history'
     | '/api/envs/$envId/vars/$key/restore'
+    | '/api/orgs/$orgId/teams/$teamId/members'
     | '/api/projects/$projectId/envs/$envId/fork'
     | '/api/projects/$projectId/envs/$envName/pull'
+    | '/api/orgs/$orgId/teams/$teamId/members/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -897,12 +999,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOrgIdProjectIdSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/projects/$projectId/team-permissions': {
+      id: '/api/projects/$projectId/team-permissions'
+      path: '/team-permissions'
+      fullPath: '/api/projects/$projectId/team-permissions'
+      preLoaderRoute: typeof ApiProjectsProjectIdTeamPermissionsRouteImport
+      parentRoute: typeof ApiProjectsProjectIdRoute
+    }
     '/api/projects/$projectId/envs': {
       id: '/api/projects/$projectId/envs'
       path: '/envs'
       fullPath: '/api/projects/$projectId/envs'
       preLoaderRoute: typeof ApiProjectsProjectIdEnvsRouteImport
       parentRoute: typeof ApiProjectsProjectIdRoute
+    }
+    '/api/orgs/$orgId/teams': {
+      id: '/api/orgs/$orgId/teams'
+      path: '/teams'
+      fullPath: '/api/orgs/$orgId/teams'
+      preLoaderRoute: typeof ApiOrgsOrgIdTeamsRouteImport
+      parentRoute: typeof ApiOrgsOrgIdRoute
     }
     '/api/orgs/$orgId/projects': {
       id: '/api/orgs/$orgId/projects'
@@ -939,6 +1055,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEnvsEnvIdVarsRouteImport
       parentRoute: typeof ApiEnvsEnvIdRoute
     }
+    '/api/envs/$envId/team-permissions': {
+      id: '/api/envs/$envId/team-permissions'
+      path: '/team-permissions'
+      fullPath: '/api/envs/$envId/team-permissions'
+      preLoaderRoute: typeof ApiEnvsEnvIdTeamPermissionsRouteImport
+      parentRoute: typeof ApiEnvsEnvIdRoute
+    }
     '/api/envs/$envId/secrets': {
       id: '/api/envs/$envId/secrets'
       path: '/secrets'
@@ -953,6 +1076,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiEnvsEnvIdPermissionsRouteImport
       parentRoute: typeof ApiEnvsEnvIdRoute
     }
+    '/api/projects/$projectId/team-permissions/$teamId': {
+      id: '/api/projects/$projectId/team-permissions/$teamId'
+      path: '/$teamId'
+      fullPath: '/api/projects/$projectId/team-permissions/$teamId'
+      preLoaderRoute: typeof ApiProjectsProjectIdTeamPermissionsTeamIdRouteImport
+      parentRoute: typeof ApiProjectsProjectIdTeamPermissionsRoute
+    }
+    '/api/orgs/$orgId/teams/$teamId': {
+      id: '/api/orgs/$orgId/teams/$teamId'
+      path: '/$teamId'
+      fullPath: '/api/orgs/$orgId/teams/$teamId'
+      preLoaderRoute: typeof ApiOrgsOrgIdTeamsTeamIdRouteImport
+      parentRoute: typeof ApiOrgsOrgIdTeamsRoute
+    }
     '/api/orgs/$orgId/members/$userId': {
       id: '/api/orgs/$orgId/members/$userId'
       path: '/$userId'
@@ -966,6 +1103,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/envs/$envId/vars/$key'
       preLoaderRoute: typeof ApiEnvsEnvIdVarsKeyRouteImport
       parentRoute: typeof ApiEnvsEnvIdVarsRoute
+    }
+    '/api/envs/$envId/team-permissions/$teamId': {
+      id: '/api/envs/$envId/team-permissions/$teamId'
+      path: '/$teamId'
+      fullPath: '/api/envs/$envId/team-permissions/$teamId'
+      preLoaderRoute: typeof ApiEnvsEnvIdTeamPermissionsTeamIdRouteImport
+      parentRoute: typeof ApiEnvsEnvIdTeamPermissionsRoute
     }
     '/api/envs/$envId/secrets/$key': {
       id: '/api/envs/$envId/secrets/$key'
@@ -994,6 +1138,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/projects/$projectId/envs/$envId/fork'
       preLoaderRoute: typeof ApiProjectsProjectIdEnvsEnvIdForkRouteImport
       parentRoute: typeof ApiProjectsProjectIdEnvsRoute
+    }
+    '/api/orgs/$orgId/teams/$teamId/members': {
+      id: '/api/orgs/$orgId/teams/$teamId/members'
+      path: '/members'
+      fullPath: '/api/orgs/$orgId/teams/$teamId/members'
+      preLoaderRoute: typeof ApiOrgsOrgIdTeamsTeamIdMembersRouteImport
+      parentRoute: typeof ApiOrgsOrgIdTeamsTeamIdRoute
     }
     '/api/envs/$envId/vars/$key/restore': {
       id: '/api/envs/$envId/vars/$key/restore'
@@ -1043,6 +1194,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/envs/$envId/secrets/$key/encrypted'
       preLoaderRoute: typeof ApiEnvsEnvIdSecretsKeyEncryptedRouteImport
       parentRoute: typeof ApiEnvsEnvIdSecretsKeyRoute
+    }
+    '/api/orgs/$orgId/teams/$teamId/members/$userId': {
+      id: '/api/orgs/$orgId/teams/$teamId/members/$userId'
+      path: '/$userId'
+      fullPath: '/api/orgs/$orgId/teams/$teamId/members/$userId'
+      preLoaderRoute: typeof ApiOrgsOrgIdTeamsTeamIdMembersUserIdRouteImport
+      parentRoute: typeof ApiOrgsOrgIdTeamsTeamIdMembersRoute
     }
   }
 }
@@ -1104,6 +1262,21 @@ const ApiEnvsEnvIdSecretsRouteChildren: ApiEnvsEnvIdSecretsRouteChildren = {
 const ApiEnvsEnvIdSecretsRouteWithChildren =
   ApiEnvsEnvIdSecretsRoute._addFileChildren(ApiEnvsEnvIdSecretsRouteChildren)
 
+interface ApiEnvsEnvIdTeamPermissionsRouteChildren {
+  ApiEnvsEnvIdTeamPermissionsTeamIdRoute: typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
+}
+
+const ApiEnvsEnvIdTeamPermissionsRouteChildren: ApiEnvsEnvIdTeamPermissionsRouteChildren =
+  {
+    ApiEnvsEnvIdTeamPermissionsTeamIdRoute:
+      ApiEnvsEnvIdTeamPermissionsTeamIdRoute,
+  }
+
+const ApiEnvsEnvIdTeamPermissionsRouteWithChildren =
+  ApiEnvsEnvIdTeamPermissionsRoute._addFileChildren(
+    ApiEnvsEnvIdTeamPermissionsRouteChildren,
+  )
+
 interface ApiEnvsEnvIdVarsKeyRouteChildren {
   ApiEnvsEnvIdVarsKeyHideRoute: typeof ApiEnvsEnvIdVarsKeyHideRoute
   ApiEnvsEnvIdVarsKeyHistoryRoute: typeof ApiEnvsEnvIdVarsKeyHistoryRoute
@@ -1133,12 +1306,15 @@ const ApiEnvsEnvIdVarsRouteWithChildren =
 interface ApiEnvsEnvIdRouteChildren {
   ApiEnvsEnvIdPermissionsRoute: typeof ApiEnvsEnvIdPermissionsRouteWithChildren
   ApiEnvsEnvIdSecretsRoute: typeof ApiEnvsEnvIdSecretsRouteWithChildren
+  ApiEnvsEnvIdTeamPermissionsRoute: typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   ApiEnvsEnvIdVarsRoute: typeof ApiEnvsEnvIdVarsRouteWithChildren
 }
 
 const ApiEnvsEnvIdRouteChildren: ApiEnvsEnvIdRouteChildren = {
   ApiEnvsEnvIdPermissionsRoute: ApiEnvsEnvIdPermissionsRouteWithChildren,
   ApiEnvsEnvIdSecretsRoute: ApiEnvsEnvIdSecretsRouteWithChildren,
+  ApiEnvsEnvIdTeamPermissionsRoute:
+    ApiEnvsEnvIdTeamPermissionsRouteWithChildren,
   ApiEnvsEnvIdVarsRoute: ApiEnvsEnvIdVarsRouteWithChildren,
 }
 
@@ -1157,11 +1333,53 @@ const ApiOrgsOrgIdMembersRouteChildren: ApiOrgsOrgIdMembersRouteChildren = {
 const ApiOrgsOrgIdMembersRouteWithChildren =
   ApiOrgsOrgIdMembersRoute._addFileChildren(ApiOrgsOrgIdMembersRouteChildren)
 
+interface ApiOrgsOrgIdTeamsTeamIdMembersRouteChildren {
+  ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute: typeof ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute
+}
+
+const ApiOrgsOrgIdTeamsTeamIdMembersRouteChildren: ApiOrgsOrgIdTeamsTeamIdMembersRouteChildren =
+  {
+    ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute:
+      ApiOrgsOrgIdTeamsTeamIdMembersUserIdRoute,
+  }
+
+const ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren =
+  ApiOrgsOrgIdTeamsTeamIdMembersRoute._addFileChildren(
+    ApiOrgsOrgIdTeamsTeamIdMembersRouteChildren,
+  )
+
+interface ApiOrgsOrgIdTeamsTeamIdRouteChildren {
+  ApiOrgsOrgIdTeamsTeamIdMembersRoute: typeof ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren
+}
+
+const ApiOrgsOrgIdTeamsTeamIdRouteChildren: ApiOrgsOrgIdTeamsTeamIdRouteChildren =
+  {
+    ApiOrgsOrgIdTeamsTeamIdMembersRoute:
+      ApiOrgsOrgIdTeamsTeamIdMembersRouteWithChildren,
+  }
+
+const ApiOrgsOrgIdTeamsTeamIdRouteWithChildren =
+  ApiOrgsOrgIdTeamsTeamIdRoute._addFileChildren(
+    ApiOrgsOrgIdTeamsTeamIdRouteChildren,
+  )
+
+interface ApiOrgsOrgIdTeamsRouteChildren {
+  ApiOrgsOrgIdTeamsTeamIdRoute: typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
+}
+
+const ApiOrgsOrgIdTeamsRouteChildren: ApiOrgsOrgIdTeamsRouteChildren = {
+  ApiOrgsOrgIdTeamsTeamIdRoute: ApiOrgsOrgIdTeamsTeamIdRouteWithChildren,
+}
+
+const ApiOrgsOrgIdTeamsRouteWithChildren =
+  ApiOrgsOrgIdTeamsRoute._addFileChildren(ApiOrgsOrgIdTeamsRouteChildren)
+
 interface ApiOrgsOrgIdRouteChildren {
   ApiOrgsOrgIdInviteRoute: typeof ApiOrgsOrgIdInviteRoute
   ApiOrgsOrgIdKeyRoute: typeof ApiOrgsOrgIdKeyRoute
   ApiOrgsOrgIdMembersRoute: typeof ApiOrgsOrgIdMembersRouteWithChildren
   ApiOrgsOrgIdProjectsRoute: typeof ApiOrgsOrgIdProjectsRoute
+  ApiOrgsOrgIdTeamsRoute: typeof ApiOrgsOrgIdTeamsRouteWithChildren
 }
 
 const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
@@ -1169,6 +1387,7 @@ const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
   ApiOrgsOrgIdKeyRoute: ApiOrgsOrgIdKeyRoute,
   ApiOrgsOrgIdMembersRoute: ApiOrgsOrgIdMembersRouteWithChildren,
   ApiOrgsOrgIdProjectsRoute: ApiOrgsOrgIdProjectsRoute,
+  ApiOrgsOrgIdTeamsRoute: ApiOrgsOrgIdTeamsRouteWithChildren,
 }
 
 const ApiOrgsOrgIdRouteWithChildren = ApiOrgsOrgIdRoute._addFileChildren(
@@ -1193,12 +1412,30 @@ const ApiProjectsProjectIdEnvsRouteWithChildren =
     ApiProjectsProjectIdEnvsRouteChildren,
   )
 
+interface ApiProjectsProjectIdTeamPermissionsRouteChildren {
+  ApiProjectsProjectIdTeamPermissionsTeamIdRoute: typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
+}
+
+const ApiProjectsProjectIdTeamPermissionsRouteChildren: ApiProjectsProjectIdTeamPermissionsRouteChildren =
+  {
+    ApiProjectsProjectIdTeamPermissionsTeamIdRoute:
+      ApiProjectsProjectIdTeamPermissionsTeamIdRoute,
+  }
+
+const ApiProjectsProjectIdTeamPermissionsRouteWithChildren =
+  ApiProjectsProjectIdTeamPermissionsRoute._addFileChildren(
+    ApiProjectsProjectIdTeamPermissionsRouteChildren,
+  )
+
 interface ApiProjectsProjectIdRouteChildren {
   ApiProjectsProjectIdEnvsRoute: typeof ApiProjectsProjectIdEnvsRouteWithChildren
+  ApiProjectsProjectIdTeamPermissionsRoute: typeof ApiProjectsProjectIdTeamPermissionsRouteWithChildren
 }
 
 const ApiProjectsProjectIdRouteChildren: ApiProjectsProjectIdRouteChildren = {
   ApiProjectsProjectIdEnvsRoute: ApiProjectsProjectIdEnvsRouteWithChildren,
+  ApiProjectsProjectIdTeamPermissionsRoute:
+    ApiProjectsProjectIdTeamPermissionsRouteWithChildren,
 }
 
 const ApiProjectsProjectIdRouteWithChildren =

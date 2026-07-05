@@ -15,8 +15,15 @@ import {
   changeMemberRole,
   removeMember,
 } from '~/lib/org-settings-form'
+import {
+  createTeam,
+  renameTeam,
+  deleteTeam,
+  addTeamMember,
+  removeTeamMember,
+} from '~/lib/teams-form'
 import type { MemberRole } from '~/lib/org-settings-form'
-import type { OrgMemberView, OrgSettingsView } from '~/lib/orgs-server'
+import type { OrgMemberView, OrgSettingsView, TeamView } from '~/lib/orgs-server'
 
 export type OrgSettingsProps = {
   view: OrgSettingsView
@@ -32,7 +39,7 @@ function formatJoined(date: Date | string): string {
 }
 
 export function OrgSettings({ view }: OrgSettingsProps) {
-  const { org, members, currentUserId, currentUserRole } = view
+  const { org, members, teams, currentUserId, currentUserRole } = view
   const navigate = useNavigate()
   const router = useRouter()
 
@@ -52,6 +59,14 @@ export function OrgSettings({ view }: OrgSettingsProps) {
         members={members}
         ownerUserId={org.owner_user_id}
         currentUserId={currentUserId}
+        canManage={canManage}
+        isPersonal={isPersonal}
+        onChanged={refresh}
+      />
+      <TeamsSection
+        orgId={org.id}
+        teams={teams}
+        members={members}
         canManage={canManage}
         isPersonal={isPersonal}
         onChanged={refresh}
@@ -376,6 +391,342 @@ function RemoveMemberModal({
         </Button>
         <Button variant="danger" size="md" onClick={() => void handleRemove()} disabled={loading}>
           {loading ? <LoadingDots /> : isSelf ? 'Leave organization' : 'Remove member'}
+        </Button>
+      </div>
+    </Modal>
+  )
+}
+
+// Teams group org members so access can be granted once instead of per
+// person. Grants live on environments and projects; membership is managed
+// here. Org owner/admin only for changes; visible to every member.
+function TeamsSection({
+  orgId,
+  teams,
+  members,
+  canManage,
+  isPersonal,
+  onChanged,
+}: {
+  orgId: string
+  teams: TeamView[]
+  members: OrgMemberView[]
+  canManage: boolean
+  isPersonal: boolean
+  onChanged: () => Promise<void>
+}) {
+  const [creating, setCreating] = useState(false)
+  const [managingTeamId, setManagingTeamId] = useState('')
+  const [deletingTeamId, setDeletingTeamId] = useState('')
+
+  const managingTeam = teams.find((t) => t.id === managingTeamId)
+  const deletingTeam = teams.find((t) => t.id === deletingTeamId)
+
+  return (
+    <section className="card settings-section">
+      <div className="settings-section-header">
+        <div>
+          <h2 className="settings-section-title">Teams</h2>
+          <p className="settings-section-desc">
+            {isPersonal
+              ? 'Personal organizations are single-member, so there is nothing to group into teams.'
+              : 'Group members to grant access once per team instead of per person. Grant a team access from a project\'s settings or an environment\'s Access dialog. Team access is additive - the widest grant wins.'}
+          </p>
+        </div>
+        {!isPersonal && canManage && (
+          <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
+            New team
+          </Button>
+        )}
+      </div>
+
+      {!isPersonal && (
+        <div className="member-list">
+          {teams.map((team) => (
+            <div key={team.id} className="member-row">
+              <Avatar name={team.name} size="md" />
+              <div className="member-row-info">
+                <span className="member-row-email">{team.name}</span>
+                <span className="member-row-meta">
+                  {team.members.length === 0
+                    ? 'No members yet'
+                    : team.members.map((m) => m.email).join(', ')}
+                </span>
+              </div>
+              <div className="member-row-actions">
+                {canManage ? (
+                  <>
+                    <Button size="sm" variant="ghost" onClick={() => setManagingTeamId(team.id)}>
+                      Members
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeletingTeamId(team.id)}>
+                      Delete
+                    </Button>
+                  </>
+                ) : (
+                  <Badge variant="neutral">
+                    {team.members.length} {team.members.length === 1 ? 'member' : 'members'}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          ))}
+          {teams.length === 0 && (
+            <p className="settings-section-desc">No teams yet.</p>
+          )}
+        </div>
+      )}
+
+      {creating && (
+        <CreateTeamModal
+          orgId={orgId}
+          onClose={() => setCreating(false)}
+          onCreated={async () => {
+            setCreating(false)
+            await onChanged()
+          }}
+        />
+      )}
+
+      {managingTeam && (
+        <TeamMembersModal
+          orgId={orgId}
+          team={managingTeam}
+          members={members}
+          onClose={() => setManagingTeamId('')}
+          onChanged={onChanged}
+        />
+      )}
+
+      {deletingTeam && (
+        <DeleteTeamModal
+          orgId={orgId}
+          team={deletingTeam}
+          onClose={() => setDeletingTeamId('')}
+          onDeleted={async () => {
+            setDeletingTeamId('')
+            await onChanged()
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+function CreateTeamModal({
+  orgId,
+  onClose,
+  onCreated,
+}: {
+  orgId: string
+  onClose: () => void
+  onCreated: () => Promise<void>
+}) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const name = (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value.trim()
+    try {
+      if (!name) throw new Error('Name cannot be empty')
+      await createTeam(orgId, name)
+      await onCreated()
+    } catch (err) {
+      setError((err as Error).message || 'Failed to create team')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal
+      title="New team"
+      subtitle="Teams have no access until you grant it - from a project's settings for project-wide access, or an environment's Access dialog."
+      onClose={onClose}
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <Input
+          name="name"
+          label="Team name"
+          placeholder="e.g. backend"
+          required
+        />
+        {error && <span className="input-error">{error}</span>}
+        <Button type="submit" size="lg" disabled={loading}>
+          {loading ? <LoadingDots /> : 'Create team'}
+        </Button>
+      </form>
+    </Modal>
+  )
+}
+
+function TeamMembersModal({
+  orgId,
+  team,
+  members,
+  onClose,
+  onChanged,
+}: {
+  orgId: string
+  team: TeamView
+  members: OrgMemberView[]
+  onClose: () => void
+  onChanged: () => Promise<void>
+}) {
+  const [addUserId, setAddUserId] = useState('')
+  const [renaming, setRenaming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const addable = members.filter(
+    (m) => !team.members.some((tm) => tm.user_id === m.user_id)
+  )
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true)
+    setError('')
+    try {
+      await action()
+      await onChanged()
+    } catch (err) {
+      setError((err as Error).message || 'Something went wrong')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRename(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const name = (e.currentTarget.elements.namedItem('teamname') as HTMLInputElement).value.trim()
+    if (!name || name === team.name) {
+      setRenaming(false)
+      return
+    }
+    await run(() => renameTeam(orgId, team.id, name))
+    setRenaming(false)
+  }
+
+  return (
+    <Modal
+      title={team.name}
+      subtitle="Everyone in the team inherits its grants. Owners and admins don't need them - they already have full access."
+      onClose={onClose}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {renaming ? (
+          <form onSubmit={(e) => void handleRename(e)} className="settings-grant-form">
+            <Input name="teamname" value={team.name} required />
+            <Button size="sm" type="submit" disabled={busy}>
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setRenaming(false)} disabled={busy}>
+              Cancel
+            </Button>
+          </form>
+        ) : (
+          <div>
+            <Button size="sm" variant="ghost" onClick={() => setRenaming(true)} disabled={busy}>
+              Rename team
+            </Button>
+          </div>
+        )}
+
+        <div className="member-list">
+          {team.members.map((member) => (
+            <div key={member.user_id} className="member-row">
+              <Avatar name={member.email} size="sm" />
+              <div className="member-row-info">
+                <span className="member-row-email">{member.email}</span>
+              </div>
+              <div className="member-row-actions">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => void run(() => removeTeamMember(orgId, team.id, member.user_id))}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ))}
+          {team.members.length === 0 && (
+            <p className="settings-section-desc">No members yet.</p>
+          )}
+        </div>
+
+        {addable.length > 0 ? (
+          <div className="settings-grant-form">
+            <Select
+              value={addUserId}
+              options={addable.map((m) => ({ value: m.user_id, label: m.email }))}
+              onChange={setAddUserId}
+              placeholder="Select a member..."
+              className="settings-grant-member"
+            />
+            <Button
+              size="sm"
+              disabled={busy || !addUserId}
+              onClick={() =>
+                void run(async () => {
+                  await addTeamMember(orgId, team.id, addUserId)
+                  setAddUserId('')
+                })
+              }
+            >
+              Add
+            </Button>
+          </div>
+        ) : (
+          <p className="input-helper">Every org member is already in this team.</p>
+        )}
+        {error && <span className="input-error">{error}</span>}
+      </div>
+    </Modal>
+  )
+}
+
+function DeleteTeamModal({
+  orgId,
+  team,
+  onClose,
+  onDeleted,
+}: {
+  orgId: string
+  team: TeamView
+  onClose: () => void
+  onDeleted: () => Promise<void>
+}) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleDelete() {
+    setLoading(true)
+    setError('')
+    try {
+      await deleteTeam(orgId, team.id)
+      await onDeleted()
+    } catch (err) {
+      setError((err as Error).message || 'Failed to delete team')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal
+      title={`Delete ${team.name}`}
+      subtitle="Every grant this team holds stops working immediately. Members keep any access they were granted individually."
+      onClose={onClose}
+    >
+      {error && <span className="input-error">{error}</span>}
+      <div className="settings-modal-actions">
+        <Button variant="secondary" size="md" onClick={onClose} disabled={loading}>
+          Cancel
+        </Button>
+        <Button variant="danger" size="md" onClick={() => void handleDelete()} disabled={loading}>
+          {loading ? <LoadingDots /> : 'Delete team'}
         </Button>
       </div>
     </Modal>

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, timestamp, boolean, primaryKey, unique, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, primaryKey, unique, uniqueIndex, index } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: text().primaryKey(),
@@ -142,6 +142,56 @@ export const envVarHistory = pgTable('env_var_history', {
   index('idx_env_var_history_created').on(t.created_at),
 ])
 
+// Teams are an authorization-only grouping of org members - there are no
+// per-team keys; the org key stays the sole crypto boundary. Grants given to
+// a team are inherited by its members (additive max-wins, no deny rules).
+// See docs/teams-design.md.
+export const teams = pgTable('teams', {
+  id: text().primaryKey(),
+  org_id: text().notNull().references(() => orgs.id),
+  name: text().notNull(),
+  created_by: text().references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  deleted_at: timestamp('deleted_at', { withTimezone: true }),
+}, (t) => [
+  // Partial so a deleted team's name is reusable during the purge window.
+  uniqueIndex('idx_teams_org_name_live').on(t.org_id, t.name).where(sql`deleted_at IS NULL`),
+  index('idx_teams_org').on(t.org_id),
+])
+
+export const teamMembers = pgTable('team_members', {
+  team_id: text().notNull().references(() => teams.id),
+  user_id: text().notNull().references(() => users.id),
+  added_by: text().references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  primaryKey({ columns: [t.team_id, t.user_id] }),
+  index('idx_team_members_user').on(t.user_id),
+])
+
+export const teamEnvPermissions = pgTable('team_env_permissions', {
+  env_id: text().notNull().references(() => environments.id),
+  team_id: text().notNull().references(() => teams.id),
+  role: text().notNull(),
+  granted_by: text().references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  primaryKey({ columns: [t.env_id, t.team_id] }),
+  index('idx_team_env_perms_team').on(t.team_id),
+])
+
+// Covers every env in the project, present and future - forks included.
+export const teamProjectPermissions = pgTable('team_project_permissions', {
+  project_id: text().notNull().references(() => projects.id),
+  team_id: text().notNull().references(() => teams.id),
+  role: text().notNull(),
+  granted_by: text().references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  primaryKey({ columns: [t.project_id, t.team_id] }),
+  index('idx_team_project_perms_team').on(t.team_id),
+])
+
 export const envPermissions = pgTable('env_permissions', {
   env_id: text().notNull().references(() => environments.id),
   user_id: text().notNull().references(() => users.id),
@@ -224,6 +274,10 @@ export type Secret = typeof secrets.$inferSelect
 export type SecretHistory = typeof secretHistory.$inferSelect
 export type EnvVarHistory = typeof envVarHistory.$inferSelect
 export type EnvPermission = typeof envPermissions.$inferSelect
+export type Team = typeof teams.$inferSelect
+export type TeamMember = typeof teamMembers.$inferSelect
+export type TeamEnvPermission = typeof teamEnvPermissions.$inferSelect
+export type TeamProjectPermission = typeof teamProjectPermissions.$inferSelect
 export type Session = typeof sessions.$inferSelect
 export type AuditLog = typeof auditLog.$inferSelect
 export type UserLastOrg = typeof userLastOrg.$inferSelect

@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgs, orgMembers } from '~/lib/schema'
+import { orgs, orgMembers, teams, teamMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { revokeAllUserSessions } from '~/lib/sessions'
@@ -61,6 +61,14 @@ export const Route = createFileRoute('/api/orgs/$orgId/members/$userId')({
 
           await db.delete(orgMembers)
             .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, targetUserId)))
+          // No CASCADE by convention: drop their team memberships in this org
+          // (soft-deleted teams included) so a later re-invite doesn't
+          // silently resurrect old team access.
+          await db.delete(teamMembers)
+            .where(and(
+              eq(teamMembers.user_id, targetUserId),
+              inArray(teamMembers.team_id, db.select({ id: teams.id }).from(teams).where(eq(teams.org_id, orgId))),
+            ))
           // Kicked users' sessions still carry this org's key; revoke them so
           // access ends now (their next login re-establishes other orgs).
           await revokeAllUserSessions(targetUserId)

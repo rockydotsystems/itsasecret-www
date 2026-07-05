@@ -3,10 +3,51 @@ import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
 import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, projects, environments, envPermissions, secrets, envVars, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
+import { users, orgs, orgMembers, projects, environments, envPermissions, secrets, envVars, teams, teamEnvPermissions, teamProjectPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
-import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { requireOrgRole, memberEnvRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { listOrgTeams } from '~/lib/teams'
+import type { TeamView } from '~/lib/teams'
 import type { Org, Project, Environment } from '~/lib/schema'
+
+export type { TeamView, TeamMemberView } from '~/lib/teams'
+
+export type TeamEnvPermissionView = {
+  env_id: string
+  team_id: string
+  team_name: string
+  role: string
+}
+
+export type TeamProjectPermissionView = {
+  project_id: string
+  team_id: string
+  team_name: string
+  role: string
+}
+
+async function listTeamEnvGrants(envIds: string[]): Promise<TeamEnvPermissionView[]> {
+  if (envIds.length === 0) return []
+  return db.select({
+    env_id: teamEnvPermissions.env_id,
+    team_id: teamEnvPermissions.team_id,
+    team_name: teams.name,
+    role: teamEnvPermissions.role,
+  }).from(teamEnvPermissions)
+    .innerJoin(teams, and(eq(teams.id, teamEnvPermissions.team_id), isNull(teams.deleted_at)))
+    .where(inArray(teamEnvPermissions.env_id, envIds))
+}
+
+async function listTeamProjectGrants(projectId: string): Promise<TeamProjectPermissionView[]> {
+  return db.select({
+    project_id: teamProjectPermissions.project_id,
+    team_id: teamProjectPermissions.team_id,
+    team_name: teams.name,
+    role: teamProjectPermissions.role,
+  }).from(teamProjectPermissions)
+    .innerJoin(teams, and(eq(teams.id, teamProjectPermissions.team_id), isNull(teams.deleted_at)))
+    .where(eq(teamProjectPermissions.project_id, projectId))
+}
 
 function buildAuthRequest(): Request | null {
   const token = getCookie('session_token')
@@ -61,6 +102,11 @@ export type ProjectView = {
   // the dashboard. Only populated when the caller is an env admin.
   envGrants: EnvPermissionView[]
   members: OrgMemberView[]
+  // Team access data, same admin-only rule. projectTeamGrants is display-only
+  // provenance in the env modal - managed from project settings.
+  envTeamGrants: TeamEnvPermissionView[]
+  projectTeamGrants: TeamProjectPermissionView[]
+  teams: TeamView[]
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -185,6 +231,7 @@ export type OrgMemberView = {
 export type OrgSettingsView = OrgView & {
   org: Org
   members: OrgMemberView[]
+  teams: TeamView[]
   currentUserId: string
   currentUserRole: string
 }
@@ -201,7 +248,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
 
     await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
 
-    const [userOrgs, orgProjects, lastProjectId, members] = await Promise.all([
+    const [userOrgs, orgProjects, lastProjectId, members, orgTeams] = await Promise.all([
       listOrgsForUser(user.id),
       listProjectsForOrg(orgId),
       lastProjectIdForOrg(user.id, orgId),
@@ -213,6 +260,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
       }).from(orgMembers)
         .innerJoin(users, eq(users.id, orgMembers.user_id))
         .where(eq(orgMembers.org_id, orgId)),
+      listOrgTeams(orgId),
     ])
 
     const org = userOrgs.find((o) => o.id === orgId)
@@ -220,7 +268,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
     const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
     const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
 
-    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, currentUserId: user.id, currentUserRole }
+    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, teams: orgTeams, currentUserId: user.id, currentUserRole }
   })
 
 export type EnvPermissionView = {
@@ -235,6 +283,9 @@ export type ProjectSettingsView = OrgView & {
   environments: Environment[]
   envPermissions: EnvPermissionView[]
   members: OrgMemberView[]
+  teams: TeamView[]
+  teamEnvPermissions: TeamEnvPermissionView[]
+  teamProjectPermissions: TeamProjectPermissionView[]
   currentUserId: string
   currentUserRole: string
 }
@@ -271,14 +322,19 @@ export const getProjectSettingsFn = createServerFn({ method: 'POST' })
     const envs = await db.select().from(environments)
       .where(and(eq(environments.project_id, projectId), isNull(environments.deleted_at)))
 
-    const perms: EnvPermissionView[] = envs.length === 0 ? [] : await db.select({
-      env_id: envPermissions.env_id,
-      user_id: envPermissions.user_id,
-      email: users.email,
-      role: envPermissions.role,
-    }).from(envPermissions)
-      .innerJoin(users, eq(users.id, envPermissions.user_id))
-      .where(inArray(envPermissions.env_id, envs.map((e) => e.id)))
+    const [perms, orgTeams, teamEnvPerms, teamProjectPerms] = await Promise.all([
+      envs.length === 0 ? Promise.resolve<EnvPermissionView[]>([]) : db.select({
+        env_id: envPermissions.env_id,
+        user_id: envPermissions.user_id,
+        email: users.email,
+        role: envPermissions.role,
+      }).from(envPermissions)
+        .innerJoin(users, eq(users.id, envPermissions.user_id))
+        .where(inArray(envPermissions.env_id, envs.map((e) => e.id))),
+      listOrgTeams(orgId),
+      listTeamEnvGrants(envs.map((e) => e.id)),
+      listTeamProjectGrants(projectId),
+    ])
 
     const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
 
@@ -290,6 +346,9 @@ export const getProjectSettingsFn = createServerFn({ method: 'POST' })
       environments: envs,
       envPermissions: perms,
       members,
+      teams: orgTeams,
+      teamEnvPermissions: teamEnvPerms,
+      teamProjectPermissions: teamProjectPerms,
       currentUserId: user.id,
       currentUserRole,
     }
@@ -343,8 +402,11 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
     let envRole = ''
     let envGrants: EnvPermissionView[] = []
     let members: OrgMemberView[] = []
+    let envTeamGrants: TeamEnvPermissionView[] = []
+    let projectTeamGrants: TeamProjectPermissionView[] = []
+    let orgTeams: TeamView[] = []
     if (envId) {
-      const [secretRows, varRows, deletedSecretRows, deletedVarRows, permRows] = await Promise.all([
+      const [secretRows, varRows, deletedSecretRows, deletedVarRows, grantedRole] = await Promise.all([
         db.select({ key: secrets.key, updated_at: secrets.updated_at }).from(secrets)
           .where(and(eq(secrets.env_id, envId), isNull(secrets.deleted_at))),
         db.select({ key: envVars.key, value: envVars.value, updated_at: envVars.updated_at }).from(envVars)
@@ -353,9 +415,7 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
           .where(and(eq(secrets.env_id, envId), isNotNull(secrets.deleted_at), isNull(secrets.hidden_at))),
         db.select({ key: envVars.key, deleted_at: envVars.deleted_at }).from(envVars)
           .where(and(eq(envVars.env_id, envId), isNotNull(envVars.deleted_at), isNull(envVars.hidden_at))),
-        db.select({ role: envPermissions.role }).from(envPermissions)
-          .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, user.id)))
-          .limit(1),
+        memberEnvRole(user.id, envId, projectId),
       ])
       envSecrets = secretRows
       envVarList = varRows
@@ -363,12 +423,12 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       deletedVars = deletedVarRows as DeletedItemSummary[]
       envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
         ? 'admin'
-        : permRows[0]?.role ?? ''
+        : grantedRole
 
       // Env admins can manage access from the dashboard; nobody else needs
       // the grant list or the org roster (emails), so don't send them.
       if (envRole === 'admin') {
-        ;[envGrants, members] = await Promise.all([
+        ;[envGrants, members, envTeamGrants, projectTeamGrants, orgTeams] = await Promise.all([
           db.select({
             env_id: envPermissions.env_id,
             user_id: envPermissions.user_id,
@@ -385,6 +445,9 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
           }).from(orgMembers)
             .innerJoin(users, eq(users.id, orgMembers.user_id))
             .where(eq(orgMembers.org_id, orgId)),
+          listTeamEnvGrants([envId]),
+          listTeamProjectGrants(projectId),
+          listOrgTeams(orgId),
         ])
       }
     }
@@ -402,5 +465,8 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       deletedVars,
       envGrants,
       members,
+      envTeamGrants,
+      projectTeamGrants,
+      teams: orgTeams,
     }
   })

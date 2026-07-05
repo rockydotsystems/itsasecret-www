@@ -57,6 +57,13 @@
       "when": 1783253587812,
       "tag": "0007_dear_green_goblin",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783293901255,
+      "tag": "0008_amusing_natasha_romanoff",
+      "breakpoints": true
     }
   ]
 }

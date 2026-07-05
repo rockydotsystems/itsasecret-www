@@ -19,7 +19,7 @@ import {
 } from '~/lib/env-items-form'
 import { ClockIcon, RestoreIcon, TrashIcon } from '~/components/secretrow'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
-import type { SecretSummary, VarSummary, DeletedItemSummary, EnvPermissionView, OrgMemberView } from '~/lib/orgs-server'
+import type { SecretSummary, VarSummary, DeletedItemSummary, EnvPermissionView, OrgMemberView, TeamView, TeamEnvPermissionView, TeamProjectPermissionView } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
 
 export type DashboardShellProps = {
@@ -37,6 +37,9 @@ export type DashboardShellProps = {
   deletedVars?: DeletedItemSummary[]
   envGrants?: EnvPermissionView[]
   members?: OrgMemberView[]
+  envTeamGrants?: TeamEnvPermissionView[]
+  projectTeamGrants?: TeamProjectPermissionView[]
+  teams?: TeamView[]
 }
 
 type EditingItem = { type: 'secret' | 'var'; itemKey: string; initialValue: string }
@@ -130,6 +133,9 @@ export function DashboardShell({
   deletedVars = [],
   envGrants = [],
   members = [],
+  envTeamGrants = [],
+  projectTeamGrants = [],
+  teams = [],
 }: DashboardShellProps) {
   const navigate = useNavigate()
   const router = useRouter()
@@ -562,6 +568,9 @@ export function DashboardShell({
           env={currentEnv}
           grants={envGrants}
           members={members}
+          teams={teams}
+          teamGrants={envTeamGrants}
+          projectTeamGrants={projectTeamGrants}
           onClose={() => setManagingAccess(false)}
           onChanged={async () => {
             await router.invalidate()

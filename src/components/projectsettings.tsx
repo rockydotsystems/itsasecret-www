@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
+import { Avatar } from '~/components/avatar'
 import { Badge } from '~/components/badge'
 import { Button } from '~/components/button'
-import { EnvAccessModal } from '~/components/envaccessmodal'
+import { EnvAccessModal, ENV_ROLE_OPTIONS } from '~/components/envaccessmodal'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { EnvNameModal } from '~/components/envnamemodal'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
+import { Select } from '~/components/select'
 import {
   renameProject,
   deleteProject,
@@ -15,7 +17,13 @@ import {
   deleteEnvironment,
   setEnvironmentLive,
 } from '~/lib/project-settings-form'
-import type { EnvPermissionView, OrgMemberView, ProjectSettingsView } from '~/lib/orgs-server'
+import {
+  grantTeamProjectPermission,
+  changeTeamProjectPermission,
+  revokeTeamProjectPermission,
+} from '~/lib/teams-form'
+import type { EnvRole } from '~/lib/project-settings-form'
+import type { EnvPermissionView, OrgMemberView, ProjectSettingsView, TeamView, TeamEnvPermissionView, TeamProjectPermissionView } from '~/lib/orgs-server'
 import type { Environment } from '~/lib/schema'
 
 export type ProjectSettingsProps = {
@@ -27,7 +35,7 @@ function formatDate(date: Date | string): string {
 }
 
 export function ProjectSettings({ view }: ProjectSettingsProps) {
-  const { project, environments, envPermissions, members, currentUserId, currentUserRole } = view
+  const { project, environments, envPermissions, members, teams, teamEnvPermissions, teamProjectPermissions, currentUserId, currentUserRole } = view
   const navigate = useNavigate()
   const router = useRouter()
 
@@ -49,8 +57,18 @@ export function ProjectSettings({ view }: ProjectSettingsProps) {
         environments={environments}
         envPermissions={envPermissions}
         members={members}
+        teams={teams}
+        teamEnvPermissions={teamEnvPermissions}
+        teamProjectPermissions={teamProjectPermissions}
         canManage={canManage}
         myEnvRole={myEnvRole}
+        onChanged={refresh}
+      />
+      <TeamAccessSection
+        project={project}
+        teams={teams}
+        grants={teamProjectPermissions}
+        canManage={canManage}
         onChanged={refresh}
       />
       {canManage && (
@@ -138,6 +156,9 @@ function EnvironmentsSection({
   environments,
   envPermissions,
   members,
+  teams,
+  teamEnvPermissions,
+  teamProjectPermissions,
   canManage,
   myEnvRole,
   onChanged,
@@ -146,6 +167,9 @@ function EnvironmentsSection({
   environments: Environment[]
   envPermissions: EnvPermissionView[]
   members: OrgMemberView[]
+  teams: TeamView[]
+  teamEnvPermissions: TeamEnvPermissionView[]
+  teamProjectPermissions: TeamProjectPermissionView[]
   canManage: boolean
   myEnvRole: (envId: string) => string
   onChanged: () => Promise<void>
@@ -244,6 +268,9 @@ function EnvironmentsSection({
           env={managingEnv}
           grants={envPermissions.filter((p) => p.env_id === managingEnv.id)}
           members={members}
+          teams={teams}
+          teamGrants={teamEnvPermissions.filter((p) => p.env_id === managingEnv.id)}
+          projectTeamGrants={teamProjectPermissions}
           onClose={() => setManagingEnvId('')}
           onChanged={onChanged}
         />
@@ -303,6 +330,133 @@ function DeleteEnvModal({
         </Button>
       </div>
     </Modal>
+  )
+}
+
+// Project-level team grants: cover every environment in the project, present
+// and future, forks included. Managing them is org owner/admin only - an env
+// admin must not be able to widen access project-wide.
+function TeamAccessSection({
+  project,
+  teams,
+  grants,
+  canManage,
+  onChanged,
+}: {
+  project: ProjectSettingsView['project']
+  teams: TeamView[]
+  grants: TeamProjectPermissionView[]
+  canManage: boolean
+  onChanged: () => Promise<void>
+}) {
+  const [grantTeamId, setGrantTeamId] = useState('')
+  const [grantRole, setGrantRole] = useState('read')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  const grantableTeams = teams.filter((t) => !grants.some((g) => g.team_id === t.id))
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true)
+    setError('')
+    try {
+      await action()
+      await onChanged()
+    } catch (err) {
+      setError((err as Error).message || 'Something went wrong')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card settings-section">
+      <div className="settings-section-header">
+        <div>
+          <h2 className="settings-section-title">Team access</h2>
+          <p className="settings-section-desc">
+            Project-wide grants for teams. They cover every environment in this project - including ones created or
+            forked later. Only org owners and admins can change these; per-environment team grants live in each
+            environment's Access dialog.
+          </p>
+        </div>
+      </div>
+
+      <div className="member-list">
+        {grants.map((grant) => (
+          <div key={grant.team_id} className="member-row">
+            <Avatar name={grant.team_name} size="sm" />
+            <div className="member-row-info">
+              <span className="member-row-email">
+                {grant.team_name}
+                <Badge variant="neutral">team</Badge>
+              </span>
+            </div>
+            <div className="member-row-actions">
+              {canManage ? (
+                <>
+                  <Select
+                    value={grant.role}
+                    options={ENV_ROLE_OPTIONS}
+                    onChange={(role) => void run(() => changeTeamProjectPermission(project.id, grant.team_id, role as EnvRole))}
+                    disabled={busy}
+                    className="member-role-select"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => void run(() => revokeTeamProjectPermission(project.id, grant.team_id))}
+                  >
+                    Revoke
+                  </Button>
+                </>
+              ) : (
+                <Badge variant="neutral">{grant.role}</Badge>
+              )}
+            </div>
+          </div>
+        ))}
+        {grants.length === 0 && (
+          <p className="settings-section-desc">
+            {teams.length === 0
+              ? 'No teams in this organization yet. Create them in the organization settings.'
+              : 'No team has project-wide access yet.'}
+          </p>
+        )}
+      </div>
+
+      {canManage && grantableTeams.length > 0 && (
+        <div className="settings-grant-form">
+          <Select
+            value={grantTeamId}
+            options={grantableTeams.map((t) => ({ value: t.id, label: t.name }))}
+            onChange={setGrantTeamId}
+            placeholder="Select a team..."
+            className="settings-grant-member"
+          />
+          <Select
+            value={grantRole}
+            options={ENV_ROLE_OPTIONS}
+            onChange={setGrantRole}
+            className="member-role-select"
+          />
+          <Button
+            size="sm"
+            disabled={busy || !grantTeamId}
+            onClick={() =>
+              void run(async () => {
+                await grantTeamProjectPermission(project.id, grantTeamId, grantRole as EnvRole)
+                setGrantTeamId('')
+              })
+            }
+          >
+            Grant team
+          </Button>
+        </div>
+      )}
+      {error && <span className="input-error">{error}</span>}
+    </section>
   )
 }
 

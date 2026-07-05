@@ -1,0 +1,57 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
+import { eq, and } from 'drizzle-orm'
+import { db } from '~/lib/db'
+import { teamProjectPermissions } from '~/lib/schema'
+import { auditLog } from '~/lib/db-utils'
+import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+
+const updateSchema = z.object({
+  role: z.enum([ROLE_READ, ROLE_WRITE, ROLE_ADMIN]),
+})
+
+export const Route = createFileRoute('/api/projects/$projectId/team-permissions/$teamId')({
+  server: {
+    handlers: {
+      PATCH: async ({ request, params }) => {
+        try {
+          const { user } = await requireAuth(request)
+          const orgId = await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
+          const projectId = params.projectId!
+          const teamId = params.teamId!
+          const { role } = updateSchema.parse(await request.json())
+
+          const permRows = await db.select().from(teamProjectPermissions)
+            .where(and(eq(teamProjectPermissions.project_id, projectId), eq(teamProjectPermissions.team_id, teamId)))
+            .limit(1)
+          if (!permRows[0]) return Response.json({ error: 'Permission not found' }, { status: 404 })
+
+          await db.update(teamProjectPermissions).set({ role })
+            .where(and(eq(teamProjectPermissions.project_id, projectId), eq(teamProjectPermissions.team_id, teamId)))
+          await auditLog({ orgId, actorUserId: user.id, action: 'project.team_permission.update', targetType: 'project', targetId: projectId, metadata: { teamId, role } })
+
+          return Response.json({ project_id: projectId, team_id: teamId, role }, { status: 200 })
+        } catch (err) {
+          return errorResponse(err)
+        }
+      },
+
+      DELETE: async ({ request, params }) => {
+        try {
+          const { user } = await requireAuth(request)
+          const orgId = await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
+          const projectId = params.projectId!
+          const teamId = params.teamId!
+
+          await db.delete(teamProjectPermissions)
+            .where(and(eq(teamProjectPermissions.project_id, projectId), eq(teamProjectPermissions.team_id, teamId)))
+          await auditLog({ orgId, actorUserId: user.id, action: 'project.team_permission.revoke', targetType: 'project', targetId: projectId, metadata: { teamId } })
+          return new Response(null, { status: 204 })
+        } catch (err) {
+          return errorResponse(err)
+        }
+      },
+    },
+  },
+})

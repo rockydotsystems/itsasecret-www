@@ -1,6 +1,6 @@
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from './db'
-import { projects, environments, orgMembers, envPermissions } from './schema'
+import { projects, environments, orgMembers, envPermissions, teams, teamMembers, teamEnvPermissions, teamProjectPermissions } from './schema'
 import { HttpError } from './auth'
 
 export const ORG_ROLE_OWNER = 'owner'
@@ -64,6 +64,51 @@ export async function requireOrgRole(
   return orgId
 }
 
+const ROLE_RANK: Record<string, number> = {
+  [ROLE_READ]: 1,
+  [ROLE_WRITE]: 2,
+  [ROLE_ADMIN]: 3,
+}
+
+// Additive max-wins: grants only ever widen access, there are no deny rules.
+// Unknown role strings rank as nothing. '' = no access.
+export function maxRole(roles: Array<string | null | undefined>): string {
+  let best = ''
+  let bestRank = 0
+  for (const role of roles) {
+    const rank = role ? (ROLE_RANK[role] ?? 0) : 0
+    if (rank > bestRank) {
+      best = role!
+      bestRank = rank
+    }
+  }
+  return best
+}
+
+// Effective env role a plain org member gets from explicit grants: the max of
+// their direct env grant, their teams' env grants, and their teams' project
+// grants. Grants through soft-deleted teams die instantly, not at purge time.
+// Callers must have verified org membership first (that stays the outer gate,
+// so a stale team_members row on its own grants nothing) and handle the
+// owner/admin bypass themselves. This is THE resolver - enforcement
+// (requireEnvRole) and dashboard display (orgs-server) both go through it;
+// do not reimplement it elsewhere.
+export async function memberEnvRole(userId: string, envId: string, projectId: string): Promise<string> {
+  const [direct, teamEnv, teamProject] = await Promise.all([
+    db.select({ role: envPermissions.role }).from(envPermissions)
+      .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, userId))),
+    db.select({ role: teamEnvPermissions.role }).from(teamEnvPermissions)
+      .innerJoin(teams, and(eq(teams.id, teamEnvPermissions.team_id), isNull(teams.deleted_at)))
+      .innerJoin(teamMembers, and(eq(teamMembers.team_id, teamEnvPermissions.team_id), eq(teamMembers.user_id, userId)))
+      .where(eq(teamEnvPermissions.env_id, envId)),
+    db.select({ role: teamProjectPermissions.role }).from(teamProjectPermissions)
+      .innerJoin(teams, and(eq(teams.id, teamProjectPermissions.team_id), isNull(teams.deleted_at)))
+      .innerJoin(teamMembers, and(eq(teamMembers.team_id, teamProjectPermissions.team_id), eq(teamMembers.user_id, userId)))
+      .where(eq(teamProjectPermissions.project_id, projectId)),
+  ])
+  return maxRole([...direct, ...teamEnv, ...teamProject].map((r) => r.role))
+}
+
 export async function requireEnvRole(
   params: Record<string, string | undefined>,
   userId: string,
@@ -97,13 +142,10 @@ export async function requireEnvRole(
     return orgId
   }
 
-  const permRows = await db.select().from(envPermissions)
-    .where(and(eq(envPermissions.env_id, envId), eq(envPermissions.user_id, userId)))
-    .limit(1)
-  const perm = permRows[0]
+  const role = await memberEnvRole(userId, envId, env.project_id)
 
-  if (!perm) throw new HttpError(403, { error: 'No access to this environment' })
-  if (!allowedRoles.includes(perm.role)) {
+  if (!role) throw new HttpError(403, { error: 'No access to this environment' })
+  if (!allowedRoles.includes(role)) {
     throw new HttpError(403, { error: 'Insufficient permissions' })
   }
 

@@ -56,6 +56,9 @@ function ProjectDashboardPage() {
       deletedVars={view.deletedVars}
       envGrants={view.envGrants}
       members={view.members}
+      envTeamGrants={view.envTeamGrants}
+      projectTeamGrants={view.projectTeamGrants}
+      teams={view.teams}
     />
   )
 }
