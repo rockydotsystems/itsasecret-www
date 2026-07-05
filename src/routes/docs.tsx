@@ -9,6 +9,7 @@ export const Route = createFileRoute('/docs')({
 
 const COMMANDS = [
   { cmd: 'shh login', body: 'Authenticate; keys are derived on your machine.' },
+  { cmd: 'shh auth <token>', body: 'Authenticate a headless machine with a long-lived access token.' },
   { cmd: 'shh config', body: 'View/set the server URL - per machine, or per repo in .shh.project.' },
   { cmd: 'shh link', body: 'Pin the directory to a project & environment (interactive when bare).' },
   { cmd: 'shh pull', body: 'Fetch vars + secrets into a file (--out) or shell (--shell).' },
@@ -87,6 +88,16 @@ function DocsPage() {
             By default the CLI talks to itsasecret.dev - self-hosting or developing locally, point
             it at your server first with <code>shh config</code> (section 07).
           </p>
+          <p>
+            Headless machine (CI runner, server, container)? Skip the password entirely: create a
+            long-lived access token under <strong>Tokens</strong> in the dashboard, then
+            authenticate with it. Token sessions don&rsquo;t roll or idle out - they last until the
+            expiry you picked (30 days up to 2 years, or never) or until you revoke them.
+          </p>
+          <CodeBlock>
+            <span className="term-prompt">$ </span><span className="term-cmd">shh auth shht_...</span>{'\n'}
+            Authenticated to https://itsasecret.dev as you@example.com (token, does not expire).
+          </CodeBlock>
         </section>
 
         <section className="docs-section">

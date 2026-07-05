@@ -7,7 +7,7 @@ export const Route = createFileRoute('/api/auth/me')({
       GET: async ({ request }) => {
         try {
           // Reachable while unverified so the client can detect the state.
-          const { user } = await requireAuth(request, { allowUnverified: true })
+          const { user, session } = await requireAuth(request, { allowUnverified: true })
           return Response.json({
             user: {
               id: user.id,
@@ -16,6 +16,11 @@ export const Route = createFileRoute('/api/auth/me')({
               kdf_params: user.kdf_params,
               email_verified: user.email_verified_at !== null,
               email_verified_at: user.email_verified_at,
+            },
+            // Lets clients (notably `shh auth`) learn what they hold.
+            session: {
+              kind: session.kind,
+              expiresAt: session.expires_at.toISOString(),
             },
           }, { status: 200 })
         } catch (err) {

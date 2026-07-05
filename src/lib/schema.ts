@@ -160,6 +160,9 @@ export const sessions = pgTable('sessions', {
   // minutes and roll - each successful request issues a new token, with the
   // previous one honored briefly (crash/parallel safety).
   kind: text().notNull().default('web'),
+  // Display name for long-lived access tokens ('token' kind); null for
+  // ordinary web/cli sessions.
+  name: text(),
   prev_token_hash: text(),
   prev_token_expires_at: timestamp('prev_token_expires_at', { withTimezone: true }),
   session_pubkey: text().notNull(),

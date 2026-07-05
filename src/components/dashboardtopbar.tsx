@@ -118,6 +118,9 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
 
           <div className="dashboard-navbar-user">
             <Avatar name="Hack R" size="sm" />
+            <Button variant="ghost" size="sm" href="/dashboard/tokens" style={{ padding: '0 8px' }}>
+              Tokens
+            </Button>
             <Button
               variant="ghost"
               size="sm"
