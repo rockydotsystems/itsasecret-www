@@ -62,12 +62,8 @@ function DocsPage() {
             Logged in.
           </CodeBlock>
           <p>
-            Self-hosting? Set the server URL once per machine with{' '}
-            <code>shh config</code> (interactive) or{' '}
-            <code>shh config set url &lt;url&gt;</code> — or commit a{' '}
-            <code>url =</code> line in <code>.shh.project</code> so the whole repo points at your
-            server. The project override wins over the machine config, and sessions are kept per
-            server — logging in to one doesn&rsquo;t log you out of another.
+            By default the CLI talks to itsasecret.dev — self-hosting or developing locally, point
+            it at your server first with <code>shh config</code> (section 07).
           </p>
         </section>
 
@@ -178,6 +174,35 @@ function DocsPage() {
             <span className="term-prompt">$ </span><span className="term-cmd">shh fork</span> --name staging{'\n'}
             Forked gh6p5a84…/production → staging
           </CodeBlock>
+        </section>
+
+        <section className="docs-section">
+          <span className="section-kicker">07 · config</span>
+          <h2 className="docs-h2">Point the CLI at your server</h2>
+          <p>
+            Nothing to do if you use itsasecret.dev. Self-hosting, or running the server locally?
+            Set the URL once per machine — bare <code>shh config</code> opens an interactive menu,
+            or set it directly:
+          </p>
+          <CodeBlock>
+            <span className="term-prompt">$ </span><span className="term-cmd">shh config set url</span> https://secrets.corp.example{'\n'}
+            Server URL set to https://secrets.corp.example for this machine.{'\n'}
+            <span className="term-dim">Run `shh login` if you haven&rsquo;t authenticated against it yet.</span>{'\n'}
+            {'\n'}
+            <span className="term-prompt">$ </span><span className="term-cmd">shh config get url</span>{'\n'}
+            https://secrets.corp.example <span className="term-dim">(this machine&rsquo;s global config)</span>
+          </CodeBlock>
+          <p>
+            A repo can instead carry its server with it: <code>shh config set url &lt;url&gt;
+            --project</code> (or picking &ldquo;this project&rdquo; in the menu) writes a{' '}
+            <code>url =</code> line into <code>.shh.project</code>, committed alongside the project
+            ID, so every clone points at the right server. The project line wins over the machine
+            config, and <code>shh config get url</code> tells you which one is in effect.
+          </p>
+          <p>
+            Sessions are stored per server — logging in to your self-hosted instance doesn&rsquo;t
+            log you out of itsasecret.dev, and switching between repos just works.
+          </p>
         </section>
 
         <section className="docs-section">
