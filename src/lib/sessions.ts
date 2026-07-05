@@ -51,21 +51,29 @@ export async function createSession(
 
 // rotateSessionToken issues a fresh token for a rolling (CLI) session and
 // extends its expiry by the session TTL. The outgoing token is kept in
-// prev_token_hash for a short grace window.
+// prev_token_hash for a short grace window. The update is a compare-and-swap
+// on the current token hash: if a concurrent request already rotated, this
+// one loses cleanly (returns null) instead of clobbering the winner's token.
 export async function rotateSessionToken(
   session: Session
-): Promise<{ token: string; expiresAt: Date }> {
+): Promise<{ token: string; expiresAt: Date } | null> {
   const { token, tokenHash } = await newToken()
   const expiresAt = new Date(Date.now() + sessionTTL(session.kind as SessionKind))
 
-  await db.update(sessions)
+  const updated = await db.update(sessions)
     .set({
       token_hash: tokenHash,
       prev_token_hash: session.token_hash,
       prev_token_expires_at: new Date(Date.now() + PREV_TOKEN_GRACE_MS),
       expires_at: expiresAt,
     })
-    .where(and(eq(sessions.id, session.id), isNull(sessions.revoked_at)))
+    .where(and(
+      eq(sessions.id, session.id),
+      eq(sessions.token_hash, session.token_hash),
+      isNull(sessions.revoked_at)
+    ))
+    .returning({ id: sessions.id })
+  if (updated.length === 0) return null
 
   return { token, expiresAt }
 }

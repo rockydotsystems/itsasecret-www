@@ -17,6 +17,7 @@ export function Navbar({ loggedIn = false, userEmail }: NavbarProps) {
         </a>
         <div className="navbar-links">
           <a href="/docs">Docs</a>
+          <a href="/how-it-works">How it works</a>
           <a href="/pricing">Pricing</a>
         </div>
         <div className="navbar-actions">

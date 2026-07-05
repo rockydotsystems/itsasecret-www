@@ -54,9 +54,10 @@ function DocsPage() {
           <h2 className="docs-h2">Authenticate once per machine</h2>
           <p>
             Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
-            CLI sessions roll: every command refreshes them, and after ~30 idle minutes the next
-            command simply asks for your master password again. Nothing stored on disk is usable
-            without it — org keys are kept master-password-wrapped, never in plaintext.
+            Sessions roll: every command refreshes them, and after ~30 idle minutes the next
+            command simply asks for your master password again. The full story — key wrapping,
+            token rotation, what&rsquo;s on your disk — is on{' '}
+            <a href="/how-it-works">how it works</a>.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh login</span>{'\n'}
@@ -230,6 +231,7 @@ function DocsPage() {
           <span>itsasecret.dev &middot; shh secret set. shh pull. done.</span>
           <span className="site-footer-links">
             <a href="/docs">docs</a>
+            <a href="/how-it-works">how it works</a>
             <a href="/login">log in</a>
             <a href="/register">register</a>
           </span>

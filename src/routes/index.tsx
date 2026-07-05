@@ -253,6 +253,7 @@ function LandingPage() {
           <span>itsasecret.dev &middot; shh secret set. shh pull. done.</span>
           <span className="site-footer-links">
             <a href="/docs">docs</a>
+            <a href="/how-it-works">how it works</a>
             <a href="/login">log in</a>
             <a href="/register">register</a>
           </span>

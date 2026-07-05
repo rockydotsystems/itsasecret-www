@@ -41,9 +41,12 @@ export async function maybeRotateCliSession(request: Request, response: Response
 
   await refreshSessionOrgKeys(session, request)
 
-  const { token, expiresAt } = await rotateSessionToken(session)
-  response.headers.set('X-New-Session-Token', token)
-  response.headers.set('X-Session-Expires-At', expiresAt.toISOString())
+  // A concurrent request may win the rotation race; in that case send no
+  // header — this request's token stays valid through the grace window.
+  const rotated = await rotateSessionToken(session)
+  if (!rotated) return
+  response.headers.set('X-New-Session-Token', rotated.token)
+  response.headers.set('X-Session-Expires-At', rotated.expiresAt.toISOString())
 }
 
 // refreshSessionOrgKeys adds keys for orgs the user joined after this session
