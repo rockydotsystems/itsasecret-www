@@ -7,7 +7,7 @@ import { getCurrentUserFromRequest } from '~/lib/auth'
 import type { CurrentUser } from '~/lib/auth-form'
 
 // What route guards see: the session user plus whether they belong to any
-// live org — verified users without one are forced through /onboarding.
+// live org - verified users without one are forced through /onboarding.
 export interface SessionUser extends CurrentUser {
   has_orgs: boolean
 }

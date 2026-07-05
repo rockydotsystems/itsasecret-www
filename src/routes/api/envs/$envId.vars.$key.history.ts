@@ -10,7 +10,7 @@ import { getServerSecretKey } from '~/lib/server-secret'
 
 // Lists the 7-day history of a plain env var. History rows are encrypted at
 // rest under the server secret; they're decrypted here because live var
-// values are plaintext to callers by design — same trust level.
+// values are plaintext to callers by design - same trust level.
 export const Route = createFileRoute('/api/envs/$envId/vars/$key/history')({
   server: {
     handlers: {

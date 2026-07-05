@@ -83,7 +83,7 @@ export const envVars = pgTable('env_vars', {
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
   // "Perma delete": hides the row from the recently-deleted UI. Retention is
-  // unchanged — the 90-day purge still runs off deleted_at.
+  // unchanged - the 90-day purge still runs off deleted_at.
   hidden_at: timestamp('hidden_at', { withTimezone: true }),
 }, (t) => [
   unique().on(t.env_id, t.key),
@@ -100,7 +100,7 @@ export const secrets = pgTable('secrets', {
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
   // "Perma delete": hides the row from the recently-deleted UI. Retention is
-  // unchanged — the 90-day purge still runs off deleted_at.
+  // unchanged - the 90-day purge still runs off deleted_at.
   hidden_at: timestamp('hidden_at', { withTimezone: true }),
 }, (t) => [
   unique().on(t.env_id, t.key),
@@ -108,7 +108,7 @@ export const secrets = pgTable('secrets', {
 ])
 
 // Prior values of secrets, written on every update/delete. Values are the
-// org-key ciphertexts as stored — never plaintext. Purged after 7 days.
+// org-key ciphertexts as stored - never plaintext. Purged after 7 days.
 export const secretHistory = pgTable('secret_history', {
   id: text().primaryKey(),
   secret_id: text().notNull().references(() => secrets.id),
@@ -154,7 +154,7 @@ export const sessions = pgTable('sessions', {
   user_id: text().notNull().references(() => users.id),
   token_hash: text().notNull().unique(),
   // 'web' sessions live 30 days on a stable token; 'cli' sessions live 30
-  // minutes and roll — each successful request issues a new token, with the
+  // minutes and roll - each successful request issues a new token, with the
   // previous one honored briefly (crash/parallel safety).
   kind: text().notNull().default('web'),
   prev_token_hash: text(),

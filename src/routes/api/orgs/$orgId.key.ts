@@ -22,7 +22,7 @@ export const Route = createFileRoute('/api/orgs/$orgId/key')({
           const member = rows[0] ?? null
           if (!member) return Response.json({ error: 'Not a member of this organization' }, { status: 403 })
 
-          // Invite re-key not finished yet — the key is still wrapped under the
+          // Invite re-key not finished yet - the key is still wrapped under the
           // server secret, not the caller's master key. A fresh login fixes it.
           if (isPendingOrgKey(member.wrapped_org_key)) {
             return Response.json({ error: 'Key setup pending. Log out and back in to finish it.' }, { status: 409 })

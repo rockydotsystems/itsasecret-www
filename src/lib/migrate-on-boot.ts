@@ -6,7 +6,7 @@ import postgres from 'postgres'
 // the runtime image next to .output). Runs before the server starts serving:
 // if a migration fails, the process exits, the deployment never passes
 // healthcheck, and Railway keeps the previous deployment live. Safe with the
-// pinned single replica — no concurrent migrator.
+// pinned single replica - no concurrent migrator.
 export async function migrateOnBoot(): Promise<void> {
   const connectionString =
     process.env.DATABASE_URL ?? 'postgres://itsasecret:itsasecret@localhost:5432/itsasecret'

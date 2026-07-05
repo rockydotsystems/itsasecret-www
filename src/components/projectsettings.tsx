@@ -126,7 +126,7 @@ function GeneralSection({
             <code>{project.id}</code>
           </div>
           <span className="input-helper">
-            Link a repo to this project from the CLI: shh link --project {project.id} — then shh pull / shh reload need no flags.
+            Link a repo to this project from the CLI: shh link --project {project.id} - then shh pull / shh reload need no flags.
           </span>
         </div>
         {error && <span className="input-error">{error}</span>}
@@ -176,7 +176,7 @@ function EnvironmentsSection({
           <h2 className="settings-section-title">Environments</h2>
           <p className="settings-section-desc">
             Each environment is its own set of vars and secrets. Fork one to branch production into staging or a
-            per-developer setup — you get full access on your fork. New environments are created from the project
+            per-developer setup - you get full access on your fork. New environments are created from the project
             dashboard.
           </p>
         </div>

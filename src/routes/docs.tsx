@@ -9,13 +9,13 @@ export const Route = createFileRoute('/docs')({
 
 const COMMANDS = [
   { cmd: 'shh login', body: 'Authenticate; keys are derived on your machine.' },
-  { cmd: 'shh config', body: 'View/set the server URL — per machine, or per repo in .shh.project.' },
+  { cmd: 'shh config', body: 'View/set the server URL - per machine, or per repo in .shh.project.' },
   { cmd: 'shh link', body: 'Pin the directory to a project & environment (interactive when bare).' },
   { cmd: 'shh pull', body: 'Fetch vars + secrets into a file (--out) or shell (--shell).' },
   { cmd: 'shh reload', body: 'Pull again, delivered the way the last pull was.' },
   { cmd: 'shh secret set KEY=VALUE', body: 'Set a secret, encrypted before it leaves your machine.' },
   { cmd: 'shh secret get <key>', body: 'Print one decrypted secret value.' },
-  { cmd: 'shh secret list', body: 'List secret keys — values are never shown.' },
+  { cmd: 'shh secret list', body: 'List secret keys - values are never shown.' },
   { cmd: 'shh var set KEY=VALUE', body: 'Set a plaintext var.' },
   { cmd: 'shh var get <key>', body: 'Print one plaintext var value.' },
   { cmd: 'shh fork --name <new>', body: 'Fork an environment, copying its vars and secrets.' },
@@ -45,7 +45,7 @@ function DocsPage() {
           </h1>
           <p className="docs-lede">
             The binary is <code>itsasecret</code>, aliased to <code>shh</code>. Five minutes from
-            login to secrets in your shell — everything encrypts on your machine before it syncs.
+            login to secrets in your shell - everything encrypts on your machine before it syncs.
           </p>
         </header>
 
@@ -54,7 +54,7 @@ function DocsPage() {
           <h2 className="docs-h2">One line, any machine</h2>
           <p>
             Installs the <code>itsasecret</code> binary (and its <code>shh</code> alias) to{' '}
-            <code>~/.local/bin</code> — linux and macOS, amd64 and arm64. The script verifies a
+            <code>~/.local/bin</code> - linux and macOS, amd64 and arm64. The script verifies a
             sha256 checksum before anything lands on disk.
           </p>
           <CodeBlock>
@@ -74,8 +74,8 @@ function DocsPage() {
           <p>
             Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
             Sessions roll: every command refreshes them, and after ~30 idle minutes the next
-            command simply asks for your master password again. The full story — key wrapping,
-            token rotation, what&rsquo;s on your disk — is on{' '}
+            command simply asks for your master password again. The full story - key wrapping,
+            token rotation, what&rsquo;s on your disk - is on{' '}
             <a href="/how-it-works">how it works</a>.
           </p>
           <CodeBlock>
@@ -84,7 +84,7 @@ function DocsPage() {
             Logged in.
           </CodeBlock>
           <p>
-            By default the CLI talks to itsasecret.dev — self-hosting or developing locally, point
+            By default the CLI talks to itsasecret.dev - self-hosting or developing locally, point
             it at your server first with <code>shh config</code> (section 07).
           </p>
         </section>
@@ -94,7 +94,7 @@ function DocsPage() {
           <h2 className="docs-h2">Pin a directory to a project</h2>
           <p>
             Run <code>shh link</code> bare while logged in and pick your org, project, and
-            environment from a menu — no IDs to copy around.
+            environment from a menu - no IDs to copy around.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh link</span>{'\n'}
@@ -105,7 +105,7 @@ function DocsPage() {
             Select an environment{'\n'}
             <span className="term-flare">&gt; production</span>{'\n'}
             {'  staging\n'}
-            <span className="term-dim">{'  skip — don’t pin an environment\n'}</span>
+            <span className="term-dim">{'  skip - don’t pin an environment\n'}</span>
             {'\n'}
             Linked project gh6p5a84… → .shh.project <span className="term-dim">(commit this file)</span>{'\n'}
             Linked environment production → .shh.env <span className="term-dim">(local only)</span>{'\n'}
@@ -116,7 +116,7 @@ function DocsPage() {
             be committed, so the whole team is linked after <code>git pull</code>.{' '}
             <code>.shh.env</code> holds <em>your</em> environment choice, stays local, and is added
             to <code>.gitignore</code> automatically. Every command finds them by walking up from
-            the current directory — link the repo root once and it works in every subdirectory.
+            the current directory - link the repo root once and it works in every subdirectory.
             Flags always win over files, and with no environment pinned, commands default to{' '}
             <code>production</code>.
           </p>
@@ -130,7 +130,7 @@ function DocsPage() {
           <span className="section-kicker">03 · set values</span>
           <h2 className="docs-h2">Secrets encrypt, vars don&rsquo;t</h2>
           <p>
-            Values are set one at a time — there is deliberately no bulk push. Secrets encrypt on
+            Values are set one at a time - there is deliberately no bulk push. Secrets encrypt on
             your machine before they sync; plaintext config goes through <code>var</code>.
           </p>
           <CodeBlock>
@@ -147,7 +147,7 @@ function DocsPage() {
           <p>
             <code>shh pull</code> writes sourceable <code>export</code> lines to{' '}
             <code>.env</code> (or <code>--out &lt;path&gt;</code>). With <code>--shell</code> it
-            prints them to stdout instead — perfect for direnv, no file written.
+            prints them to stdout instead - perfect for direnv, no file written.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh pull</span>{'\n'}
@@ -171,7 +171,7 @@ function DocsPage() {
           <span className="section-kicker">05 · reload</span>
           <h2 className="docs-h2">Pull again, the same way</h2>
           <p>
-            After the environment changes — a teammate rotated a key, a new var landed — you
+            After the environment changes - a teammate rotated a key, a new var landed - you
             don&rsquo;t need to remember how this repo consumes its values.{' '}
             <code>shh reload</code> pulls the linked project and environment again and delivers
             them exactly the way the last pull here did: rewriting the same file, or re-emitting
@@ -187,9 +187,9 @@ function DocsPage() {
           <p>
             The delivery is recorded in <code>.shh.project</code> (<code>pull = shell</code> or{' '}
             <code>pull = file:&lt;path&gt;</code>, relative to that file), so reload writes to the
-            same place from anywhere in the tree. It always targets the linked scope — the project
+            same place from anywhere in the tree. It always targets the linked scope - the project
             from <code>.shh.project</code> and the environment your last <code>shh link</code>{' '}
-            pinned in <code>.shh.env</code> — and one-off <code>--project</code>/<code>--env</code>{' '}
+            pinned in <code>.shh.env</code> - and one-off <code>--project</code>/<code>--env</code>{' '}
             pulls don&rsquo;t change what it repeats.
           </p>
         </section>
@@ -199,7 +199,7 @@ function DocsPage() {
           <h2 className="docs-h2">Branch an environment</h2>
           <p>
             Fork <code>production</code> into <code>staging</code>, or staging into a per-developer
-            environment — vars and secrets are copied, then diverge freely.
+            environment - vars and secrets are copied, then diverge freely.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh fork</span> --name staging{'\n'}
@@ -212,7 +212,7 @@ function DocsPage() {
           <h2 className="docs-h2">Point the CLI at your server</h2>
           <p>
             Nothing to do if you use itsasecret.dev. Self-hosting, or running the server locally?
-            Set the URL once per machine — bare <code>shh config</code> opens an interactive menu,
+            Set the URL once per machine - bare <code>shh config</code> opens an interactive menu,
             or set it directly:
           </p>
           <CodeBlock>
@@ -231,7 +231,7 @@ function DocsPage() {
             config, and <code>shh config get url</code> tells you which one is in effect.
           </p>
           <p>
-            Sessions are stored per server — logging in to your self-hosted instance doesn&rsquo;t
+            Sessions are stored per server - logging in to your self-hosted instance doesn&rsquo;t
             log you out of itsasecret.dev, and switching between repos just works.
           </p>
         </section>

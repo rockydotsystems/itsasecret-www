@@ -41,7 +41,7 @@ function HowItWorksPage() {
           <p>
             Your master password feeds an argon2id key derivation. The derived key wraps your
             orgs&rsquo; keys; the server stores only a separate login hash (which cannot recover
-            the key) and the wrapped blobs. Nothing at rest — on the server or on your machines —
+            the key) and the wrapped blobs. Nothing at rest - on the server or on your machines -
             is readable without the master password.
           </p>
         </section>
@@ -52,7 +52,7 @@ function HowItWorksPage() {
           <p>
             Every org has a shared key that encrypts its secrets. Each member holds that org key
             wrapped under their own master-password-derived key. Invite someone and the org key is
-            re-wrapped for them the first time they log in — so joining an org never requires
+            re-wrapped for them the first time they log in - so joining an org never requires
             anyone to hand around plaintext keys.
           </p>
         </section>
@@ -62,7 +62,7 @@ function HowItWorksPage() {
           <h2 className="docs-h2">Rolling sessions: type your password when idle, not constantly</h2>
           <p>
             Logging in from the CLI starts a <em>rolling session</em>, valid for 30 minutes. Every
-            successful command refreshes it — and hands the CLI a brand-new session token, with
+            successful command refreshes it - and hands the CLI a brand-new session token, with
             the old one dying moments later. While you&rsquo;re actively working you never see a
             prompt; a token stolen in flight goes stale almost immediately.
           </p>
@@ -71,18 +71,18 @@ function HowItWorksPage() {
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh pull</span>{'\n'}
-            Session for https://itsasecret.dev expired — enter your master password to unlock.{'\n'}
+            Session for https://itsasecret.dev expired - enter your master password to unlock.{'\n'}
             Master password (you@example.com) <span className="term-dim">********</span>{'\n'}
             Unlocked https://itsasecret.dev.{'\n'}
             Wrote .env
           </CodeBlock>
           <p>
-            That unlock is a full re-authentication, so it also refreshes your org keys — join a
+            That unlock is a full re-authentication, so it also refreshes your org keys - join a
             new org and it shows up by your next unlock at the latest. Sessions are kept{' '}
             <em>per server</em>: your itsasecret.dev login and a self-hosted server&rsquo;s login
             coexist, each rolling independently. The prompt talks to your terminal directly
-            (sudo-style), so it works even where output is captured — direnv loading your{' '}
-            <code>.envrc</code>, or <code>eval &quot;$(shh pull --shell)&quot;</code> — without a
+            (sudo-style), so it works even where output is captured - direnv loading your{' '}
+            <code>.envrc</code>, or <code>eval &quot;$(shh pull --shell)&quot;</code> - without a
             stray character reaching the shell. Only a genuinely headless run (CI, no terminal)
             fails, with a clear message.
           </p>
@@ -95,7 +95,7 @@ function HowItWorksPage() {
             The CLI keeps one config file (<code>~/.config/itsasecret/config.json</code>, mode
             0600). Per server it holds: the current rolling token and its expiry, your account
             email, the session&rsquo;s transport key, and your org keys{' '}
-            <strong>wrapped under your master password</strong> — never unwrapped. If the file
+            <strong>wrapped under your master password</strong> - never unwrapped. If the file
             leaks, the wrapped keys are useless without your password, and the token + transport
             key expire within 30 minutes of your last command.
           </p>
@@ -110,7 +110,7 @@ function HowItWorksPage() {
           <h2 className="docs-h2">Ciphertext on the wire, ciphertext in the database</h2>
           <p>
             Each session negotiates an ephemeral ECDH transport key. Secrets travel encrypted
-            under it and are stored re-encrypted under the org key — the database holds only
+            under it and are stored re-encrypted under the org key - the database holds only
             ciphertext. Even the session&rsquo;s own org-key material is stored encrypted under a
             key the server does not persist: the client supplies it per request, so a stolen
             database dump cannot decrypt anything on its own.

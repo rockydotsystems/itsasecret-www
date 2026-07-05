@@ -36,7 +36,7 @@ export function MasterPassModal({ orgId, onUnlocked, onClose }: MasterPassModalP
   return (
     <Modal
       title="Unlock your vault"
-      subtitle="Secrets are decrypted in your browser only. Your master password stays on this device — it is never sent to the server."
+      subtitle="Secrets are decrypted in your browser only. Your master password stays on this device - it is never sent to the server."
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

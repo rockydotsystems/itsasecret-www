@@ -7,7 +7,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 // "Perma delete" a soft-deleted var: hides it from the recently-deleted UI.
-// The row is retained until the 90-day purge — this does not shorten
+// The row is retained until the 90-day purge - this does not shorten
 // retention, it only removes the restore surface.
 export const Route = createFileRoute('/api/envs/$envId/vars/$key/hide')({
   server: {

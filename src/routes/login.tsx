@@ -66,7 +66,7 @@ function LoginPage() {
 
         {verified === 1 && (
           <div className="auth-banner auth-banner-success">
-            Email verified — log in to finish setting up your workspace.
+            Email verified - log in to finish setting up your workspace.
           </div>
         )}
         {verified === 0 && (

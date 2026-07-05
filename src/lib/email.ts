@@ -18,7 +18,7 @@ export async function sendVerificationEmail({ to, verifyUrl }: SendVerificationE
   if (!apiKey) {
     // No Resend key: surface the link on the terminal for manual verification.
     console.log(
-      `\n[email:dev] Verify ${to} — no RESEND_API_KEY set, open this link to verify:\n  ${verifyUrl}\n`
+      `\n[email:dev] Verify ${to} - no RESEND_API_KEY set, open this link to verify:\n  ${verifyUrl}\n`
     )
     return
   }

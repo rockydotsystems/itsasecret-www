@@ -117,7 +117,7 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
             <h1 className={titleClass}>Name your organization</h1>
             <p className={subtitleClass}>
               {mode === 'onboarding'
-                ? 'This is your personal org — just you. You can create shared orgs for your team later.'
+                ? 'This is your personal org - just you. You can create shared orgs for your team later.'
                 : 'Shared orgs let you invite teammates and collaborate on projects.'}
             </p>
           </div>
@@ -141,7 +141,7 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
           <div>
             <h1 className={titleClass}>Create {mode === 'onboarding' ? 'your' : 'its'} first project</h1>
             <p className={subtitleClass}>
-              A project usually maps to one app or repo — its environments hold the config.
+              A project usually maps to one app or repo - its environments hold the config.
             </p>
           </div>
           <Input
@@ -164,7 +164,7 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
           <div>
             <h1 className={titleClass}>Name {mode === 'onboarding' ? 'your' : 'its'} first environment</h1>
             <p className={subtitleClass}>
-              Environments hold your vars and secrets — production, staging, dev forks. Start
+              Environments hold your vars and secrets - production, staging, dev forks. Start
               with one; fork more later.
             </p>
           </div>

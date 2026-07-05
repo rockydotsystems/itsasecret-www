@@ -11,7 +11,7 @@ import { recordSecretHistory } from '~/lib/history'
 
 // cipher 'session': value is encrypted under the ECDH transport key and the
 // server re-encrypts it under the org key (CLI flow). cipher 'org': value is
-// already encrypted under the org key in the client and is stored verbatim —
+// already encrypted under the org key in the client and is stored verbatim -
 // the server never sees the plaintext (web E2E flow).
 const upsertSchema = z.object({
   encryptedValue: z.string(),

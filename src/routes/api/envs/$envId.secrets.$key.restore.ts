@@ -7,7 +7,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 // Un-deletes a soft-deleted secret. The stored org-key ciphertext was never
-// touched by the delete, so this needs no crypto — and the (env_id, key)
+// touched by the delete, so this needs no crypto - and the (env_id, key)
 // unique constraint guarantees no live row with the same key can exist.
 export const Route = createFileRoute('/api/envs/$envId/secrets/$key/restore')({
   server: {

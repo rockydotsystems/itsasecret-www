@@ -44,7 +44,7 @@ export async function submitAuthForm(
     // the dashboard doesn't have to re-prompt for it in this tab.
     await seedVaultFromLogin(password)
   } catch {
-    // Best-effort — the dashboard prompts for the master password when needed.
+    // Best-effort - the dashboard prompts for the master password when needed.
   }
 
   return data

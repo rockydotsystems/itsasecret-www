@@ -103,7 +103,7 @@ export function jsonError(message: string, status: number): HttpError {
 
 export async function getCurrentUserFromRequest(request: Request): Promise<User | null> {
   try {
-    // Identity lookup only — verification is enforced by callers/route guards
+    // Identity lookup only - verification is enforced by callers/route guards
     // so this can still resolve who an unverified user is.
     const { user } = await requireAuth(request, { allowUnverified: true })
     return user

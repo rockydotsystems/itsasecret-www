@@ -153,7 +153,7 @@ export function DashboardShell({
 
   // Resolves once the vault is unlocked, prompting for the master password
   // when needed. Rejects when the user dismisses the prompt. Concurrent
-  // callers share one prompt — a second request must not replace the first
+  // callers share one prompt - a second request must not replace the first
   // one's resolve/reject and leave it hanging.
   async function ensureUnlocked(): Promise<void> {
     if (await isVaultUnlocked()) return
@@ -191,7 +191,7 @@ export function DashboardShell({
   // History entries for the modal: secrets decrypt per-entry in the browser,
   // vars arrive as plaintext (same trust level as their live values).
   // Restore reapplies a snapshot through the normal upsert, which snapshots
-  // the value being replaced — so a restore is itself undoable.
+  // the value being replaced - so a restore is itself undoable.
   async function loadHistoryEntries(item: HistoryItem): Promise<HistoryModalEntry[]> {
     async function finishRestore() {
       setHistoryItem(null)
@@ -358,7 +358,7 @@ export function DashboardShell({
               <EmptyEnvGraphic />
               <h2 className="env-empty-title">No environments yet</h2>
               <p className="env-empty-desc">
-                Environments hold this project's vars and secrets — production first, then fork it into staging and
+                Environments hold this project's vars and secrets - production first, then fork it into staging and
                 per-developer setups.
               </p>
               {canCreateEnv ? (
@@ -541,7 +541,7 @@ export function DashboardShell({
       {creatingItem === 'secret' && (
         <KeyValueModal
           title="New secret"
-          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent — the server never sees the value.`}
+          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent - the server never sees the value.`}
           submitLabel="Save secret"
           keyPlaceholder="e.g. STRIPE_SECRET_KEY"
           valuePlaceholder="sk_live_..."
@@ -558,7 +558,7 @@ export function DashboardShell({
       {creatingItem === 'var' && (
         <KeyValueModal
           title="New variable"
-          subtitle={`Plain, unencrypted value in ${envName} — for config that isn't sensitive.`}
+          subtitle={`Plain, unencrypted value in ${envName} - for config that isn't sensitive.`}
           submitLabel="Save variable"
           keyPlaceholder="e.g. LOG_LEVEL"
           valuePlaceholder="debug"
@@ -574,7 +574,7 @@ export function DashboardShell({
       {editingItem?.type === 'secret' && (
         <KeyValueModal
           title="Edit secret"
-          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent — the server never sees the value.`}
+          subtitle={`Encrypted in your browser under ${envName}'s org key before it's sent - the server never sees the value.`}
           submitLabel="Save secret"
           keyPlaceholder=""
           valuePlaceholder="sk_live_..."
@@ -593,7 +593,7 @@ export function DashboardShell({
       {editingItem?.type === 'var' && (
         <KeyValueModal
           title="Edit variable"
-          subtitle={`Plain, unencrypted value in ${envName} — for config that isn't sensitive.`}
+          subtitle={`Plain, unencrypted value in ${envName} - for config that isn't sensitive.`}
           submitLabel="Save variable"
           keyPlaceholder=""
           valuePlaceholder="debug"

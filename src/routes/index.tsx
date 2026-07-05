@@ -11,17 +11,17 @@ import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 const FEATURES = [
   {
     title: 'Encrypted end to end',
-    body: 'Every value is encrypted on your machine before it ever leaves it — by the CLI or right in your browser. itsasecret.dev never sees a plaintext secret.',
+    body: 'Every value is encrypted on your machine before it ever leaves it - by the CLI or right in your browser. itsasecret.dev never sees a plaintext secret.',
     tag: 'security',
   },
   {
     title: 'Environment-aware',
-    body: 'production, staging, preview-pr-42 — each environment is its own keychain, enabled per-secret.',
+    body: 'production, staging, preview-pr-42 - each environment is its own keychain, enabled per-secret.',
     tag: 'environments',
   },
   {
     title: 'One command sync',
-    body: 'shh secret set encrypts and syncs in one shot. shh pull decrypts straight into your .env — or into your shell via direnv, no file written.',
+    body: 'shh secret set encrypts and syncs in one shot. shh pull decrypts straight into your .env - or into your shell via direnv, no file written.',
     tag: 'cli',
   },
   {
@@ -35,17 +35,17 @@ const STEPS = [
   {
     num: '01',
     cmd: 'shh link',
-    body: 'Pin this repo to a project and environment — pick them from an interactive menu. Your master key is derived from your password, on your machine, and stays there.',
+    body: 'Pin this repo to a project and environment - pick them from an interactive menu. Your master key is derived from your password, on your machine, and stays there.',
   },
   {
     num: '02',
     cmd: 'shh secret set',
-    body: 'Each value encrypts on your machine, then syncs — the server receives ciphertext and nothing else. Plaintext config takes the same trip via shh var set.',
+    body: 'Each value encrypts on your machine, then syncs - the server receives ciphertext and nothing else. Plaintext config takes the same trip via shh var set.',
   },
   {
     num: '03',
     cmd: 'shh pull',
-    body: 'Any machine, any teammate with access — decrypts straight into .env. Or shh pull --shell in your .envrc, and direnv allow loads them without writing a file. shh reload repeats the last pull, delivered the same way.',
+    body: 'Any machine, any teammate with access - decrypts straight into .env. Or shh pull --shell in your .envrc, and direnv allow loads them without writing a file. shh reload repeats the last pull, delivered the same way.',
   },
 ]
 
@@ -111,7 +111,7 @@ function Terminal() {
           <span className="term-cmd">shh pull</span>
         </div>
         <div className="term-line term-dim">
-          {'  .env updated — 12 values, decrypted '}
+          {'  .env updated - 12 values, decrypted '}
           <span className="term-flare">on this machine only</span>
         </div>
         <div className="term-line">&nbsp;</div>
@@ -186,7 +186,7 @@ function LandingPage() {
           <span className="section-kicker">the dashboard</span>
           <h2 className="section-title">Masked by default.</h2>
           <p className="section-lede">
-            Values stay dots until you deliberately reveal one — and the orange flare means something sensitive is exposed right now.
+            Values stay dots until you deliberately reveal one - and the orange flare means something sensitive is exposed right now.
             Set values here too: the web client encrypts in your browser, the same envelope the CLI writes.
           </p>
           <div className="vault-preview">

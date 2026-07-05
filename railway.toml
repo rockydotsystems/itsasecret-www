@@ -1,4 +1,4 @@
-# railway.toml — itsasecret www (TanStack Start / Nitro node server)
+# railway.toml - itsasecret www (TanStack Start / Nitro node server)
 # Builds from ./Dockerfile. us-west2 = closest Railway region to Alberta.
 # Railway has no Canadian region; data residency is US-West for now.
 
@@ -13,6 +13,6 @@ healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 
 # Pin ONE replica in us-west2. The purge cron is an in-process setInterval
-# (src/lib/purge-cron.ts) — more than one replica double-fires it.
+# (src/lib/purge-cron.ts) - more than one replica double-fires it.
 [deploy.multiRegionConfig.us-west2]
 numReplicas = 1

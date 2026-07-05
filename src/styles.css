@@ -488,7 +488,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ─── Redaction pattern background ──────────────── */
-/* Thin horizontal bars of varying width — marketing/docs heroes only. */
+/* Thin horizontal bars of varying width - marketing/docs heroes only. */
 .hero-texture {
   position: relative;
 }

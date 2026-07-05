@@ -7,7 +7,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 // Lists the 7-day history of a secret. Values are the org-key ciphertexts
-// verbatim — decryption happens client-side with the unlocked vault, same as
+// verbatim - decryption happens client-side with the unlocked vault, same as
 // the live reveal flow.
 export const Route = createFileRoute('/api/envs/$envId/secrets/$key/history')({
   server: {

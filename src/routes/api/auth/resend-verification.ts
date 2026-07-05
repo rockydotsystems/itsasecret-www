@@ -9,7 +9,7 @@ export const Route = createFileRoute('/api/auth/resend-verification')({
     handlers: {
       POST: async ({ request }) => {
         try {
-          // Reachable while unverified — that's the whole point.
+          // Reachable while unverified - that's the whole point.
           const { user } = await requireAuth(request, { allowUnverified: true })
 
           // Already verified: nothing to do (also stops link spam).

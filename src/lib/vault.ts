@@ -7,7 +7,7 @@ import { unwrapKey } from './crypto/envelope'
 // once per browser session; the Argon2id-derived master key (never the raw
 // password) is kept encrypted in sessionStorage under a non-extractable
 // runtime AES key stored in IndexedDB. Org keys are unwrapped from it locally
-// — no key material is ever sent to the server.
+// - no key material is ever sent to the server.
 
 const STORAGE_KEY = 'vaultMasterKey'
 const IDB_NAME = 'itsasecret-vault'
@@ -146,7 +146,7 @@ async function fetchKdfSettings(): Promise<{ kdf_salt: string; kdf_params: strin
 
 // Called right after a successful login/register, while the password is in
 // hand, so viewing secrets doesn't re-prompt in this tab. Skips the unwrap
-// proof — the server just verified the password.
+// proof - the server just verified the password.
 export async function seedVaultFromLogin(password: string): Promise<void> {
   const user = await fetchKdfSettings()
   const kdfParams: KdfParams = JSON.parse(user.kdf_params)

@@ -41,7 +41,7 @@ function VerifyEmailPage() {
         </div>
         <h1 className="auth-title">Verify your email</h1>
         <p className="auth-subtitle">
-          We sent a verification link to <strong>{email}</strong>. Open it to unlock your account —
+          We sent a verification link to <strong>{email}</strong>. Open it to unlock your account -
           the rest of the app stays locked until you do.
         </p>
 

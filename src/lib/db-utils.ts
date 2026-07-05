@@ -7,7 +7,7 @@ export function generateId(): string {
   return createId()
 }
 
-// Every project starts with one environment — 'production' by default
+// Every project starts with one environment - 'production' by default
 // (product spec); onboarding lets the user name their first one.
 export async function createProjectWithEnv(
   orgId: string,

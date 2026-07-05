@@ -16,7 +16,7 @@ const sessionRotationMiddleware = createMiddleware({ type: 'request' }).server(
         const { maybeRotateCliSession } = await import('./lib/session-rotation')
         await maybeRotateCliSession(request, result.response)
       } catch {
-        // Rotation is best-effort — never break the actual response over it.
+        // Rotation is best-effort - never break the actual response over it.
       }
     }
     return result

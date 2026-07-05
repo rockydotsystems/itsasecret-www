@@ -70,7 +70,7 @@ export const Route = createFileRoute('/api/auth/register')({
             kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
           })
 
-          // No orgs/projects are provisioned at signup — the onboarding wizard
+          // No orgs/projects are provisioned at signup - the onboarding wizard
           // creates the personal org (with a client-wrapped key), first project,
           // and first environment after email verification.
           const { publicKey: serverPubkey } = await generateKeyPair()
@@ -83,7 +83,7 @@ export const Route = createFileRoute('/api/auth/register')({
           const { token: verifyToken } = await createEmailVerification(userId)
           const verifyUrl = verificationUrl(request, verifyToken)
           // Best-effort: the account already exists, so a mail hiccup must not
-          // fail signup — the user can re-request verification later.
+          // fail signup - the user can re-request verification later.
           try {
             await sendVerificationEmail({ to: email, verifyUrl })
           } catch (mailErr) {

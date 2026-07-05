@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { presignGetUrl } from '~/lib/s3-presign'
 
 // CLI binary downloads. The Railway bucket is private, so this route
-// presigns a short-lived GET and redirects — install.sh and direct curls
+// presigns a short-lived GET and redirects - install.sh and direct curls
 // only ever see itsasecret.dev URLs.
 const ALLOWED_TARGETS =
   /^(itsasecret_(linux|darwin)_(amd64|arm64)|checksums\.txt|version\.json)$/

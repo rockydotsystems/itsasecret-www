@@ -1,5 +1,5 @@
 {
-  description = "itsasecret — TanStack Start API + website";
+  description = "itsasecret - TanStack Start API + website";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -82,7 +82,7 @@
               exit 1
             '');
           };
-          # Own script (not the `app` helper) — the helper does `exec ${cmd}`,
+          # Own script (not the `app` helper) - the helper does `exec ${cmd}`,
           # which only works for a single command, not this multi-line body.
           migrateProdApp = {
             type = "app";
@@ -105,7 +105,7 @@
           db-generate = app "db-generate" ''pnpm exec drizzle-kit generate "$@"'';
           deploy = app "deploy" ''railway up "$@"'';
           # `railway run` injects the web service's DATABASE_URL, which is the
-          # INTERNAL domain (postgres.railway.internal) — unresolvable off
+          # INTERNAL domain (postgres.railway.internal) - unresolvable off
           # Railway, so it hangs. migrateProdApp instead pulls the Postgres
           # service's public proxy URL and hands it to drizzle-kit directly.
           # No hardcoded creds; survives password rotation.

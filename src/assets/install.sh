@@ -1,5 +1,5 @@
 #!/bin/sh
-# itsasecret installer — https://itsasecret.dev/install.sh
+# itsasecret installer - https://itsasecret.dev/install.sh
 #
 #   curl -fsSL https://itsasecret.dev/install.sh | sh
 #
@@ -15,7 +15,7 @@ os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$os" in
   linux | darwin) ;;
   *)
-    echo "error: unsupported OS '$os' — the installer covers linux and macOS" >&2
+    echo "error: unsupported OS '$os' - the installer covers linux and macOS" >&2
     exit 1
     ;;
 esac
@@ -25,7 +25,7 @@ case "$arch" in
   x86_64 | amd64) arch=amd64 ;;
   aarch64 | arm64) arch=arm64 ;;
   *)
-    echo "error: unsupported architecture '$arch' — amd64 and arm64 only" >&2
+    echo "error: unsupported architecture '$arch' - amd64 and arm64 only" >&2
     exit 1
     ;;
 esac
@@ -45,7 +45,7 @@ else
 fi
 expected=$(awk -v f="$bin" '$2 == f { print $1 }' "$tmp/checksums.txt")
 if [ -z "$expected" ] || [ "$actual" != "$expected" ]; then
-  echo "error: checksum mismatch for $bin — aborting install" >&2
+  echo "error: checksum mismatch for $bin - aborting install" >&2
   exit 1
 fi
 

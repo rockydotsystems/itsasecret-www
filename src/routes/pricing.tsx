@@ -10,7 +10,7 @@ export const Route = createFileRoute('/pricing')({
 
 const INCLUDED = [
   'Unlimited secrets & env vars',
-  'Unlimited environments — production, staging, per-dev forks',
+  'Unlimited environments - production, staging, per-dev forks',
   'Your whole team, roles included',
   'End-to-end encryption on every plan, forever',
   'CLI + web dashboard',
@@ -36,7 +36,7 @@ function PricingPage() {
             Free while in beta<span className="hero-title-flare">.</span>
           </h1>
           <p className="hero-subtitle">
-            Every feature, every environment, your whole team. Paid team plans arrive with GA —
+            Every feature, every environment, your whole team. Paid team plans arrive with GA -
             early users hear about it first, with plenty of notice.
           </p>
 
@@ -64,7 +64,7 @@ function PricingPage() {
           </div>
 
           <p className="pricing-footnote">
-            Questions about team plans or self-hosting? The crypto is the same on every tier —
+            Questions about team plans or self-hosting? The crypto is the same on every tier -
             encryption is never a paid feature.
           </p>
         </div>

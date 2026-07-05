@@ -407,7 +407,7 @@ function DangerSection({
           <div>
             <h2 className="settings-section-title">Danger zone</h2>
             <p className="settings-section-desc">
-              Personal organizations cannot be transferred or deleted — they live and die with your account.
+              Personal organizations cannot be transferred or deleted - they live and die with your account.
             </p>
           </div>
         </div>

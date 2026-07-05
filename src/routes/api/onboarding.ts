@@ -21,7 +21,7 @@ export const Route = createFileRoute('/api/onboarding')({
       // One-shot first-workspace setup for a freshly verified account: creates
       // the personal org (key wrapped client-side under the master key), the
       // first project, and its first environment. Refused once the user
-      // belongs to any live org — after that, the normal org/project APIs own
+      // belongs to any live org - after that, the normal org/project APIs own
       // this.
       POST: async ({ request }) => {
         try {

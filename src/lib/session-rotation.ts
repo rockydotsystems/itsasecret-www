@@ -29,7 +29,7 @@ export async function maybeRotateCliSession(request: Request, response: Response
 
   // Match on the *current* token only: a request that came in on the
   // grace-window (previous) token means rotation already happened and the
-  // client simply hasn't caught up — rotating again would churn tokens.
+  // client simply hasn't caught up - rotating again would churn tokens.
   const rows = await db.select().from(sessions).where(and(
     eq(sessions.token_hash, tokenHash),
     eq(sessions.kind, 'cli'),
@@ -42,7 +42,7 @@ export async function maybeRotateCliSession(request: Request, response: Response
   await refreshSessionOrgKeys(session, request)
 
   // A concurrent request may win the rotation race; in that case send no
-  // header — this request's token stays valid through the grace window.
+  // header - this request's token stays valid through the grace window.
   const rotated = await rotateSessionToken(session)
   if (!rotated) return
   response.headers.set('X-New-Session-Token', rotated.token)

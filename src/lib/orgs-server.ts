@@ -293,7 +293,7 @@ export const getProjectSettingsFn = createServerFn({ method: 'POST' })
 
 // Loads the project-level dashboard view and records org + project (and, when
 // a valid envId is passed, env) visits. The returned envId is the requested
-// one when valid, otherwise last-visited or first — callers canonicalize the
+// one when valid, otherwise last-visited or first - callers canonicalize the
 // URL against it.
 export const getProjectViewFn = createServerFn({ method: 'POST' })
   .validator(z.object({ orgId: z.string(), projectId: z.string(), envId: z.string().optional() }))

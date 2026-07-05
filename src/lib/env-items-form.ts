@@ -42,7 +42,7 @@ export async function deleteVar(envId: string, key: string): Promise<void> {
 }
 
 // E2E: the value is encrypted under the org key in the browser (vault must be
-// unlocked) and stored verbatim — the server never sees the plaintext.
+// unlocked) and stored verbatim - the server never sees the plaintext.
 export async function setSecret(orgId: string, envId: string, key: string, value: string): Promise<void> {
   validateItemKey(key)
   const orgKey = await getOrgKeyClient(orgId)

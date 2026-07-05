@@ -2,7 +2,7 @@
   "name": "itsasecret-www",
   "version": "0.1.0",
   "private": true,
-  "description": "itsasecret — TanStack Start API + website",
+  "description": "itsasecret - TanStack Start API + website",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

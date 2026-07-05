@@ -1,8 +1,8 @@
 import { createHash, createHmac } from 'node:crypto'
 
 // Minimal SigV4 query presigner for GET requests against an S3-compatible
-// store (Railway Buckets). Query-string auth only — no request body, no
-// extra signed headers — so the ~60 lines here beat pulling in the AWS SDK.
+// store (Railway Buckets). Query-string auth only - no request body, no
+// extra signed headers - so the ~60 lines here beat pulling in the AWS SDK.
 
 interface PresignOptions {
   endpoint: string // base S3 endpoint, e.g. https://storage.railway.app

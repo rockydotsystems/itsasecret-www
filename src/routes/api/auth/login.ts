@@ -85,7 +85,7 @@ export const Route = createFileRoute('/api/auth/login')({
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
 
           const orgKeys: Record<string, string> = {}
-          // Org keys wrapped under the user's master-password-derived key —
+          // Org keys wrapped under the user's master-password-derived key -
           // safe for a client to persist locally: useless without the master
           // password.
           const masterWrappedOrgKeys: Record<string, string> = {}
