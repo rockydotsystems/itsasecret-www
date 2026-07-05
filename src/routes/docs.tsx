@@ -134,9 +134,18 @@ function DocsPage() {
             <span className="term-prompt">$ </span><span className="term-cmd">shh pull</span>{'\n'}
             Wrote .env{'\n'}
             {'\n'}
-            <span className="term-dim"># .envrc</span>{'\n'}
-            eval &quot;$(<span className="term-cmd">shh pull</span> --shell)&quot;
+            <span className="term-dim"># .envrc (direnv) or bash/zsh</span>{'\n'}
+            eval &quot;$(<span className="term-cmd">shh pull</span> --shell)&quot;{'\n'}
+            <span className="term-dim"># fish</span>{'\n'}
+            eval (<span className="term-cmd">shh pull</span> --shell){'\n'}
+            <span className="term-dim"># nushell</span>{'\n'}
+            load-env (<span className="term-cmd">shh pull</span> --shell | from json)
           </CodeBlock>
+          <p>
+            <code>--shell</code> speaks your shell&rsquo;s dialect: it auto-detects from{' '}
+            <code>$SHELL</code> (POSIX inside direnv, where <code>.envrc</code> is always bash),
+            or force one with <code>--shell=posix|fish|nu|pwsh</code>.
+          </p>
         </section>
 
         <section className="docs-section">
