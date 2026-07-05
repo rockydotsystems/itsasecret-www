@@ -5,6 +5,7 @@ import { Badge } from '~/components/badge'
 import { Navbar } from '~/components/navbar'
 import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
+import { InstallSnippet } from '~/components/installsnippet'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 
 const FEATURES = [
@@ -156,6 +157,7 @@ function LandingPage() {
               </>
             )}
           </div>
+          <InstallSnippet />
           <Terminal />
         </div>
       </section>

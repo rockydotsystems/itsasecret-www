@@ -50,6 +50,25 @@ function DocsPage() {
         </header>
 
         <section className="docs-section">
+          <span className="section-kicker">00 · install</span>
+          <h2 className="docs-h2">One line, any machine</h2>
+          <p>
+            Installs the <code>itsasecret</code> binary (and its <code>shh</code> alias) to{' '}
+            <code>~/.local/bin</code> — linux and macOS, amd64 and arm64. The script verifies a
+            sha256 checksum before anything lands on disk.
+          </p>
+          <CodeBlock>
+            <span className="term-prompt">$ </span>
+            <span className="term-cmd">curl -fsSL https://itsasecret.dev/install.sh | sh</span>
+          </CodeBlock>
+          <p>
+            Prefer to read it first? The same URL prints the script in your terminal.{' '}
+            <code>SHH_INSTALL_DIR</code> overrides the destination, and{' '}
+            <code>SHH_BASE_URL</code> downloads from a self-hosted server instead.
+          </p>
+        </section>
+
+        <section className="docs-section">
           <span className="section-kicker">01 · log in</span>
           <h2 className="docs-h2">Authenticate once per machine</h2>
           <p>

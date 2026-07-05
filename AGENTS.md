@@ -51,6 +51,25 @@ docker compose up -d           # start Postgres 17
 - **Unverified accounts are locked out by default** — `requireAuth` throws `403 Email not verified` unless called with `{ allowUnverified: true }`; only `me`, `logout`, and `resend-verification` opt out. So every current/future protected API route is gated by one check. Web pages: `requireAuthBeforeLoad` redirects unverified users to `/verify-email` (a holding page with resend + logout). `POST /api/auth/resend-verification` re-issues a link (rate-limited).
 - **Route guards use `beforeLoad` with server-side cookie check** — protected pages redirect to `/login?redirect=<origin>`; logged-in users hitting `/login` or `/register` are redirected to `/dashboard`.
 
+- **Migrations run automatically at boot in production** — `start.ts` runs
+  `src/lib/migrate-on-boot.ts` (drizzle-orm postgres-js migrator, `drizzle/`
+  folder copied into the Docker image) when `MIGRATE_ON_BOOT` is set (it is,
+  on the Railway `web` service). A failed migration exits the process, so the
+  deploy fails healthcheck and the previous deployment stays live. Local dev
+  keeps explicit `db:push`/`db:migrate`. Safe only while replicas stay pinned
+  to 1 (same constraint as the purge cron).
+- **CLI installer is served by this app** — `/install.sh` (a server route that
+  returns `src/assets/install.sh` via `?raw` import; `public/` static assets
+  are NOT served in this nitro setup, don't use them) and `/api/dl/$target`,
+  which 302-redirects allowlisted names (`itsasecret_<os>_<arch>`,
+  `checksums.txt`, `version.json`) to 5-minute presigned GETs against the
+  private Railway bucket (`src/lib/s3-presign.ts`, hand-rolled SigV4 —
+  tested against the AWS known-answer vector). Binaries land in the bucket
+  under `cli/latest/` from the client repo's release workflow. Needs
+  `BUCKET_ENDPOINT`/`BUCKET_NAME`/`BUCKET_ACCESS_KEY_ID`/
+  `BUCKET_SECRET_ACCESS_KEY` (+ optional `BUCKET_REGION`, default `auto`) —
+  set on the Railway `web` service; without them the route 503s.
+
 ## Repo layout
 
 ```

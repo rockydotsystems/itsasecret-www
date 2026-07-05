@@ -27,9 +27,23 @@ export const startInstance = createStart(() => ({
   requestMiddleware: [csrfMiddleware, sessionRotationMiddleware],
 }))
 
-// The purge cron touches Postgres, so it must only run on the server.
-// start.ts is loaded by the client, so use a dynamic import guarded by the
+// Boot-time DB work touches Postgres, so it must only run on the server.
+// start.ts is loaded by the client, so use dynamic imports guarded by the
 // environment to avoid pulling postgres (Node-only) into the browser bundle.
 if (typeof window === 'undefined') {
-  void import('./lib/purge-cron').then((m) => m.startPurgeCron())
+  const bootstrap = async () => {
+    // MIGRATE_ON_BOOT is set on the Railway web service; local dev keeps
+    // using db:push / db:migrate explicitly.
+    if (process.env.MIGRATE_ON_BOOT) {
+      const { migrateOnBoot } = await import('./lib/migrate-on-boot')
+      await migrateOnBoot()
+    }
+    const { startPurgeCron } = await import('./lib/purge-cron')
+    startPurgeCron()
+  }
+  void bootstrap().catch((err) => {
+    // A failed migration must fail the deploy, not serve on a stale schema.
+    console.error('Boot-time migration failed:', err)
+    process.exit(1)
+  })
 }

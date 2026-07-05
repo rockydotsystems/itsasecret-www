@@ -20,5 +20,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY --from=build /app/.output ./.output
+# Migration SQL + journal for the boot-time migrator (MIGRATE_ON_BOOT)
+COPY --from=build /app/drizzle ./drizzle
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]

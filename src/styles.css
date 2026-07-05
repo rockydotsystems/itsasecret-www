@@ -636,6 +636,18 @@ a:hover { text-decoration: underline; }
 .hero-subtitle { font: 400 var(--text-lg)/var(--leading-relaxed) var(--font-family-body); color: var(--text-secondary); max-width: 540px; margin: 0 auto 36px; }
 .hero-ctas { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
 
+/* ─── Install snippet ───────────────────────────── */
+.install-snippet {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 28px auto 0; padding: 8px 10px 8px 18px;
+  background: var(--bg-raised); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family-mono); font-size: 13px;
+  letter-spacing: var(--tracking-mono); color: var(--text-primary);
+  max-width: 100%; overflow-x: auto;
+}
+.install-snippet-cmd { white-space: nowrap; }
+
 /* ─── Hero terminal ─────────────────────────────── */
 .hero-terminal {
   max-width: 620px; margin: 56px auto 0; text-align: left;
