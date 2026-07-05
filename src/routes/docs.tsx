@@ -9,6 +9,7 @@ export const Route = createFileRoute('/docs')({
 
 const COMMANDS = [
   { cmd: 'shh login', body: 'Authenticate; keys are derived on your machine.' },
+  { cmd: 'shh config', body: 'View/set the API server — per machine, or per repo in .shh.project.' },
   { cmd: 'shh link', body: 'Pin the directory to a project & environment (interactive when bare).' },
   { cmd: 'shh pull', body: 'Fetch vars + secrets into a file (--out) or shell (--shell).' },
   { cmd: 'shh reload', body: 'Pull again, delivered the way the last pull was.' },
@@ -60,6 +61,13 @@ function DocsPage() {
             <span className="term-dim">Email:    you@example.com{'\n'}Password: ********{'\n'}</span>
             Logged in.
           </CodeBlock>
+          <p>
+            Self-hosting? Set the API server once per machine with{' '}
+            <code>shh config</code> (interactive) or{' '}
+            <code>shh config set api &lt;url&gt;</code> — or commit an{' '}
+            <code>api =</code> line in <code>.shh.project</code> so the whole repo points at your
+            server. The project override wins over the machine config.
+          </p>
         </section>
 
         <section className="docs-section">
