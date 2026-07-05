@@ -57,6 +57,10 @@ export type ProjectView = {
   envVars: VarSummary[]
   deletedSecrets: DeletedItemSummary[]
   deletedVars: DeletedItemSummary[]
+  // Access data for the selected environment, for managing grants right from
+  // the dashboard. Only populated when the caller is an env admin.
+  envGrants: EnvPermissionView[]
+  members: OrgMemberView[]
 }
 
 async function listOrgsForUser(userId: string): Promise<Org[]> {
@@ -337,6 +341,8 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
     let deletedSecrets: DeletedItemSummary[] = []
     let deletedVars: DeletedItemSummary[] = []
     let envRole = ''
+    let envGrants: EnvPermissionView[] = []
+    let members: OrgMemberView[] = []
     if (envId) {
       const [secretRows, varRows, deletedSecretRows, deletedVarRows, permRows] = await Promise.all([
         db.select({ key: secrets.key, updated_at: secrets.updated_at }).from(secrets)
@@ -358,6 +364,29 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
         ? 'admin'
         : permRows[0]?.role ?? ''
+
+      // Env admins can manage access from the dashboard; nobody else needs
+      // the grant list or the org roster (emails), so don't send them.
+      if (envRole === 'admin') {
+        ;[envGrants, members] = await Promise.all([
+          db.select({
+            env_id: envPermissions.env_id,
+            user_id: envPermissions.user_id,
+            email: users.email,
+            role: envPermissions.role,
+          }).from(envPermissions)
+            .innerJoin(users, eq(users.id, envPermissions.user_id))
+            .where(eq(envPermissions.env_id, envId)),
+          db.select({
+            user_id: orgMembers.user_id,
+            email: users.email,
+            role: orgMembers.role,
+            created_at: orgMembers.created_at,
+          }).from(orgMembers)
+            .innerJoin(users, eq(users.id, orgMembers.user_id))
+            .where(eq(orgMembers.org_id, orgId)),
+        ])
+      }
     }
 
     return {
@@ -371,5 +400,7 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envVars: envVarList,
       deletedSecrets,
       deletedVars,
+      envGrants,
+      members,
     }
   })

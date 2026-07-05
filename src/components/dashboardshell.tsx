@@ -11,6 +11,7 @@ import { MasterPassModal } from '~/components/masterpassmodal'
 import { HistoryModal } from '~/components/historymodal'
 import type { HistoryModalEntry } from '~/components/historymodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
+import { EnvAccessModal } from '~/components/envaccessmodal'
 import { createEnvironment, forkEnvironment } from '~/lib/project-settings-form'
 import {
   setSecret, setVar, deleteSecret, deleteVar, revealSecret,
@@ -18,7 +19,7 @@ import {
 } from '~/lib/env-items-form'
 import { ClockIcon, RestoreIcon, TrashIcon } from '~/components/secretrow'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
-import type { SecretSummary, VarSummary, DeletedItemSummary } from '~/lib/orgs-server'
+import type { SecretSummary, VarSummary, DeletedItemSummary, EnvPermissionView, OrgMemberView } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
 
 export type DashboardShellProps = {
@@ -34,6 +35,8 @@ export type DashboardShellProps = {
   envVars?: VarSummary[]
   deletedSecrets?: DeletedItemSummary[]
   deletedVars?: DeletedItemSummary[]
+  envGrants?: EnvPermissionView[]
+  members?: OrgMemberView[]
 }
 
 type EditingItem = { type: 'secret' | 'var'; itemKey: string; initialValue: string }
@@ -125,11 +128,14 @@ export function DashboardShell({
   envVars = [],
   deletedSecrets = [],
   deletedVars = [],
+  envGrants = [],
+  members = [],
 }: DashboardShellProps) {
   const navigate = useNavigate()
   const router = useRouter()
   const [creatingEnv, setCreatingEnv] = useState(false)
   const [forkingEnv, setForkingEnv] = useState(false)
+  const [managingAccess, setManagingAccess] = useState(false)
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
@@ -141,11 +147,14 @@ export function DashboardShell({
   const unlockPromiseRef = useRef<Promise<void> | null>(null)
 
   const projectName = projects.find((p) => p.id === projectId)?.name || 'Select project'
-  const envName = environments.find((e) => e.id === envId)?.name ?? ''
+  const currentEnv = environments.find((e) => e.id === envId)
+  const envName = currentEnv?.name ?? ''
   // Only org owners and admins can create environments from scratch.
   const canCreateEnv = !!projectId && (currentUserRole === 'owner' || currentUserRole === 'admin')
   // Same rule as the fork API: org owners/admins, or anyone with a grant on the env.
   const canFork = !!envId && (currentUserRole === 'owner' || currentUserRole === 'admin' || envRole !== '')
+  // envRole is 'admin' for org owners/admins too, mirroring the permissions API.
+  const canManageAccess = !!envId && envRole === 'admin'
   const canWrite = envRole === 'write' || envRole === 'admin'
   const hasDeleted = deletedSecrets.length > 0 || deletedVars.length > 0
   // Deleted items keep the sections view alive so they stay reachable.
@@ -327,10 +336,19 @@ export function DashboardShell({
           </button>
         )}
       </div>
-      {canFork && (
-        <Button size="sm" variant="ghost" onClick={() => setForkingEnv(true)}>
-          Fork {envName}
-        </Button>
+      {(canFork || canManageAccess) && (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {canFork && (
+            <Button size="sm" variant="ghost" onClick={() => setForkingEnv(true)}>
+              Fork {envName}
+            </Button>
+          )}
+          {canManageAccess && (
+            <Button size="sm" variant="ghost" onClick={() => setManagingAccess(true)}>
+              Access
+            </Button>
+          )}
+        </div>
       )}
     </div>
   )
@@ -534,6 +552,18 @@ export function DashboardShell({
               params: { orgId, projectId },
               search: { env: env.id },
             })
+          }}
+        />
+      )}
+
+      {managingAccess && currentEnv && (
+        <EnvAccessModal
+          env={currentEnv}
+          grants={envGrants}
+          members={members}
+          onClose={() => setManagingAccess(false)}
+          onChanged={async () => {
+            await router.invalidate()
           }}
         />
       )}
