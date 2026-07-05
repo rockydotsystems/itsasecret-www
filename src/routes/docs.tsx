@@ -66,7 +66,8 @@ function DocsPage() {
             <code>shh config</code> (interactive) or{' '}
             <code>shh config set api &lt;url&gt;</code> — or commit an{' '}
             <code>api =</code> line in <code>.shh.project</code> so the whole repo points at your
-            server. The project override wins over the machine config.
+            server. The project override wins over the machine config, and sessions are kept per
+            server — logging in to one doesn&rsquo;t log you out of another.
           </p>
         </section>
 
