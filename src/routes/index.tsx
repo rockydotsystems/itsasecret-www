@@ -33,8 +33,8 @@ const FEATURES = [
 const STEPS = [
   {
     num: '01',
-    cmd: 'shh init',
-    body: 'Link this repo to a project. Your master key is derived from your password, on your machine, and stays there.',
+    cmd: 'shh link',
+    body: 'Pin this repo to a project and environment — pick them from an interactive menu. Your master key is derived from your password, on your machine, and stays there.',
   },
   {
     num: '02',
@@ -44,7 +44,7 @@ const STEPS = [
   {
     num: '03',
     cmd: 'shh pull',
-    body: 'Any machine, any teammate with access — decrypts straight into .env. Or shh pull --shell in your .envrc, and direnv allow loads them without writing a file.',
+    body: 'Any machine, any teammate with access — decrypts straight into .env. Or shh pull --shell in your .envrc, and direnv allow loads them without writing a file. shh reload repeats the last pull, delivered the same way.',
   },
 ]
 

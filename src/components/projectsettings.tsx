@@ -126,7 +126,7 @@ function GeneralSection({
             <code>{project.id}</code>
           </div>
           <span className="input-helper">
-            Target this project from the CLI: shh pull --shell --project {project.id}
+            Link a repo to this project from the CLI: shh link --project {project.id} — then shh pull / shh reload need no flags.
           </span>
         </div>
         {error && <span className="input-error">{error}</span>}
