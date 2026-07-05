@@ -53,8 +53,10 @@ function DocsPage() {
           <span className="section-kicker">01 · log in</span>
           <h2 className="docs-h2">Authenticate once per machine</h2>
           <p>
-            Your master password derives your key on-device (argon2id) and unwraps your orgs&rsquo;
-            keys; the session is stored under <code>~/.config/itsasecret/</code>.
+            Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
+            CLI sessions roll: every command refreshes them, and after ~30 idle minutes the next
+            command simply asks for your master password again. Nothing stored on disk is usable
+            without it — org keys are kept master-password-wrapped, never in plaintext.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh login</span>{'\n'}

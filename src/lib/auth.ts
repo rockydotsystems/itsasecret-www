@@ -1,4 +1,4 @@
-import { eq, and, isNull, gt } from 'drizzle-orm'
+import { eq, and, isNull, gt, or } from 'drizzle-orm'
 import { ZodError } from 'zod'
 import { db } from './db'
 import { users, sessions } from './schema'
@@ -30,13 +30,23 @@ export async function requireAuth(
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes as BufferSource)
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
 
+  // Rolling (CLI) sessions rotate their token on every successful request;
+  // the immediately-previous token is honored for a short grace window so an
+  // interrupted client isn't locked out.
+  const now = new Date()
   const sessionRows = await db
     .select()
     .from(sessions)
     .where(and(
-      eq(sessions.token_hash, tokenHash),
+      or(
+        eq(sessions.token_hash, tokenHash),
+        and(
+          eq(sessions.prev_token_hash, tokenHash),
+          gt(sessions.prev_token_expires_at, now)
+        )
+      ),
       isNull(sessions.revoked_at),
-      gt(sessions.expires_at, new Date())
+      gt(sessions.expires_at, now)
     ))
     .limit(1)
   const session = sessionRows[0] ?? null

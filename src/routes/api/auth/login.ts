@@ -20,6 +20,9 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
   clientPubkey: z.string(),
+  // 'cli' sessions are short-lived and roll their token on every successful
+  // request (see lib/sessions.ts); the default 'web' keeps long sessions.
+  client: z.enum(['web', 'cli']).optional(),
 })
 
 function isSecureRequest(request: Request): boolean {
@@ -44,6 +47,7 @@ export const Route = createFileRoute('/api/auth/login')({
 
           const body = loginSchema.parse(await request.json())
           const { email, password, clientPubkey } = body
+          const kind = body.client ?? 'web'
 
           const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1)
           const user = userRows[0] ?? null
@@ -81,22 +85,29 @@ export const Route = createFileRoute('/api/auth/login')({
           const sessionKey = await deriveSessionKey(privateKey, clientPubkey)
 
           const orgKeys: Record<string, string> = {}
+          // Org keys wrapped under the user's master-password-derived key —
+          // safe for a client to persist locally: useless without the master
+          // password.
+          const masterWrappedOrgKeys: Record<string, string> = {}
           for (const member of memberRows) {
             let orgKey: Uint8Array
+            let masterWrapped = member.wrapped_org_key
             if (isPendingOrgKey(member.wrapped_org_key)) {
               // Invited member logging in for the first time since the invite:
               // finish the re-key by wrapping the org key under their master key.
               orgKey = await unwrapPendingOrgKey(member.wrapped_org_key)
+              masterWrapped = await wrapKey(derivedKey, orgKey)
               await db.update(orgMembers)
-                .set({ wrapped_org_key: await wrapKey(derivedKey, orgKey) })
+                .set({ wrapped_org_key: masterWrapped })
                 .where(and(eq(orgMembers.org_id, member.org_id), eq(orgMembers.user_id, user.id)))
             } else {
               orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
             }
             orgKeys[member.org_id] = await encrypt(sessionKey, base64Encode(orgKey))
+            masterWrappedOrgKeys[member.org_id] = masterWrapped
           }
 
-          const { token } = await createSession(user.id, serverPubkey, orgKeys)
+          const { token, expiresAt } = await createSession(user.id, serverPubkey, orgKeys, kind)
 
           // Upgrade legacy password hashes to the new format on successful login.
           // This removes the leak where the hash exposed the KDF-derived key.
@@ -111,7 +122,13 @@ export const Route = createFileRoute('/api/auth/login')({
           const headers = new Headers()
           headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
 
-          return Response.json({ token, serverPubkey, orgKeys }, { status: 200, headers })
+          return Response.json({
+            token,
+            serverPubkey,
+            orgKeys,
+            masterWrappedOrgKeys,
+            sessionExpiresAt: expiresAt.toISOString(),
+          }, { status: 200, headers })
         } catch (err) {
           return errorResponse(err)
         }

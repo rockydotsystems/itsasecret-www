@@ -153,6 +153,12 @@ export const sessions = pgTable('sessions', {
   id: text().primaryKey(),
   user_id: text().notNull().references(() => users.id),
   token_hash: text().notNull().unique(),
+  // 'web' sessions live 30 days on a stable token; 'cli' sessions live 30
+  // minutes and roll — each successful request issues a new token, with the
+  // previous one honored briefly (crash/parallel safety).
+  kind: text().notNull().default('web'),
+  prev_token_hash: text(),
+  prev_token_expires_at: timestamp('prev_token_expires_at', { withTimezone: true }),
   session_pubkey: text().notNull(),
   encrypted_org_keys: text().notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
@@ -161,6 +167,7 @@ export const sessions = pgTable('sessions', {
 }, (t) => [
   index('idx_sessions_user').on(t.user_id),
   index('idx_sessions_expires').on(t.expires_at),
+  index('idx_sessions_prev_token').on(t.prev_token_hash),
 ])
 
 export const userLastOrg = pgTable('user_last_org', {
