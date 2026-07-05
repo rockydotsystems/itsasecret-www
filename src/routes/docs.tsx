@@ -9,7 +9,7 @@ export const Route = createFileRoute('/docs')({
 
 const COMMANDS = [
   { cmd: 'shh login', body: 'Authenticate; keys are derived on your machine.' },
-  { cmd: 'shh config', body: 'View/set the API server — per machine, or per repo in .shh.project.' },
+  { cmd: 'shh config', body: 'View/set the server URL — per machine, or per repo in .shh.project.' },
   { cmd: 'shh link', body: 'Pin the directory to a project & environment (interactive when bare).' },
   { cmd: 'shh pull', body: 'Fetch vars + secrets into a file (--out) or shell (--shell).' },
   { cmd: 'shh reload', body: 'Pull again, delivered the way the last pull was.' },
@@ -62,10 +62,10 @@ function DocsPage() {
             Logged in.
           </CodeBlock>
           <p>
-            Self-hosting? Set the API server once per machine with{' '}
+            Self-hosting? Set the server URL once per machine with{' '}
             <code>shh config</code> (interactive) or{' '}
-            <code>shh config set api &lt;url&gt;</code> — or commit an{' '}
-            <code>api =</code> line in <code>.shh.project</code> so the whole repo points at your
+            <code>shh config set url &lt;url&gt;</code> — or commit a{' '}
+            <code>url =</code> line in <code>.shh.project</code> so the whole repo points at your
             server. The project override wins over the machine config, and sessions are kept per
             server — logging in to one doesn&rsquo;t log you out of another.
           </p>
