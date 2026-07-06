@@ -14,21 +14,6 @@ export const Route = createFileRoute('/docs')({
   component: DocsPage,
 })
 
-const COMMANDS = [
-  { cmd: 'shh login', body: 'Authenticate; keys are derived on your machine.' },
-  { cmd: 'shh auth <token>', body: 'Authenticate a headless machine with a long-lived access token.' },
-  { cmd: 'shh config', body: 'View/set the server URL - per machine, or per repo in .shh.project.' },
-  { cmd: 'shh link', body: 'Pin the directory to a project & environment (interactive when bare).' },
-  { cmd: 'shh pull', body: 'Fetch vars + secrets into a file (--out) or shell (--shell).' },
-  { cmd: 'shh reload', body: 'Pull again, delivered the way the last pull was.' },
-  { cmd: 'shh secret set KEY=VALUE', body: 'Set a secret, encrypted before it leaves your machine.' },
-  { cmd: 'shh secret get <key>', body: 'Print one decrypted secret value.' },
-  { cmd: 'shh secret list', body: 'List secret keys - values are never shown.' },
-  { cmd: 'shh var set KEY=VALUE', body: 'Set a plaintext var.' },
-  { cmd: 'shh var get <key>', body: 'Print one plaintext var value.' },
-  { cmd: 'shh fork --name <new>', body: 'Fork an environment, copying its vars and secrets.' },
-]
-
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return <pre className="docs-code">{children}</pre>
 }
@@ -288,23 +273,6 @@ function DocsPage() {
             Sessions are stored per server - logging in to your self-hosted instance doesn&rsquo;t
             log you out of itsasecret.dev, and switching between repos just works.
           </p>
-        </section>
-
-        <section className="docs-section">
-          <span className="section-kicker">reference</span>
-          <h2 className="docs-h2">Every command</h2>
-          <p>
-            All environment-scoped commands accept <code>--project &lt;id&gt;</code> and{' '}
-            <code>--env &lt;name&gt;</code> to override the linked scope.
-          </p>
-          <div className="docs-table">
-            {COMMANDS.map((c) => (
-              <div className="docs-table-row" key={c.cmd}>
-                <code className="docs-table-cmd">{c.cmd}</code>
-                <span className="docs-table-body">{c.body}</span>
-              </div>
-            ))}
-          </div>
         </section>
 
         <div className="docs-notice">
