@@ -131,6 +131,47 @@ export async function sendTeamAddedEmail({ to, teamName, orgName, addedByEmail, 
   }
 }
 
+export interface SendTeamRemovedEmailArgs {
+  to: string
+  teamName: string
+  orgName: string
+  removedByEmail: string
+}
+
+// Notifies an org member they were removed from a team. Same contract as the
+// added notification: pure heads-up, failures logged and swallowed.
+export async function sendTeamRemovedEmail({ to, teamName, orgName, removedByEmail }: SendTeamRemovedEmailArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    console.log(
+      `\n[email:dev] ${to} removed from team "${teamName}" in "${orgName}" by ${removedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
+    )
+    return
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+      to,
+      reply_to: removedByEmail,
+      subject: `You've been removed from ${teamName} in ${orgName} on itsasecret`,
+      html: teamRemovedEmailHtml({ teamName, orgName, removedByEmail }),
+      text: `${removedByEmail} removed you from the team "${teamName}" in the organization "${orgName}" on itsasecret.\n\nYou keep any access granted to you individually or through other teams.`,
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error(`[email] Resend team-removed send failed (${res.status}): ${detail}`)
+  }
+}
+
 export interface SendFeedbackEmailArgs {
   fromUserEmail: string
   fromUserName: string | null
@@ -200,6 +241,17 @@ function teamAddedEmailHtml({ teamName, orgName, addedByEmail, dashboardUrl }: O
     <p><strong>${escapeHtml(addedByEmail)}</strong> added you to the team <strong>${escapeHtml(teamName)}</strong> in the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret.</p>
     <p>You now have whatever project and environment access is granted to ${escapeHtml(teamName)}.</p>
     <p><a href="${dashboardUrl}">Open the dashboard</a></p>
+    <p style="color:#666;font-size:12px;">No action is needed. If this seems wrong, contact an organization admin.</p>
+  </body>
+</html>`
+}
+
+function teamRemovedEmailHtml({ teamName, orgName, removedByEmail }: Omit<SendTeamRemovedEmailArgs, 'to'>): string {
+  return `<!doctype html>
+<html>
+  <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
+    <p><strong>${escapeHtml(removedByEmail)}</strong> removed you from the team <strong>${escapeHtml(teamName)}</strong> in the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret.</p>
+    <p>You keep any access granted to you individually or through other teams.</p>
     <p style="color:#666;font-size:12px;">No action is needed. If this seems wrong, contact an organization admin.</p>
   </body>
 </html>`
