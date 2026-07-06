@@ -5,10 +5,20 @@ import { Navbar } from '~/components/navbar'
 import { SiteFooter } from '~/components/sitefooter'
 import { RedactionTexture } from '~/components/redactiontexture'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
+import { IconHouse2, IconRocket } from 'nucleo-pixel-essential'
 
 export const Route = createFileRoute('/pricing')({
   component: PricingPage,
 })
+
+const INCLUDED = [
+  'Unlimited secrets & env vars',
+  'Unlimited environments - production, staging, per-dev forks',
+  'Your whole team, roles included',
+  'End-to-end encryption on every plan, forever',
+  'CLI + web dashboard',
+  'Version history & recovery',
+]
 
 type Tier = {
   name: string
@@ -90,12 +100,41 @@ function PricingPage() {
         <RedactionTexture rows={18} />
         <div className="hero-inner">
           <h1 className="hero-title">
-            Simple, honest pricing<span className="hero-title-flare">.</span>
+            Free while in beta<span className="hero-title-flare">.</span>
           </h1>
           <p className="hero-subtitle">
-            Encryption is never a paid feature - the crypto is identical on every tier. These plans
-            are not live yet; today, everything is free while in beta.
+            Every feature, every environment, your whole team. Paid plans arrive with GA - early
+            users hear about it first, with plenty of notice. Here&rsquo;s where things are headed.
           </p>
+
+          <div className="pricing-card">
+            <div className="pricing-card-header">
+              <span className="pricing-card-name">Beta</span>
+              <span className="pricing-card-price">
+                $0<span className="pricing-card-period">/ month</span>
+              </span>
+            </div>
+            <ul className="pricing-includes">
+              {INCLUDED.map((item) => (
+                <li key={item}>
+                  <span className="term-ok">✓</span> {item}
+                </li>
+              ))}
+            </ul>
+            <div className="pricing-card-cta">
+              {user ? (
+                <Button variant="primary" size="lg" href="/dashboard">
+                  <IconHouse2 size={16} aria-hidden="true" />
+                  Go to dashboard
+                </Button>
+              ) : (
+                <Button variant="primary" size="lg" href="/register">
+                  Get started
+                  <IconRocket size={16} aria-hidden="true" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -134,9 +173,8 @@ function PricingPage() {
         </div>
 
         <p className="pricing-footnote">
-          Prices aren&rsquo;t final and these tiers can&rsquo;t be selected yet - they&rsquo;re here
-          so you know where things are headed. Early users hear about GA first, with plenty of
-          notice.
+          Prices aren&rsquo;t final and these tiers can&rsquo;t be selected yet - while we&rsquo;re
+          in beta, everything above is free.
         </p>
       </section>
 
