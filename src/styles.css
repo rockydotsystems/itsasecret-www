@@ -865,6 +865,23 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
   letter-spacing: var(--tracking-mono); color: var(--text-primary);
   overflow-x: auto;
 }
+.docs-checksums {
+  list-style: none; margin: 18px 0; padding: 0;
+  border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden;
+}
+.docs-checksums li {
+  display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: baseline;
+  padding: 12px 16px; background: var(--bg-raised);
+  font-family: var(--font-family-mono); font-size: 12px; letter-spacing: var(--tracking-mono);
+}
+.docs-checksums li + li { border-top: 1px solid var(--border-default); }
+.docs-checksum-file { color: var(--text-primary); white-space: nowrap; }
+.docs-checksum-hash { color: var(--text-tertiary); word-break: break-all; }
+.docs-checksums-empty { font-size: var(--text-sm); color: var(--text-tertiary); }
+@media (max-width: 640px) {
+  .docs-checksums li { grid-template-columns: 1fr; gap: 4px; }
+}
+
 .docs-table { display: flex; flex-direction: column; border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; }
 .docs-table-row {
   display: grid; grid-template-columns: 260px 1fr; gap: 16px;

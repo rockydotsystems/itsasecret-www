@@ -3,8 +3,14 @@ import { useEffect, useState } from 'react'
 import { Navbar } from '~/components/navbar'
 import { SiteFooter } from '~/components/sitefooter'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
+import { getChecksumsFn, type ChecksumEntry } from '~/lib/checksums-server'
 
 export const Route = createFileRoute('/docs')({
+  loader: async (): Promise<ChecksumEntry[] | null> => getChecksumsFn(),
+  // Never serve a router-cached copy - re-run the loader on every visit so the
+  // checksums track the latest release as closely as the 60s server cache allows.
+  staleTime: 0,
+  shouldReload: true,
   component: DocsPage,
 })
 
@@ -29,6 +35,7 @@ function CodeBlock({ children }: { children: React.ReactNode }) {
 
 function DocsPage() {
   const [user, setUser] = useState<CurrentUser | null>(null)
+  const checksums = Route.useLoaderData()
 
   useEffect(() => {
     void getCurrentUser().then((u) => {
@@ -56,8 +63,23 @@ function DocsPage() {
           <p>
             Installs the <code>itsasecret</code> binary (and its <code>shh</code> alias) to{' '}
             <code>~/.local/bin</code> - linux and macOS, amd64 and arm64. The script verifies a
-            sha256 checksum before anything lands on disk.
+            sha256 checksum before installing - but feel free to view the checksums anyway:
           </p>
+          {checksums && checksums.length > 0 ? (
+            <ul className="docs-checksums">
+              {checksums.map((c) => (
+                <li key={c.file}>
+                  <span className="docs-checksum-file">{c.file}</span>
+                  <span className="docs-checksum-hash">{c.hash}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="docs-checksums-empty">
+              Checksums are published with every release - they&rsquo;ll appear here once this
+              server has a build to serve.
+            </p>
+          )}
           <CodeBlock>
             <span className="term-prompt">$ </span>
             <span className="term-cmd">curl -fsSL https://itsasecret.dev/install.sh | sh</span>
