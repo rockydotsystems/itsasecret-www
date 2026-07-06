@@ -524,6 +524,9 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
   -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 0%, transparent 78%);
   mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 0%, transparent 78%);
 }
+/* The closing CTA sits at the page bottom - mirror the texture so it grows
+   up from the bottom edge instead of hanging from the top. */
+.cta-final .redaction-bars { transform: scaleY(-1); }
 .redaction-row { display: flex; gap: 16px; flex: 0 0 auto; }
 .redaction-bar {
   height: 8px; border-radius: 2px; flex: 0 0 auto;
