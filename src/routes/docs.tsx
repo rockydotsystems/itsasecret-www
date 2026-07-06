@@ -199,8 +199,9 @@ function DocsPage() {
           <h2 className="docs-h2">Decrypt into a file or your shell</h2>
           <p>
             <code>shh pull</code> writes sourceable <code>export</code> lines to{' '}
-            <code>.env</code> (or <code>--out &lt;path&gt;</code>). With <code>--shell</code> it
-            prints them to stdout instead - perfect for direnv, no file written.
+            <code>.env</code> (or <code>--out &lt;path&gt;</code>). With <code>--shell</code>,
+            wrapping it in <code>eval</code> loads the values straight into your current shell
+            instead - perfect for direnv, no file written.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh pull</span>{'\n'}
