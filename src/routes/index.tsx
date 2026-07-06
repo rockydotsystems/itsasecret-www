@@ -61,11 +61,11 @@ const ASSURANCES = [
 const SHELL_FEATURES = [
   {
     cmd: 'shh pull --shell',
-    body: 'Works with every shell - POSIX exports for bash and zsh, set -gx for fish, JSON for nushell\'s load-env, $env: for PowerShell. The dialect is picked from $SHELL automatically.',
+    body: 'Works with every shell - bash, zsh, fish, nushell, PowerShell. Each gets its native syntax, picked from $SHELL automatically.',
   },
   {
     cmd: 'direnv allow',
-    body: 'First-class direnv support: put eval "$(shh pull --shell)" in .envrc and secrets load the moment you enter the directory - straight into the shell, no file written.',
+    body: 'First-class direnv support: put eval "$(shh pull --shell)" in .envrc and secrets load the moment you enter the directory - straight into the shell.',
   },
   {
     cmd: 'shh completion',
