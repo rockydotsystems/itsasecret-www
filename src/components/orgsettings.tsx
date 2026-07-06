@@ -12,6 +12,7 @@ import {
   transferOrgOwnership,
   deleteOrg,
   inviteMember,
+  revokeInvite,
   changeMemberRole,
   removeMember,
 } from '~/lib/org-settings-form'
@@ -23,7 +24,7 @@ import {
   removeTeamMember,
 } from '~/lib/teams-form'
 import type { MemberRole } from '~/lib/org-settings-form'
-import type { OrgMemberView, OrgSettingsView, TeamView } from '~/lib/orgs-server'
+import type { OrgInviteView, OrgMemberView, OrgSettingsView, TeamView } from '~/lib/orgs-server'
 
 export type OrgSettingsProps = {
   view: OrgSettingsView
@@ -39,7 +40,7 @@ function formatJoined(date: Date | string): string {
 }
 
 export function OrgSettings({ view }: OrgSettingsProps) {
-  const { org, members, teams, currentUserId, currentUserRole } = view
+  const { org, members, invites, teams, currentUserId, currentUserRole } = view
   const navigate = useNavigate()
   const router = useRouter()
 
@@ -57,6 +58,7 @@ export function OrgSettings({ view }: OrgSettingsProps) {
       <MembersSection
         orgId={org.id}
         members={members}
+        invites={invites}
         ownerUserId={org.owner_user_id}
         currentUserId={currentUserId}
         canManage={canManage}
@@ -161,6 +163,7 @@ function GeneralSection({
 function MembersSection({
   orgId,
   members,
+  invites,
   ownerUserId,
   currentUserId,
   canManage,
@@ -169,6 +172,7 @@ function MembersSection({
 }: {
   orgId: string
   members: OrgMemberView[]
+  invites: OrgInviteView[]
   ownerUserId: string
   currentUserId: string
   canManage: boolean
@@ -178,7 +182,21 @@ function MembersSection({
   const [inviting, setInviting] = useState(false)
   const [removing, setRemoving] = useState<OrgMemberView | null>(null)
   const [busyUserId, setBusyUserId] = useState('')
+  const [busyInviteId, setBusyInviteId] = useState('')
   const [error, setError] = useState('')
+
+  async function handleRevokeInvite(invite: OrgInviteView) {
+    setBusyInviteId(invite.id)
+    setError('')
+    try {
+      await revokeInvite(orgId, invite.id)
+      await onChanged()
+    } catch (err) {
+      setError((err as Error).message || 'Failed to revoke invite')
+    } finally {
+      setBusyInviteId('')
+    }
+  }
 
   async function handleRoleChange(member: OrgMemberView, role: string) {
     if (role === member.role) return
@@ -255,6 +273,33 @@ function MembersSection({
               </div>
             )
           })}
+          {invites.map((invite) => (
+            <div key={invite.id} className="member-row">
+              <Avatar name={invite.email} email={invite.email} size="md" />
+              <div className="member-row-info">
+                <span className="member-row-email">
+                  {invite.email}
+                  <Badge variant="neutral">invited</Badge>
+                </span>
+                <span className="member-row-meta">
+                  Invited {formatJoined(invite.created_at)} - awaiting acceptance
+                </span>
+              </div>
+              <div className="member-row-actions">
+                <Badge variant="neutral">{invite.role}</Badge>
+                {canManage && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={busyInviteId === invite.id}
+                    onClick={() => void handleRevokeInvite(invite)}
+                  >
+                    Revoke
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
       {error && <span className="input-error">{error}</span>}
@@ -316,7 +361,7 @@ function InviteMemberModal({
   return (
     <Modal
       title="Invite member"
-      subtitle="They need an itsasecret account already. They get access to this organization's key on their next login."
+      subtitle="We'll email them a link to accept the invitation. It expires in 7 days; re-inviting the same address sends a fresh link."
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

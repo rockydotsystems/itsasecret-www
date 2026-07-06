@@ -10,6 +10,8 @@ import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
+  // Prefill for the email field, set by the /invite accept page.
+  email: z.string().optional().catch(undefined),
   // Set by GET /api/auth/verify-email: 1 = verified, 0 = bad/expired link.
   // The router JSON-parses search values, so `?verified=1` arrives as the
   // number 1; junk values must not error the page, hence the catch.
@@ -23,7 +25,7 @@ export const Route = createFileRoute('/login')({
 })
 
 function LoginPage() {
-  const { redirect, verified } = Route.useSearch()
+  const { redirect, email: emailPrefill, verified } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
@@ -76,7 +78,7 @@ function LoginPage() {
         )}
 
         <form id="login-form" ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
+          <Input name="email" type="email" label="Email" placeholder="you@example.com" value={emailPrefill} required />
           <Input name="password" type="password" label="Master password" placeholder="••••••••••••" required />
           <span data-auth-form-error className="input-error">{error}</span>
           <Button type="submit" size="lg" disabled={loading}>

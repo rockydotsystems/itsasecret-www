@@ -1,9 +1,9 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import { eq, and, isNull, isNotNull, inArray } from 'drizzle-orm'
+import { eq, and, isNull, isNotNull, inArray, gt } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, projects, environments, envPermissions, secrets, envVars, teams, teamEnvPermissions, teamProjectPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
+import { users, orgs, orgMembers, orgInvites, projects, environments, envPermissions, secrets, envVars, teams, teamEnvPermissions, teamProjectPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
 import { requireOrgRole, memberEnvRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { listOrgTeams } from '~/lib/teams'
@@ -228,9 +228,20 @@ export type OrgMemberView = {
   created_at: Date
 }
 
+// An emailed invitation still awaiting acceptance. Shown alongside the
+// member roster; owner/admin can revoke (which kills the emailed link).
+export type OrgInviteView = {
+  id: string
+  email: string
+  role: string
+  created_at: Date
+  expires_at: Date
+}
+
 export type OrgSettingsView = OrgView & {
   org: Org
   members: OrgMemberView[]
+  invites: OrgInviteView[]
   teams: TeamView[]
   currentUserId: string
   currentUserRole: string
@@ -248,7 +259,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
 
     await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
 
-    const [userOrgs, orgProjects, lastProjectId, members, orgTeams] = await Promise.all([
+    const [userOrgs, orgProjects, lastProjectId, members, invites, orgTeams] = await Promise.all([
       listOrgsForUser(user.id),
       listProjectsForOrg(orgId),
       lastProjectIdForOrg(user.id, orgId),
@@ -260,6 +271,19 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
       }).from(orgMembers)
         .innerJoin(users, eq(users.id, orgMembers.user_id))
         .where(eq(orgMembers.org_id, orgId)),
+      db.select({
+        id: orgInvites.id,
+        email: orgInvites.email,
+        role: orgInvites.role,
+        created_at: orgInvites.created_at,
+        expires_at: orgInvites.expires_at,
+      }).from(orgInvites)
+        .where(and(
+          eq(orgInvites.org_id, orgId),
+          isNull(orgInvites.accepted_at),
+          isNull(orgInvites.revoked_at),
+          gt(orgInvites.expires_at, new Date())
+        )),
       listOrgTeams(orgId),
     ])
 
@@ -268,7 +292,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
     const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
     const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
 
-    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, teams: orgTeams, currentUserId: user.id, currentUserRole }
+    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, invites, teams: orgTeams, currentUserId: user.id, currentUserRole }
   })
 
 export type EnvPermissionView = {

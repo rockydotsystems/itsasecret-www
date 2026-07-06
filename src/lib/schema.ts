@@ -47,6 +47,30 @@ export const orgMembers = pgTable('org_members', {
   index('idx_org_members_user').on(t.user_id),
 ])
 
+// Pending invitations to join an org, emailed as a single-use accept link.
+// The invite carries the org key wrapped under the server secret ("pending:")
+// so acceptance can create the member row without the inviter being online;
+// the invitee's next login re-wraps it under their master key. Only the
+// SHA-256 hash of the emailed token is stored (same pattern as sessions).
+export const orgInvites = pgTable('org_invites', {
+  id: text().primaryKey(),
+  org_id: text().notNull().references(() => orgs.id),
+  // Normalized to lowercase at the API boundary so re-invites and accept-time
+  // matching are case-insensitive.
+  email: text().notNull(),
+  role: text().notNull().default('member'),
+  token_hash: text().notNull().unique(),
+  wrapped_org_key: text().notNull(),
+  invited_by: text().notNull().references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  accepted_at: timestamp('accepted_at', { withTimezone: true }),
+  revoked_at: timestamp('revoked_at', { withTimezone: true }),
+}, (t) => [
+  index('idx_org_invites_org').on(t.org_id),
+  index('idx_org_invites_email').on(t.email),
+])
+
 export const projects = pgTable('projects', {
   id: text().primaryKey(),
   org_id: text().notNull().references(() => orgs.id),
@@ -281,6 +305,7 @@ export type User = typeof users.$inferSelect
 export type EmailVerification = typeof emailVerifications.$inferSelect
 export type Org = typeof orgs.$inferSelect
 export type OrgMember = typeof orgMembers.$inferSelect
+export type OrgInvite = typeof orgInvites.$inferSelect
 export type Project = typeof projects.$inferSelect
 export type Environment = typeof environments.$inferSelect
 export type EnvVar = typeof envVars.$inferSelect

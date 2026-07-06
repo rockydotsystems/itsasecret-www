@@ -100,7 +100,7 @@ export function storeAuthFormNativeListener(
   })
 }
 
-export async function performLogout(): Promise<void> {
+export async function performLogout(redirectTo = '/login'): Promise<void> {
   const token = localStorage.getItem('sessionToken')
   if (token) {
     try {
@@ -117,7 +117,7 @@ export async function performLogout(): Promise<void> {
   localStorage.removeItem('serverPubkey')
   localStorage.removeItem('orgKeys')
   lockVault()
-  window.location.href = '/login'
+  window.location.href = redirectTo
 }
 
 export interface CurrentUser {

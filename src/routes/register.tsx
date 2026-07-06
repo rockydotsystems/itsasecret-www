@@ -10,6 +10,9 @@ import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
+  // Prefill for the email field, set by the /invite accept page. Invites are
+  // bound to the invited address, so registering with it matters.
+  email: z.string().optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/register')({
@@ -19,7 +22,7 @@ export const Route = createFileRoute('/register')({
 })
 
 function RegisterPage() {
-  const { redirect } = Route.useSearch()
+  const { redirect, email: emailPrefill } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
@@ -61,7 +64,7 @@ function RegisterPage() {
         <p className="auth-subtitle">Your master password encrypts your secrets. We can't recover it for you.</p>
 
         <form id="register-form" ref={formRef} onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <Input name="email" type="email" label="Email" placeholder="you@example.com" required />
+          <Input name="email" type="email" label="Email" placeholder="you@example.com" value={emailPrefill} required />
           <Input
             name="password"
             type="password"

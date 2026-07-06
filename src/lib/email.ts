@@ -46,6 +46,49 @@ export async function sendVerificationEmail({ to, verifyUrl }: SendVerificationE
   }
 }
 
+export interface SendOrgInviteEmailArgs {
+  to: string
+  orgName: string
+  inviterEmail: string
+  role: string
+  acceptUrl: string
+}
+
+// Emails an org invitation with its single-use accept link. Best-effort like
+// verification: a delivery hiccup must not fail the invite - the inviter can
+// re-invite the same email to resend a fresh link.
+export async function sendOrgInviteEmail({ to, orgName, inviterEmail, role, acceptUrl }: SendOrgInviteEmailArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    console.log(
+      `\n[email:dev] Invite ${to} to "${orgName}" (${role}) - no RESEND_API_KEY set, open this link to accept:\n  ${acceptUrl}\n`
+    )
+    return
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+      to,
+      reply_to: inviterEmail,
+      subject: `${inviterEmail} invited you to ${orgName} on itsasecret`,
+      html: orgInviteEmailHtml({ orgName, inviterEmail, role, acceptUrl }),
+      text: `${inviterEmail} invited you to join the organization "${orgName}" on itsasecret as ${role === 'admin' ? 'an admin' : 'a member'}.\n\nAccept the invitation by opening this link:\n\n${acceptUrl}\n\nThis link expires in 7 days. If you weren't expecting this, ignore this email.`,
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error(`[email] Resend invite send failed (${res.status}): ${detail}`)
+  }
+}
+
 export interface SendFeedbackEmailArgs {
   fromUserEmail: string
   fromUserName: string | null
@@ -84,6 +127,28 @@ export async function sendFeedbackEmail({ fromUserEmail, fromUserName, message }
     const detail = await res.text().catch(() => '')
     console.error(`[email] Resend feedback send failed (${res.status}): ${detail}`)
   }
+}
+
+// Org names and inviter emails are user-controlled - escape them before
+// interpolating into email HTML.
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function orgInviteEmailHtml({ orgName, inviterEmail, role, acceptUrl }: Omit<SendOrgInviteEmailArgs, 'to'>): string {
+  return `<!doctype html>
+<html>
+  <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
+    <p><strong>${escapeHtml(inviterEmail)}</strong> invited you to join the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret as ${role === 'admin' ? 'an admin' : 'a member'}.</p>
+    <p><a href="${acceptUrl}">Accept invitation</a></p>
+    <p style="color:#666;font-size:12px;">This link expires in 7 days. If you weren't expecting this, ignore this email.</p>
+  </body>
+</html>`
 }
 
 function verificationEmailHtml(verifyUrl: string): string {

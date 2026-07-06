@@ -14,6 +14,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as InstallDotshRouteImport } from './routes/install[.]sh'
 import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -31,6 +32,7 @@ import { Route as DashboardOrgIdSettingsRouteImport } from './routes/dashboard/$
 import { Route as ApiTokensTokenIdRouteImport } from './routes/api/tokens.$tokenId'
 import { Route as ApiProjectsProjectIdRouteImport } from './routes/api/projects/$projectId'
 import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
+import { Route as ApiInvitesAcceptRouteImport } from './routes/api/invites.accept'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
 import { Route as ApiDlTargetRouteImport } from './routes/api/dl.$target'
 import { Route as ApiAuthVerifyEmailRouteImport } from './routes/api/auth/verify-email'
@@ -56,6 +58,7 @@ import { Route as ApiEnvsEnvIdPermissionsRouteImport } from './routes/api/envs/$
 import { Route as ApiProjectsProjectIdTeamPermissionsTeamIdRouteImport } from './routes/api/projects/$projectId.team-permissions.$teamId'
 import { Route as ApiOrgsOrgIdTeamsTeamIdRouteImport } from './routes/api/orgs/$orgId.teams.$teamId'
 import { Route as ApiOrgsOrgIdMembersUserIdRouteImport } from './routes/api/orgs/$orgId.members.$userId'
+import { Route as ApiOrgsOrgIdInvitesInviteIdRouteImport } from './routes/api/orgs/$orgId.invites.$inviteId'
 import { Route as ApiEnvsEnvIdVarsKeyRouteImport } from './routes/api/envs/$envId.vars.$key'
 import { Route as ApiEnvsEnvIdTeamPermissionsTeamIdRouteImport } from './routes/api/envs/$envId.team-permissions.$teamId'
 import { Route as ApiEnvsEnvIdSecretsKeyRouteImport } from './routes/api/envs/$envId.secrets.$key'
@@ -95,6 +98,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstallDotshRoute = InstallDotshRouteImport.update({
@@ -180,6 +188,11 @@ const ApiProjectsProjectIdRoute = ApiProjectsProjectIdRouteImport.update({
 const ApiOrgsOrgIdRoute = ApiOrgsOrgIdRouteImport.update({
   id: '/api/orgs/$orgId',
   path: '/api/orgs/$orgId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiInvitesAcceptRoute = ApiInvitesAcceptRouteImport.update({
+  id: '/api/invites/accept',
+  path: '/api/invites/accept',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEnvsEnvIdRoute = ApiEnvsEnvIdRouteImport.update({
@@ -315,6 +328,12 @@ const ApiOrgsOrgIdMembersUserIdRoute =
     path: '/$userId',
     getParentRoute: () => ApiOrgsOrgIdMembersRoute,
   } as any)
+const ApiOrgsOrgIdInvitesInviteIdRoute =
+  ApiOrgsOrgIdInvitesInviteIdRouteImport.update({
+    id: '/invites/$inviteId',
+    path: '/invites/$inviteId',
+    getParentRoute: () => ApiOrgsOrgIdRoute,
+  } as any)
 const ApiEnvsEnvIdVarsKeyRoute = ApiEnvsEnvIdVarsKeyRouteImport.update({
   id: '/$key',
   path: '/$key',
@@ -408,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/how-it-works': typeof HowItWorksRoute
   '/install.sh': typeof InstallDotshRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -429,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
+  '/api/invites/accept': typeof ApiInvitesAcceptRoute
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
   '/api/tokens/$tokenId': typeof ApiTokensTokenIdRoute
@@ -452,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
   '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
@@ -472,6 +494,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/how-it-works': typeof HowItWorksRoute
   '/install.sh': typeof InstallDotshRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -493,6 +516,7 @@ export interface FileRoutesByTo {
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
+  '/api/invites/accept': typeof ApiInvitesAcceptRoute
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
   '/api/tokens/$tokenId': typeof ApiTokensTokenIdRoute
@@ -516,6 +540,7 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
   '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
@@ -537,6 +562,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/how-it-works': typeof HowItWorksRoute
   '/install.sh': typeof InstallDotshRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -558,6 +584,7 @@ export interface FileRoutesById {
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
+  '/api/invites/accept': typeof ApiInvitesAcceptRoute
   '/api/orgs/$orgId': typeof ApiOrgsOrgIdRouteWithChildren
   '/api/projects/$projectId': typeof ApiProjectsProjectIdRouteWithChildren
   '/api/tokens/$tokenId': typeof ApiTokensTokenIdRoute
@@ -581,6 +608,7 @@ export interface FileRoutesById {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
   '/api/projects/$projectId/team-permissions/$teamId': typeof ApiProjectsProjectIdTeamPermissionsTeamIdRoute
@@ -603,6 +631,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/how-it-works'
     | '/install.sh'
+    | '/invite'
     | '/login'
     | '/onboarding'
     | '/pricing'
@@ -624,6 +653,7 @@ export interface FileRouteTypes {
     | '/api/auth/verify-email'
     | '/api/dl/$target'
     | '/api/envs/$envId'
+    | '/api/invites/accept'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
     | '/api/tokens/$tokenId'
@@ -647,6 +677,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
     | '/api/projects/$projectId/team-permissions/$teamId'
@@ -667,6 +698,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/how-it-works'
     | '/install.sh'
+    | '/invite'
     | '/login'
     | '/onboarding'
     | '/pricing'
@@ -688,6 +720,7 @@ export interface FileRouteTypes {
     | '/api/auth/verify-email'
     | '/api/dl/$target'
     | '/api/envs/$envId'
+    | '/api/invites/accept'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
     | '/api/tokens/$tokenId'
@@ -711,6 +744,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
     | '/api/projects/$projectId/team-permissions/$teamId'
@@ -731,6 +765,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/how-it-works'
     | '/install.sh'
+    | '/invite'
     | '/login'
     | '/onboarding'
     | '/pricing'
@@ -752,6 +787,7 @@ export interface FileRouteTypes {
     | '/api/auth/verify-email'
     | '/api/dl/$target'
     | '/api/envs/$envId'
+    | '/api/invites/accept'
     | '/api/orgs/$orgId'
     | '/api/projects/$projectId'
     | '/api/tokens/$tokenId'
@@ -775,6 +811,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
     | '/api/projects/$projectId/team-permissions/$teamId'
@@ -796,6 +833,7 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   HowItWorksRoute: typeof HowItWorksRoute
   InstallDotshRoute: typeof InstallDotshRoute
+  InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PricingRoute: typeof PricingRoute
@@ -817,6 +855,7 @@ export interface RootRouteChildren {
   ApiAuthVerifyEmailRoute: typeof ApiAuthVerifyEmailRoute
   ApiDlTargetRoute: typeof ApiDlTargetRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
+  ApiInvitesAcceptRoute: typeof ApiInvitesAcceptRoute
   ApiOrgsOrgIdRoute: typeof ApiOrgsOrgIdRouteWithChildren
   ApiProjectsProjectIdRoute: typeof ApiProjectsProjectIdRouteWithChildren
   DashboardOrgIdSettingsRoute: typeof DashboardOrgIdSettingsRoute
@@ -861,6 +900,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/install.sh': {
@@ -980,6 +1026,13 @@ declare module '@tanstack/react-router' {
       path: '/api/orgs/$orgId'
       fullPath: '/api/orgs/$orgId'
       preLoaderRoute: typeof ApiOrgsOrgIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/invites/accept': {
+      id: '/api/invites/accept'
+      path: '/api/invites/accept'
+      fullPath: '/api/invites/accept'
+      preLoaderRoute: typeof ApiInvitesAcceptRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/envs/$envId': {
@@ -1156,6 +1209,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/orgs/$orgId/members/$userId'
       preLoaderRoute: typeof ApiOrgsOrgIdMembersUserIdRouteImport
       parentRoute: typeof ApiOrgsOrgIdMembersRoute
+    }
+    '/api/orgs/$orgId/invites/$inviteId': {
+      id: '/api/orgs/$orgId/invites/$inviteId'
+      path: '/invites/$inviteId'
+      fullPath: '/api/orgs/$orgId/invites/$inviteId'
+      preLoaderRoute: typeof ApiOrgsOrgIdInvitesInviteIdRouteImport
+      parentRoute: typeof ApiOrgsOrgIdRoute
     }
     '/api/envs/$envId/vars/$key': {
       id: '/api/envs/$envId/vars/$key'
@@ -1440,6 +1500,7 @@ interface ApiOrgsOrgIdRouteChildren {
   ApiOrgsOrgIdMembersRoute: typeof ApiOrgsOrgIdMembersRouteWithChildren
   ApiOrgsOrgIdProjectsRoute: typeof ApiOrgsOrgIdProjectsRoute
   ApiOrgsOrgIdTeamsRoute: typeof ApiOrgsOrgIdTeamsRouteWithChildren
+  ApiOrgsOrgIdInvitesInviteIdRoute: typeof ApiOrgsOrgIdInvitesInviteIdRoute
 }
 
 const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
@@ -1448,6 +1509,7 @@ const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
   ApiOrgsOrgIdMembersRoute: ApiOrgsOrgIdMembersRouteWithChildren,
   ApiOrgsOrgIdProjectsRoute: ApiOrgsOrgIdProjectsRoute,
   ApiOrgsOrgIdTeamsRoute: ApiOrgsOrgIdTeamsRouteWithChildren,
+  ApiOrgsOrgIdInvitesInviteIdRoute: ApiOrgsOrgIdInvitesInviteIdRoute,
 }
 
 const ApiOrgsOrgIdRouteWithChildren = ApiOrgsOrgIdRoute._addFileChildren(
@@ -1506,6 +1568,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   HowItWorksRoute: HowItWorksRoute,
   InstallDotshRoute: InstallDotshRoute,
+  InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PricingRoute: PricingRoute,
@@ -1527,6 +1590,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthVerifyEmailRoute: ApiAuthVerifyEmailRoute,
   ApiDlTargetRoute: ApiDlTargetRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
+  ApiInvitesAcceptRoute: ApiInvitesAcceptRoute,
   ApiOrgsOrgIdRoute: ApiOrgsOrgIdRouteWithChildren,
   ApiProjectsProjectIdRoute: ApiProjectsProjectIdRouteWithChildren,
   DashboardOrgIdSettingsRoute: DashboardOrgIdSettingsRoute,

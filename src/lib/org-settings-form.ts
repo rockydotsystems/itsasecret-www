@@ -55,6 +55,14 @@ export async function inviteMember(orgId: string, email: string, role: MemberRol
   if (!resp.ok) await throwResponseError(resp, 'Failed to invite member')
 }
 
+export async function revokeInvite(orgId: string, inviteId: string): Promise<void> {
+  const resp = await fetch(`/api/orgs/${orgId}/invites/${inviteId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!resp.ok) await throwResponseError(resp, 'Failed to revoke invite')
+}
+
 export async function changeMemberRole(orgId: string, userId: string, role: MemberRole): Promise<void> {
   const resp = await fetch(`/api/orgs/${orgId}/members/${userId}`, {
     method: 'PATCH',

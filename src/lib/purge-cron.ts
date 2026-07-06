@@ -1,6 +1,6 @@
 import { lte } from 'drizzle-orm'
 import { db } from './db'
-import { envVars, secrets, environments, projects, secretHistory, envVarHistory } from './schema'
+import { envVars, secrets, environments, projects, secretHistory, envVarHistory, orgInvites } from './schema'
 
 const PURGE_INTERVAL = 24 * 60 * 60 * 1000
 const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000
@@ -18,6 +18,11 @@ async function purgeExpired(): Promise<void> {
   await db.delete(secrets).where(lte(secrets.deleted_at, cutoff))
   await db.delete(environments).where(lte(environments.deleted_at, cutoff))
   await db.delete(projects).where(lte(projects.deleted_at, cutoff))
+
+  // Org invites: every row eventually passes expires_at (accepted and revoked
+  // ones included), so one cutoff clears them all - and drops the stored
+  // server-wrapped org key with it.
+  await db.delete(orgInvites).where(lte(orgInvites.expires_at, cutoff))
 }
 
 let purgeTimer: ReturnType<typeof setInterval> | null = null

@@ -71,6 +71,13 @@
       "when": 1783299359704,
       "tag": "0009_real_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783303149589,
+      "tag": "0010_busy_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

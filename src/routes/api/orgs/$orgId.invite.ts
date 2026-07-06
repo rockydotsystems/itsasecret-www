@@ -1,22 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, sql } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgs, orgMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse, getSessionKey, getOrgKey } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { wrapPendingOrgKey } from '~/lib/pending-org-key'
+import { createOrgInvite, inviteAcceptUrl, normalizeInviteEmail } from '~/lib/org-invites'
+import { sendOrgInviteEmail } from '~/lib/email'
 
 const inviteSchema = z.object({
   email: z.string().email(),
   role: z.enum([ORG_ROLE_ADMIN, ORG_ROLE_MEMBER]),
 })
 
-// The inviter cannot wrap the org key with the invitee's master key, so the
-// caller supplies its session key (X-Session-Key), the server recovers the
-// org key from the session and stores it server-wrapped as "pending:". The
-// invitee's next login re-wraps it under their master key.
+// Inviting emails a single-use accept link; membership is only created when
+// the invitee accepts (POST /api/invites/accept), so the invitee doesn't need
+// an account yet. The inviter cannot wrap the org key with the invitee's
+// master key, so the caller supplies its session key (X-Session-Key), the
+// server recovers the org key from the session and stores it server-wrapped
+// as "pending:" on the invite. Acceptance copies it onto the member row and
+// the invitee's next login re-wraps it under their master key.
 export const Route = createFileRoute('/api/orgs/$orgId/invite')({
   server: {
     handlers: {
@@ -26,7 +31,8 @@ export const Route = createFileRoute('/api/orgs/$orgId/invite')({
           await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
           const orgId = params.orgId!
           const body = inviteSchema.parse(await request.json())
-          const { email, role } = body
+          const email = normalizeInviteEmail(body.email)
+          const { role } = body
 
           const orgRows = await db.select().from(orgs)
             .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
@@ -40,29 +46,40 @@ export const Route = createFileRoute('/api/orgs/$orgId/invite')({
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const orgKey = await getOrgKey(session, sessionKey, orgId)
 
-          const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1)
-          const invitee = userRows[0] ?? null
-          if (!invitee) return Response.json({ error: 'User not found' }, { status: 404 })
-
-          const existingRows = await db.select().from(orgMembers)
-            .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, invitee.id)))
+          // The invitee may not have an account yet - that's fine, they can
+          // register from the accept page. Only reject if they are already in.
+          const userRows = await db.select().from(users)
+            .where(sql`lower(${users.email}) = ${email}`)
             .limit(1)
-          if (existingRows[0]) return Response.json({ error: 'User is already a member' }, { status: 409 })
+          const invitee = userRows[0] ?? null
+          if (invitee) {
+            const existingRows = await db.select().from(orgMembers)
+              .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, invitee.id)))
+              .limit(1)
+            if (existingRows[0]) return Response.json({ error: 'User is already a member' }, { status: 409 })
+          }
 
-          await db.insert(orgMembers).values({
-            org_id: orgId,
-            user_id: invitee.id,
+          const { token } = await createOrgInvite({
+            orgId,
+            email,
             role,
-            wrapped_org_key: await wrapPendingOrgKey(orgKey),
-            invited_by: user.id,
+            invitedBy: user.id,
+            wrappedOrgKey: await wrapPendingOrgKey(orgKey),
           })
 
-          await auditLog({ orgId, actorUserId: user.id, action: 'member.invite', targetType: 'user', targetId: invitee.id, metadata: { role } })
+          await sendOrgInviteEmail({
+            to: email,
+            orgName: org.name,
+            inviterEmail: user.email,
+            role,
+            acceptUrl: inviteAcceptUrl(request, token),
+          })
+
+          await auditLog({ orgId, actorUserId: user.id, action: 'member.invite', targetType: 'email', targetId: email, metadata: { role } })
 
           return Response.json({
             org_id: orgId,
-            user_id: invitee.id,
-            email: invitee.email,
+            email,
             role,
             invited_by: user.id,
           }, { status: 201 })

@@ -43,7 +43,22 @@ docker compose up -d           # start Postgres 17
 - **No MFA in v1** - master-password auth first; TOTP/passkeys later.
 - **Password hash is independent from the KDF-derived key** - the online authentication hash uses its own Argon2id salt/parameters so it cannot leak the master key that wraps organization keys.
 - **Login/register endpoints have per-IP rate limiting and timing-attack mitigations** - failed logins burn a dummy password hash so response times do not reveal whether an email is registered.
-- **Invites use a server-side pending re-key** (interim, see docs/open-questions.md #3) - an inviter cannot wrap the org key for the invitee's master key, so `/api/orgs/:id/invite` (owner/admin, shared orgs only) recovers the org key via the caller's `X-Session-Key`, stores it in `org_members.wrapped_org_key` with a `pending:` prefix wrapped under `SERVER_WRAP_SECRET` (env var, required in production), and the invitee's next login re-wraps it under their master key (`src/lib/pending-org-key.ts`).
+- **Invites are emailed accept links; membership is created on acceptance** -
+  `POST /api/orgs/:id/invite` (owner/admin, shared orgs only) no longer requires
+  the invitee to have an account: it writes an `org_invites` row (hashed
+  single-use token like sessions, 7-day TTL, lowercased email) and emails the
+  accept link via Resend (`sendOrgInviteEmail`; dev prints it to the terminal).
+  Re-inviting the same address revokes the old pending invite and sends a fresh
+  link; owner/admin can revoke from org settings (`DELETE
+  /api/orgs/:id/invites/:inviteId`). The public `/invite?token=` page routes
+  logged-out users through login/register (redirect + email prefill) and
+  `POST /api/invites/accept` creates the `org_members` row - acceptance is
+  bound to the invited address (case-insensitive) and, since the token proves
+  inbox control, also stamps `email_verified_at` for unverified accounts.
+  Audit actions: `member.invite` (target = email), `member.invite.accept`,
+  `member.invite.revoke`. Expired invites purge with the daily cron after 90
+  days.
+- **Invites use a server-side pending re-key** (interim, see docs/open-questions.md #3) - an inviter cannot wrap the org key for the invitee's master key, so the invite route recovers the org key via the caller's `X-Session-Key` and stores it on the `org_invites` row with a `pending:` prefix wrapped under `SERVER_WRAP_SECRET` (env var, required in production). Acceptance copies it into `org_members.wrapped_org_key`, and the invitee's next login re-wraps it under their master key (`src/lib/pending-org-key.ts`).
 - **Removing an org member revokes all their sessions** - their sessions carry the org key; other-org access is re-established on next login.
 - **API routes are TanStack Start server routes** - the Go CLI calls these as raw HTTP endpoints (not server functions).
 - **Email verification is tracked from signup and gates the whole app** - `users.email_verified_at` (null = unverified). Register issues a single-use token (`email_verifications`, hashed like sessions) and sends the link via Resend (`RESEND_API_KEY`/`EMAIL_FROM`). With no `RESEND_API_KEY`, the link is printed to the server terminal so accounts can be verified in dev without Resend. `GET /api/auth/verify-email?token=` consumes it and redirects to `/login?verified=1` (login shows a success banner; `verified=0` shows an invalid/expired banner).
