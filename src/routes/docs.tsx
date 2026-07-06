@@ -46,8 +46,7 @@ function DocsPage() {
             The <code>shh</code> CLI<span className="hero-title-flare">.</span>
           </h1>
           <p className="docs-lede">
-            The binary is <code>itsasecret</code>, aliased to <code>shh</code>. Five minutes from
-            login to secrets in your shell - everything encrypts on your machine before it syncs.
+            Command reference and setup guide for the CLI.
           </p>
         </header>
 
@@ -68,6 +67,42 @@ function DocsPage() {
             <code>SHH_INSTALL_DIR</code> overrides the destination, and{' '}
             <code>SHH_BASE_URL</code> downloads from a self-hosted server instead.
           </p>
+
+          <h3 className="docs-h3">Nix and NixOS</h3>
+          <p>
+            The{' '}
+            <a href="https://github.com/rockydotsystems/itsasecret-client">client repo</a> is a
+            flake. It builds the CLI from source and installs both the <code>itsasecret</code>{' '}
+            binary and its <code>shh</code> alias - linux and macOS, amd64 and arm64. Drop it into
+            your profile:
+          </p>
+          <CodeBlock>
+            <span className="term-prompt">$ </span><span className="term-cmd">nix profile install</span> github:rockydotsystems/itsasecret-client{'\n'}
+            <span className="term-prompt">$ </span><span className="term-cmd">shh --version</span>{'\n'}
+            itsasecret version 9bc4db5
+          </CodeBlock>
+          <p>
+            Track new releases with <code>nix profile upgrade</code>, and remove it with{' '}
+            <code>nix profile remove</code>. Just trying it?{' '}
+            <code>nix run github:rockydotsystems/itsasecret-client -- --version</code> runs the
+            compiled binary without installing anything.
+          </p>
+          <p>
+            Prefer a declarative setup? Add the flake as an input and pull the package into{' '}
+            <code>environment.systemPackages</code> (NixOS) or <code>home.packages</code>{' '}
+            (home-manager):
+          </p>
+          <CodeBlock>{`# flake.nix
+{
+  inputs.itsasecret.url = "github:rockydotsystems/itsasecret-client";
+
+  # then, in your NixOS or home-manager module:
+  #   environment.systemPackages =
+  #     [ inputs.itsasecret.packages.\${pkgs.system}.default ];
+  #
+  #   home.packages =
+  #     [ inputs.itsasecret.packages.\${pkgs.system}.default ];
+}`}</CodeBlock>
         </section>
 
         <section className="docs-section">
