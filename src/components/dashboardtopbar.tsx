@@ -8,16 +8,12 @@ import { Modal } from '~/components/modal'
 import { WorkspaceWizard } from '~/components/workspacewizard'
 import { CreateProjectForm } from '~/components/createprojectform'
 import { performLogout } from '~/lib/auth-form'
+import { IconCircleKey, IconCircleLogout, IconGear2, IconPlus } from 'nucleo-pixel-essential'
 import type { SessionUser } from '~/lib/auth-server'
 import type { Org, Project } from '~/lib/schema'
 
 function SettingsIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  )
+  return <IconGear2 size={16} aria-hidden="true" />
 }
 
 export type DashboardTopBarProps = {
@@ -78,8 +74,14 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
                 variant="crumb"
                 disabled={orgOptions.length === 0}
                 action={
-                  <button type="button" onClick={() => setCreating('org')} aria-label="Create new organization">
-                    + New org
+                  <button
+                    type="button"
+                    onClick={() => setCreating('org')}
+                    aria-label="Create new organization"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <IconPlus size={12} aria-hidden="true" />
+                    New org
                   </button>
                 }
                 optionAction={(option) => (
@@ -102,8 +104,14 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
                 placeholder={projectOptions.length === 0 ? 'No projects' : undefined}
                 disabled={!orgId}
                 action={
-                  <button type="button" onClick={() => setCreating('project')} aria-label="Create new project">
-                    + New project
+                  <button
+                    type="button"
+                    onClick={() => setCreating('project')}
+                    aria-label="Create new project"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <IconPlus size={12} aria-hidden="true" />
+                    New project
                   </button>
                 }
                 optionAction={(option) => (
@@ -125,6 +133,7 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
               <Avatar name={user?.name || user?.email || '?'} email={user?.email} size="sm" />
             </Link>
             <Button variant="ghost" size="sm" href="/dashboard/tokens" style={{ padding: '0 8px' }}>
+              <IconCircleKey size={16} aria-hidden="true" />
               Tokens
             </Button>
             <Button
@@ -134,7 +143,12 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
               onClick={handleLogout}
               style={{ padding: '0 8px' }}
             >
-              {loggingOut ? '...' : 'Log out'}
+              {loggingOut ? '...' : (
+                <>
+                  <IconCircleLogout size={16} aria-hidden="true" />
+                  Log out
+                </>
+              )}
             </Button>
           </div>
         </div>

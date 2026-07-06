@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { IconChevronDown } from 'nucleo-pixel-essential'
 
 export type SelectOption = { value: string; label: string }
 
@@ -57,9 +58,7 @@ export function Select({
         aria-expanded={open}
       >
         <span className="select-value">{selected?.label || placeholder || 'Select...'}</span>
-        <svg className="select-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <IconChevronDown className="select-chevron" size={16} aria-hidden="true" />
       </button>
       {open && (
         <ul className="select-menu" role="listbox">

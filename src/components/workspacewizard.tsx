@@ -4,6 +4,7 @@ import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { completeOnboarding, createOrgWorkspace } from '~/lib/org-form'
 import { isVaultUnlocked } from '~/lib/vault'
+import { IconCheck, IconChevronRight, IconRocket } from 'nucleo-pixel-essential'
 
 // Guided org → project → environment setup, shared by the post-verification
 // onboarding page (with intro step, personal org) and the dashboard's
@@ -107,7 +108,10 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
               your projects, and an environment for your first project's vars and secrets.
             </p>
           </div>
-          <Button type="submit" size="lg">Get started</Button>
+          <Button type="submit" size="lg">
+            Get started
+            <IconRocket size={16} aria-hidden="true" />
+          </Button>
         </form>
       )}
 
@@ -131,7 +135,10 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
           />
           <div className="onboarding-actions">
             {intro && <Button type="button" variant="secondary" onClick={back}>Back</Button>}
-            <Button type="submit">Continue</Button>
+            <Button type="submit">
+              Continue
+              <IconChevronRight size={16} aria-hidden="true" />
+            </Button>
           </div>
         </form>
       )}
@@ -154,7 +161,10 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
           />
           <div className="onboarding-actions">
             <Button type="button" variant="secondary" onClick={back}>Back</Button>
-            <Button type="submit">Continue</Button>
+            <Button type="submit">
+              Continue
+              <IconChevronRight size={16} aria-hidden="true" />
+            </Button>
           </div>
         </form>
       )}
@@ -183,7 +193,12 @@ export function WorkspaceWizard({ mode, defaultOrgName = '', onComplete }: Works
           <div className="onboarding-actions">
             <Button type="button" variant="secondary" onClick={back} disabled={loading}>Back</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? <LoadingDots /> : mode === 'onboarding' ? 'Create workspace' : 'Create organization'}
+              {loading ? <LoadingDots /> : (
+                <>
+                  <IconCheck size={16} aria-hidden="true" />
+                  {mode === 'onboarding' ? 'Create workspace' : 'Create organization'}
+                </>
+              )}
             </Button>
           </div>
         </form>

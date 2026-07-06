@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { IconXmark } from 'nucleo-pixel-essential'
 
 export type ModalProps = {
   title: string
@@ -25,10 +26,7 @@ export function Modal({ title, subtitle, wide = false, onClose, children }: Moda
         <div className="modal-header">
           <h2 className="modal-title">{title}</h2>
           <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <IconXmark size={16} aria-hidden="true" />
           </button>
         </div>
         {subtitle && <p className="modal-subtitle">{subtitle}</p>}

@@ -4,6 +4,7 @@ import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
 import { unlockVault } from '~/lib/vault'
+import { IconLockCircleOpen } from 'nucleo-pixel-essential'
 
 export type MasterPassModalProps = {
   orgId: string
@@ -49,7 +50,12 @@ export function MasterPassModal({ orgId, onUnlocked, onClose }: MasterPassModalP
         />
         {error && <span className="input-error">{error}</span>}
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : 'Unlock'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconLockCircleOpen size={16} aria-hidden="true" />
+              Unlock
+            </>
+          )}
         </Button>
       </form>
     </Modal>

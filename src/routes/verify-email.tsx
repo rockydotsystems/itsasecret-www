@@ -5,6 +5,7 @@ import { LogoMark } from '~/components/logo'
 import { LoadingDots } from '~/components/loadingdots'
 import { requireUnverifiedBeforeLoad } from '~/lib/route-guards'
 import { performLogout } from '~/lib/auth-form'
+import { IconCircleLogout, IconEnvelopeOpen } from 'nucleo-pixel-essential'
 
 export const Route = createFileRoute('/verify-email')({
   beforeLoad: requireUnverifiedBeforeLoad,
@@ -47,7 +48,12 @@ function VerifyEmailPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
           <Button size="lg" disabled={status === 'sending'} onClick={resend}>
-            {status === 'sending' ? <LoadingDots /> : 'Resend verification email'}
+            {status === 'sending' ? <LoadingDots /> : (
+              <>
+                <IconEnvelopeOpen size={16} aria-hidden="true" />
+                Resend verification email
+              </>
+            )}
           </Button>
           {status === 'sent' && (
             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
@@ -58,6 +64,7 @@ function VerifyEmailPage() {
             <span className="input-error">Couldn't resend right now. Try again shortly.</span>
           )}
           <Button size="lg" variant="secondary" onClick={() => void performLogout()}>
+            <IconCircleLogout size={16} aria-hidden="true" />
             Log out
           </Button>
         </div>

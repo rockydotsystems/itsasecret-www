@@ -5,6 +5,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
 import { LoadingDots } from '~/components/loadingdots'
+import { IconUser } from 'nucleo-pixel-essential'
 import { submitAuthForm, getRedirectPath } from '~/lib/auth-form'
 import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
@@ -75,7 +76,12 @@ function RegisterPage() {
           />
           <span data-auth-form-error className="input-error">{error}</span>
           <Button type="submit" size="lg" disabled={loading}>
-            {loading ? <LoadingDots /> : 'Create account'}
+            {loading ? <LoadingDots /> : (
+              <>
+                <IconUser size={16} aria-hidden="true" />
+                Create account
+              </>
+            )}
           </Button>
         </form>
 

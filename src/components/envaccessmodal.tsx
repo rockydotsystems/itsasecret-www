@@ -14,6 +14,7 @@ import {
   changeTeamEnvPermission,
   revokeTeamEnvPermission,
 } from '~/lib/teams-form'
+import { IconPlus, IconXmark } from 'nucleo-pixel-essential'
 import type { EnvRole } from '~/lib/project-settings-form'
 import type {
   EnvPermissionView,
@@ -110,6 +111,7 @@ export function EnvAccessModal({
                   disabled={busy}
                   onClick={() => void run(() => revokeEnvPermission(env.id, grant.user_id))}
                 >
+                  <IconXmark size={16} aria-hidden="true" />
                   Revoke
                 </Button>
               </div>
@@ -138,6 +140,7 @@ export function EnvAccessModal({
                   disabled={busy}
                   onClick={() => void run(() => revokeTeamEnvPermission(env.id, grant.team_id))}
                 >
+                  <IconXmark size={16} aria-hidden="true" />
                   Revoke
                 </Button>
               </div>
@@ -191,6 +194,7 @@ export function EnvAccessModal({
                 })
               }
             >
+              <IconPlus size={16} aria-hidden="true" />
               Grant
             </Button>
           </div>
@@ -223,6 +227,7 @@ export function EnvAccessModal({
                 })
               }
             >
+              <IconPlus size={16} aria-hidden="true" />
               Grant team
             </Button>
           </div>

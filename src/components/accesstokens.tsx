@@ -5,6 +5,7 @@ import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
 import { Select } from '~/components/select'
 import { listAccessTokens, createAccessToken, revokeAccessToken } from '~/lib/tokens-form'
+import { IconCircleKey, IconClipboard } from 'nucleo-pixel-essential'
 import type { AccessTokenSummary, CreatedAccessToken } from '~/lib/tokens-form'
 
 // Lifetime choices: 30-day minimum, stepped up to the 2-year maximum, plus
@@ -64,6 +65,7 @@ export function AccessTokens() {
           </p>
         </div>
         <Button size="sm" onClick={() => setCreating(true)}>
+          <IconCircleKey size={16} aria-hidden="true" />
           New token
         </Button>
       </div>
@@ -173,6 +175,7 @@ function CreateTokenModal({
               Done
             </Button>
             <Button variant="primary" size="md" onClick={() => void handleCopy()}>
+              <IconClipboard size={16} aria-hidden="true" />
               {copied ? 'Copied' : 'Copy token'}
             </Button>
           </div>
@@ -210,7 +213,12 @@ function CreateTokenModal({
             Cancel
           </Button>
           <Button variant="primary" size="md" onClick={() => void handleCreate()} disabled={busy || !name.trim()}>
-            {busy ? <LoadingDots /> : 'Create token'}
+            {busy ? <LoadingDots /> : (
+              <>
+                <IconCircleKey size={16} aria-hidden="true" />
+                Create token
+              </>
+            )}
           </Button>
         </div>
       </div>

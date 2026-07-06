@@ -18,6 +18,14 @@ import {
   fetchSecretHistory, fetchVarHistory, decryptSecretHistoryValue, restoreDeletedItem, hideDeletedItem,
 } from '~/lib/env-items-form'
 import { ClockIcon, RestoreIcon, TrashIcon } from '~/components/secretrow'
+import {
+  IconFile,
+  IconLayers,
+  IconLock,
+  IconPlus,
+  IconSquareDottedArrowBottomRight,
+  IconUser,
+} from 'nucleo-pixel-essential'
 import { isVaultUnlocked, VaultLockedError } from '~/lib/vault'
 import type { SecretSummary, VarSummary, DeletedItemSummary, EnvPermissionView, OrgMemberView, TeamView, TeamEnvPermissionView, TeamProjectPermissionView } from '~/lib/orgs-server'
 import type { Environment, Org, Project } from '~/lib/schema'
@@ -339,7 +347,8 @@ export function DashboardShell({
             onClick={() => setCreatingEnv(true)}
             aria-label="Create new environment"
           >
-            + new
+            <IconPlus size={12} aria-hidden="true" />
+            new
           </button>
         )}
       </div>
@@ -347,11 +356,13 @@ export function DashboardShell({
         <div style={{ display: 'flex', gap: '8px' }}>
           {canFork && (
             <Button size="sm" variant="ghost" onClick={() => setForkingEnv(true)}>
+              <IconSquareDottedArrowBottomRight size={16} aria-hidden="true" />
               Fork {envName}
             </Button>
           )}
           {canManageAccess && (
             <Button size="sm" variant="ghost" onClick={() => setManagingAccess(true)}>
+              <IconUser size={16} aria-hidden="true" />
               Access
             </Button>
           )}
@@ -388,6 +399,7 @@ export function DashboardShell({
               </p>
               {canCreateEnv ? (
                 <Button size="lg" onClick={() => setCreatingEnv(true)}>
+                  <IconLayers size={16} aria-hidden="true" />
                   Create your first environment
                 </Button>
               ) : (
@@ -412,9 +424,11 @@ export function DashboardShell({
               {canWrite ? (
                 <div className="env-empty-actions">
                   <Button size="lg" onClick={() => setCreatingItem('secret')}>
+                    <IconLock size={16} aria-hidden="true" />
                     Create your first secret
                   </Button>
                   <Button size="lg" variant="secondary" onClick={() => setCreatingItem('var')}>
+                    <IconFile size={16} aria-hidden="true" />
                     Create your first variable
                   </Button>
                 </div>
@@ -437,6 +451,7 @@ export function DashboardShell({
                 <h2 className="env-section-title">Secrets</h2>
                 {canWrite && (
                   <Button size="sm" variant="secondary" onClick={() => setCreatingItem('secret')}>
+                    <IconPlus size={16} aria-hidden="true" />
                     New secret
                   </Button>
                 )}
@@ -467,6 +482,7 @@ export function DashboardShell({
                 <h2 className="env-section-title">Variables</h2>
                 {canWrite && (
                   <Button size="sm" variant="secondary" onClick={() => setCreatingItem('var')}>
+                    <IconPlus size={16} aria-hidden="true" />
                     New variable
                   </Button>
                 )}
@@ -531,6 +547,7 @@ export function DashboardShell({
           subtitle="Creates an empty environment in this project. To branch an existing one instead, select it and use Fork."
           submitLabel="Create environment"
           placeholder="e.g. production"
+          icon={<IconLayers size={16} aria-hidden="true" />}
           onClose={() => setCreatingEnv(false)}
           onSubmit={async (name) => {
             const env = await createEnvironment(projectId, name)
@@ -550,6 +567,7 @@ export function DashboardShell({
           subtitle="Copies every var and secret into a new environment. You get full access on the fork; the parent is untouched."
           submitLabel="Fork environment"
           placeholder={`e.g. ${envName}-dev`}
+          icon={<IconSquareDottedArrowBottomRight size={16} aria-hidden="true" />}
           onClose={() => setForkingEnv(false)}
           onSubmit={async (name) => {
             const env = await forkEnvironment(projectId, envId, name)
@@ -585,6 +603,7 @@ export function DashboardShell({
           submitLabel="Save secret"
           keyPlaceholder="e.g. STRIPE_SECRET_KEY"
           valuePlaceholder="sk_live_..."
+          icon={<IconLock size={16} aria-hidden="true" />}
           onClose={() => setCreatingItem(null)}
           onSubmit={async (key, value) => {
             await ensureUnlocked()
@@ -602,6 +621,7 @@ export function DashboardShell({
           submitLabel="Save variable"
           keyPlaceholder="e.g. LOG_LEVEL"
           valuePlaceholder="debug"
+          icon={<IconFile size={16} aria-hidden="true" />}
           onClose={() => setCreatingItem(null)}
           onSubmit={async (key, value) => {
             await setVar(envId, key, value)
@@ -620,6 +640,7 @@ export function DashboardShell({
           valuePlaceholder="sk_live_..."
           initialKey={editingItem.itemKey}
           initialValue={editingItem.initialValue}
+          icon={<IconLock size={16} aria-hidden="true" />}
           onClose={() => setEditingItem(null)}
           onSubmit={async (key, value) => {
             await ensureUnlocked()
@@ -639,6 +660,7 @@ export function DashboardShell({
           valuePlaceholder="debug"
           initialKey={editingItem.itemKey}
           initialValue={editingItem.initialValue}
+          icon={<IconFile size={16} aria-hidden="true" />}
           onClose={() => setEditingItem(null)}
           onSubmit={async (key, value) => {
             await setVar(envId, key, value)

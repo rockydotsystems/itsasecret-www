@@ -6,6 +6,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { updateProfileName, changePassword, submitFeedback } from '~/lib/profile-form'
+import { IconCheck, IconLockCircleOpen, IconPaperPlane2 } from 'nucleo-pixel-essential'
 
 export type ProfileSettingsProps = {
   email: string
@@ -77,7 +78,12 @@ function ProfileSection({ email, name }: ProfileSettingsProps) {
         <div className="settings-modal-actions">
           {saved && <span className="input-helper">Saved.</span>}
           <Button type="submit" size="md" disabled={busy}>
-            {busy ? <LoadingDots /> : 'Save profile'}
+            {busy ? <LoadingDots /> : (
+              <>
+                <IconCheck size={16} aria-hidden="true" />
+                Save profile
+              </>
+            )}
           </Button>
         </div>
       </form>
@@ -156,7 +162,12 @@ function PasswordSection() {
         <div className="settings-modal-actions">
           {done && <span className="input-helper">Password changed. Other sessions were signed out.</span>}
           <Button type="submit" size="md" disabled={busy}>
-            {busy ? <LoadingDots /> : 'Change password'}
+            {busy ? <LoadingDots /> : (
+              <>
+                <IconLockCircleOpen size={16} aria-hidden="true" />
+                Change password
+              </>
+            )}
           </Button>
         </div>
       </form>
@@ -216,7 +227,12 @@ function FeedbackSection() {
         <div className="settings-modal-actions">
           {sent && <span className="input-helper">Thanks - feedback sent.</span>}
           <Button type="submit" size="md" disabled={busy}>
-            {busy ? <LoadingDots /> : 'Send feedback'}
+            {busy ? <LoadingDots /> : (
+              <>
+                <IconPaperPlane2 size={16} aria-hidden="true" />
+                Send feedback
+              </>
+            )}
           </Button>
         </div>
       </form>

@@ -6,6 +6,15 @@ import { Button } from '~/components/button'
 import { EnvAccessModal, ENV_ROLE_OPTIONS } from '~/components/envaccessmodal'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { EnvNameModal } from '~/components/envnamemodal'
+import {
+  IconCheck,
+  IconCircleInfo,
+  IconLock,
+  IconPlus,
+  IconSquareDottedArrowBottomRight,
+  IconTrash,
+  IconXmark,
+} from 'nucleo-pixel-essential'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
@@ -141,7 +150,12 @@ function GeneralSection({
         {canManage && (
           <div className="settings-form-actions">
             <Button type="submit" size="sm" disabled={saving}>
-              {saving ? <LoadingDots /> : 'Save changes'}
+              {saving ? <LoadingDots /> : (
+                <>
+                  <IconCheck size={16} aria-hidden="true" />
+                  Save changes
+                </>
+              )}
             </Button>
             {saved && <span className="settings-saved-note">Saved</span>}
           </div>
@@ -217,6 +231,7 @@ function EnvironmentsSection({
               <div className="member-row-actions">
                 {canFork && (
                   <Button size="sm" variant="ghost" onClick={() => setForkingEnvId(env.id)}>
+                    <IconSquareDottedArrowBottomRight size={16} aria-hidden="true" />
                     Fork
                   </Button>
                 )}
@@ -229,12 +244,15 @@ function EnvironmentsSection({
                         void setEnvironmentLive(env.id, !env.is_live).then(() => onChanged())
                       }
                     >
+                      <IconCircleInfo size={16} aria-hidden="true" />
                       {env.is_live ? 'Clear live marker' : 'Mark as live'}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setManagingEnvId(env.id)}>
+                      <IconLock size={16} aria-hidden="true" />
                       Access
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setDeletingEnvId(env.id)}>
+                      <IconTrash size={16} aria-hidden="true" />
                       Delete
                     </Button>
                   </>
@@ -254,6 +272,7 @@ function EnvironmentsSection({
           subtitle="Copies every var and secret into a new environment. You get full access on the fork; the parent is untouched."
           submitLabel="Fork environment"
           placeholder={`e.g. ${forkingEnv.name}-dev`}
+          icon={<IconSquareDottedArrowBottomRight size={16} aria-hidden="true" />}
           onClose={() => setForkingEnvId('')}
           onSubmit={async (name) => {
             await forkEnvironment(project.id, forkingEnv.id, name)
@@ -326,7 +345,12 @@ function DeleteEnvModal({
           Cancel
         </Button>
         <Button variant="danger" size="md" onClick={() => void handleDelete()} disabled={loading}>
-          {loading ? <LoadingDots /> : 'Delete environment'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconTrash size={16} aria-hidden="true" />
+              Delete environment
+            </>
+          )}
         </Button>
       </div>
     </Modal>
@@ -408,6 +432,7 @@ function TeamAccessSection({
                     disabled={busy}
                     onClick={() => void run(() => revokeTeamProjectPermission(project.id, grant.team_id))}
                   >
+                    <IconXmark size={16} aria-hidden="true" />
                     Revoke
                   </Button>
                 </>
@@ -451,6 +476,7 @@ function TeamAccessSection({
               })
             }
           >
+            <IconPlus size={16} aria-hidden="true" />
             Grant team
           </Button>
         </div>
@@ -486,6 +512,7 @@ function DangerSection({
           </span>
         </div>
         <Button size="sm" variant="danger" onClick={() => setDeleting(true)}>
+          <IconTrash size={16} aria-hidden="true" />
           Delete
         </Button>
       </div>
@@ -558,7 +585,12 @@ function DeleteProjectModal({
             onClick={() => void handleDelete()}
             disabled={loading || confirmation !== project.name}
           >
-            {loading ? <LoadingDots /> : 'Delete project'}
+            {loading ? <LoadingDots /> : (
+              <>
+                <IconTrash size={16} aria-hidden="true" />
+                Delete project
+              </>
+            )}
           </Button>
         </div>
       </div>

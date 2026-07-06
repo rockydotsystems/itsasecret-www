@@ -1,4 +1,5 @@
 import { Button } from './button'
+import { IconHouse2, IconUser } from 'nucleo-pixel-essential'
 
 export function NotFound() {
   return (
@@ -11,9 +12,11 @@ export function NotFound() {
         </p>
         <div className="not-found-actions">
           <Button variant="primary" size="lg" href="/">
+            <IconHouse2 size={16} aria-hidden="true" />
             Go home
           </Button>
           <Button variant="secondary" size="lg" href="/login">
+            <IconUser size={16} aria-hidden="true" />
             Log in
           </Button>
         </div>

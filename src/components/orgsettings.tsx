@@ -23,6 +23,16 @@ import {
   addTeamMember,
   removeTeamMember,
 } from '~/lib/teams-form'
+import {
+  IconCheck,
+  IconEnvelopeOpen,
+  IconPenWriting,
+  IconPlus,
+  IconTrash,
+  IconUser,
+  IconUsers2,
+  IconXmark,
+} from 'nucleo-pixel-essential'
 import type { MemberRole } from '~/lib/org-settings-form'
 import type { OrgInviteView, OrgMemberView, OrgSettingsView, TeamView } from '~/lib/orgs-server'
 
@@ -150,7 +160,12 @@ function GeneralSection({
         {canManage && (
           <div className="settings-form-actions">
             <Button type="submit" size="sm" disabled={saving}>
-              {saving ? <LoadingDots /> : 'Save changes'}
+              {saving ? <LoadingDots /> : (
+                <>
+                  <IconCheck size={16} aria-hidden="true" />
+                  Save changes
+                </>
+              )}
             </Button>
             {saved && <span className="settings-saved-note">Saved</span>}
           </div>
@@ -225,6 +240,7 @@ function MembersSection({
         </div>
         {!isPersonal && canManage && (
           <Button size="sm" variant="secondary" onClick={() => setInviting(true)}>
+            <IconPlus size={16} aria-hidden="true" />
             Invite member
           </Button>
         )}
@@ -263,6 +279,7 @@ function MembersSection({
                         disabled={busyUserId === member.user_id}
                         onClick={() => setRemoving(member)}
                       >
+                        <IconXmark size={16} aria-hidden="true" />
                         {isSelf ? 'Leave' : 'Remove'}
                       </Button>
                     </>
@@ -294,6 +311,7 @@ function MembersSection({
                     disabled={busyInviteId === invite.id}
                     onClick={() => void handleRevokeInvite(invite)}
                   >
+                    <IconXmark size={16} aria-hidden="true" />
                     Revoke
                   </Button>
                 )}
@@ -380,7 +398,12 @@ function InviteMemberModal({
         />
         {error && <span className="input-error">{error}</span>}
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : 'Send invite'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconEnvelopeOpen size={16} aria-hidden="true" />
+              Send invite
+            </>
+          )}
         </Button>
       </form>
     </Modal>
@@ -435,7 +458,12 @@ function RemoveMemberModal({
           Cancel
         </Button>
         <Button variant="danger" size="md" onClick={() => void handleRemove()} disabled={loading}>
-          {loading ? <LoadingDots /> : isSelf ? 'Leave organization' : 'Remove member'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconXmark size={16} aria-hidden="true" />
+              {isSelf ? 'Leave organization' : 'Remove member'}
+            </>
+          )}
         </Button>
       </div>
     </Modal>
@@ -480,6 +508,7 @@ function TeamsSection({
         </div>
         {!isPersonal && canManage && (
           <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
+            <IconPlus size={16} aria-hidden="true" />
             New team
           </Button>
         )}
@@ -505,6 +534,7 @@ function TeamsSection({
                       Members
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setDeletingTeamId(team.id)}>
+                      <IconTrash size={16} aria-hidden="true" />
                       Delete
                     </Button>
                   </>
@@ -600,7 +630,12 @@ function CreateTeamModal({
         />
         {error && <span className="input-error">{error}</span>}
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : 'Create team'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconUsers2 size={16} aria-hidden="true" />
+              Create team
+            </>
+          )}
         </Button>
       </form>
     </Modal>
@@ -664,15 +699,18 @@ function TeamMembersModal({
           <form onSubmit={(e) => void handleRename(e)} className="settings-grant-form">
             <Input name="teamname" value={team.name} required />
             <Button size="sm" type="submit" disabled={busy}>
+              <IconCheck size={16} aria-hidden="true" />
               Save
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setRenaming(false)} disabled={busy}>
+              <IconXmark size={16} aria-hidden="true" />
               Cancel
             </Button>
           </form>
         ) : (
           <div>
             <Button size="sm" variant="ghost" onClick={() => setRenaming(true)} disabled={busy}>
+              <IconPenWriting size={16} aria-hidden="true" />
               Rename team
             </Button>
           </div>
@@ -692,6 +730,7 @@ function TeamMembersModal({
                   disabled={busy}
                   onClick={() => void run(() => removeTeamMember(orgId, team.id, member.user_id))}
                 >
+                  <IconXmark size={16} aria-hidden="true" />
                   Remove
                 </Button>
               </div>
@@ -721,6 +760,7 @@ function TeamMembersModal({
                 })
               }
             >
+              <IconPlus size={16} aria-hidden="true" />
               Add
             </Button>
           </div>
@@ -771,7 +811,12 @@ function DeleteTeamModal({
           Cancel
         </Button>
         <Button variant="danger" size="md" onClick={() => void handleDelete()} disabled={loading}>
-          {loading ? <LoadingDots /> : 'Delete team'}
+          {loading ? <LoadingDots /> : (
+            <>
+              <IconTrash size={16} aria-hidden="true" />
+              Delete team
+            </>
+          )}
         </Button>
       </div>
     </Modal>
@@ -837,6 +882,7 @@ function DangerSection({
           disabled={otherMembers.length === 0}
           onClick={() => setTransferring(true)}
         >
+          <IconUser size={16} aria-hidden="true" />
           Transfer
         </Button>
       </div>
@@ -849,6 +895,7 @@ function DangerSection({
           </span>
         </div>
         <Button size="sm" variant="danger" onClick={() => setDeleting(true)}>
+          <IconTrash size={16} aria-hidden="true" />
           Delete
         </Button>
       </div>
@@ -924,7 +971,12 @@ function TransferOwnershipModal({
             Cancel
           </Button>
           <Button variant="danger" size="md" onClick={() => void handleTransfer()} disabled={loading || !newOwnerId}>
-            {loading ? <LoadingDots /> : 'Transfer ownership'}
+            {loading ? <LoadingDots /> : (
+              <>
+                <IconUser size={16} aria-hidden="true" />
+                Transfer ownership
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -989,7 +1041,12 @@ function DeleteOrgModal({
             onClick={() => void handleDelete()}
             disabled={loading || confirmation !== org.name}
           >
-            {loading ? <LoadingDots /> : 'Delete organization'}
+            {loading ? <LoadingDots /> : (
+              <>
+                <IconTrash size={16} aria-hidden="true" />
+                Delete organization
+              </>
+            )}
           </Button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { SecretRow } from '~/components/secretrow'
 import { EnvironmentTag } from '~/components/environmenttag'
 import { InstallSnippet } from '~/components/installsnippet'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
+import { IconBookBookmark, IconHouse2, IconRocket } from 'nucleo-pixel-essential'
 
 const FEATURES = [
   {
@@ -149,11 +150,20 @@ function LandingPage() {
           </p>
           <div className="hero-ctas">
             {user ? (
-              <Button variant="primary" size="lg" href="/dashboard">Go to dashboard</Button>
+              <Button variant="primary" size="lg" href="/dashboard">
+                <IconHouse2 size={16} aria-hidden="true" />
+                Go to dashboard
+              </Button>
             ) : (
               <>
-                <Button variant="primary" size="lg" href="/register">Get started free</Button>
-                <Button variant="secondary" size="lg" href="/docs">Read the docs</Button>
+                <Button variant="primary" size="lg" href="/register">
+                  Get started free
+                  <IconRocket size={16} aria-hidden="true" />
+                </Button>
+                <Button variant="secondary" size="lg" href="/docs">
+                  <IconBookBookmark size={16} aria-hidden="true" />
+                  Read the docs
+                </Button>
               </>
             )}
           </div>
@@ -239,11 +249,20 @@ function LandingPage() {
           <h2 className="cta-final-title">Stop pasting .env files into Slack.</h2>
           <div className="hero-ctas">
             {user ? (
-              <Button variant="primary" size="lg" href="/dashboard">Go to dashboard</Button>
+              <Button variant="primary" size="lg" href="/dashboard">
+                <IconHouse2 size={16} aria-hidden="true" />
+                Go to dashboard
+              </Button>
             ) : (
               <>
-                <Button variant="primary" size="lg" href="/register">Get started free</Button>
-                <Button variant="secondary" size="lg" href="/docs">Read the docs</Button>
+                <Button variant="primary" size="lg" href="/register">
+                  Get started free
+                  <IconRocket size={16} aria-hidden="true" />
+                </Button>
+                <Button variant="secondary" size="lg" href="/docs">
+                  <IconBookBookmark size={16} aria-hidden="true" />
+                  Read the docs
+                </Button>
               </>
             )}
           </div>

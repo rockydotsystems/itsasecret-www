@@ -3,6 +3,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
+import type { ReactNode } from 'react'
 
 export type KeyValueModalProps = {
   title: string
@@ -15,6 +16,7 @@ export type KeyValueModalProps = {
   initialValue?: string
   onClose: () => void
   onSubmit: (key: string, value: string) => Promise<void>
+  icon?: ReactNode
 }
 
 export function KeyValueModal({
@@ -27,6 +29,7 @@ export function KeyValueModal({
   initialValue,
   onClose,
   onSubmit,
+  icon,
 }: KeyValueModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -72,7 +75,12 @@ export function KeyValueModal({
         </div>
         {error && <span className="input-error">{error}</span>}
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : submitLabel}
+          {loading ? <LoadingDots /> : (
+            <>
+              {icon}
+              {submitLabel}
+            </>
+          )}
         </Button>
       </form>
     </Modal>

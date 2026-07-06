@@ -3,6 +3,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
+import type { ReactNode } from 'react'
 
 export type EnvNameModalProps = {
   title: string
@@ -11,9 +12,10 @@ export type EnvNameModalProps = {
   placeholder: string
   onClose: () => void
   onSubmit: (name: string) => Promise<void>
+  icon?: ReactNode
 }
 
-export function EnvNameModal({ title, subtitle, submitLabel, placeholder, onClose, onSubmit }: EnvNameModalProps) {
+export function EnvNameModal({ title, subtitle, submitLabel, placeholder, onClose, onSubmit, icon }: EnvNameModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -37,7 +39,12 @@ export function EnvNameModal({ title, subtitle, submitLabel, placeholder, onClos
         <Input name="name" label="Environment name" placeholder={placeholder} mono required />
         {error && <span className="input-error">{error}</span>}
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? <LoadingDots /> : submitLabel}
+          {loading ? <LoadingDots /> : (
+            <>
+              {icon}
+              {submitLabel}
+            </>
+          )}
         </Button>
       </form>
     </Modal>

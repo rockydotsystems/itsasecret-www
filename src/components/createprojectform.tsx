@@ -3,6 +3,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { createProject } from '~/lib/project-form'
+import { IconFolderOpen } from 'nucleo-pixel-essential'
 import type { Org, Project } from '~/lib/schema'
 
 export type CreateProjectFormProps = {
@@ -43,7 +44,12 @@ export function CreateProjectForm({ org, onCreated }: CreateProjectFormProps) {
       />
       <span className="input-error">{error}</span>
       <Button type="submit" size="lg" disabled={loading}>
-        {loading ? <LoadingDots /> : 'Create project'}
+        {loading ? <LoadingDots /> : (
+          <>
+            <IconFolderOpen size={16} aria-hidden="true" />
+            Create project
+          </>
+        )}
       </Button>
     </form>
   )

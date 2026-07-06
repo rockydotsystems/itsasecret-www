@@ -7,6 +7,7 @@ import { LoadingDots } from '~/components/loadingdots'
 import { acceptInvite } from '~/lib/invite-form'
 import { performLogout } from '~/lib/auth-form'
 import { getInvitePageFn } from '~/lib/invites-server'
+import { IconCheck, IconCircleLogout, IconHouse2, IconUser } from 'nucleo-pixel-essential'
 import type { InvitePageView } from '~/lib/invites-server'
 
 const inviteSearchSchema = z.object({
@@ -93,6 +94,7 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
           your next login, so if secrets won't reveal yet, log out and back in.
         </p>
         <Button size="lg" onClick={() => { window.location.href = '/dashboard' }}>
+          <IconHouse2 size={16} aria-hidden="true" />
           Go to dashboard
         </Button>
       </>
@@ -115,6 +117,7 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
               window.location.href = `/login?redirect=${encodeURIComponent(selfUrl)}&email=${encodeURIComponent(view.email)}`
             }}
           >
+            <IconUser size={16} aria-hidden="true" />
             Log in to accept
           </Button>
           <Button
@@ -124,6 +127,7 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
               window.location.href = `/register?redirect=${encodeURIComponent(selfUrl)}&email=${encodeURIComponent(view.email)}`
             }}
           >
+            <IconUser size={16} aria-hidden="true" />
             Create an account
           </Button>
         </div>
@@ -133,6 +137,7 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
             You're already a member of <strong>{view.orgName}</strong>.
           </p>
           <Button size="lg" onClick={() => { window.location.href = '/dashboard' }}>
+            <IconHouse2 size={16} aria-hidden="true" />
             Go to dashboard
           </Button>
         </>
@@ -147,6 +152,7 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
             variant="secondary"
             onClick={() => void performLogout(`/login?redirect=${encodeURIComponent(selfUrl)}&email=${encodeURIComponent(view.email)}`)}
           >
+            <IconCircleLogout size={16} aria-hidden="true" />
             Log in as {view.email}
           </Button>
         </>
@@ -154,7 +160,12 @@ function ValidInvite({ view, token }: { view: Extract<InvitePageView, { status: 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {error && <span className="input-error">{error}</span>}
           <Button size="lg" disabled={loading} onClick={() => void handleAccept()}>
-            {loading ? <LoadingDots /> : 'Accept invitation'}
+            {loading ? <LoadingDots /> : (
+              <>
+                <IconCheck size={16} aria-hidden="true" />
+                Accept invitation
+              </>
+            )}
           </Button>
         </div>
       )}

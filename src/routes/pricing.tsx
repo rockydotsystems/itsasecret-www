@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '~/components/button'
 import { Navbar } from '~/components/navbar'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
+import { IconHouse2, IconRocket } from 'nucleo-pixel-essential'
 
 export const Route = createFileRoute('/pricing')({
   component: PricingPage,
@@ -56,9 +57,15 @@ function PricingPage() {
             </ul>
             <div className="pricing-card-cta">
               {user ? (
-                <Button variant="primary" size="lg" href="/dashboard">Go to dashboard</Button>
+                <Button variant="primary" size="lg" href="/dashboard">
+                  <IconHouse2 size={16} aria-hidden="true" />
+                  Go to dashboard
+                </Button>
               ) : (
-                <Button variant="primary" size="lg" href="/register">Get started free</Button>
+                <Button variant="primary" size="lg" href="/register">
+                  Get started free
+                  <IconRocket size={16} aria-hidden="true" />
+                </Button>
               )}
             </div>
           </div>

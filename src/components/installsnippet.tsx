@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { IconCheck } from 'nucleo-pixel-essential'
 import { CopyIcon } from '~/components/secretrow'
 
 const INSTALL_CMD = 'curl -fsSL https://itsasecret.dev/install.sh | sh'
@@ -22,7 +23,7 @@ export function InstallSnippet() {
         onClick={() => void handleCopy()}
         title="Copy install command"
       >
-        {copied ? <span className="term-ok">✓</span> : CopyIcon}
+        {copied ? <IconCheck className="term-ok" size={16} aria-hidden="true" /> : CopyIcon}
       </button>
     </div>
   )
