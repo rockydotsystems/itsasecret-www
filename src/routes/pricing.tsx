@@ -63,7 +63,7 @@ function PricingPage() {
                 </Button>
               ) : (
                 <Button variant="primary" size="lg" href="/register">
-                  Get started free
+                  Get started
                   <IconRocket size={16} aria-hidden="true" />
                 </Button>
               )}

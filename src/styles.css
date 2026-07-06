@@ -726,14 +726,37 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 }
 .step-body { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; }
 
-/* ─── Vault preview ─────────────────────────────── */
-.vault-preview { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-.vault-envs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
-.vault-caption {
-  margin-top: 12px; text-align: center;
-  font-family: var(--font-family-mono); font-size: 12px; color: var(--text-tertiary);
-  letter-spacing: var(--tracking-mono);
+/* ─── Zero-knowledge diagram ────────────────────── */
+.zk-diagram { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: stretch; max-width: 960px; margin: 0 auto; }
+.zk-node {
+  display: flex; flex-direction: column; gap: 10px; padding: 20px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--bg-base);
 }
+.zk-node-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-family: var(--font-family-mono); font-size: var(--text-sm); font-weight: 600;
+  color: var(--text-primary); letter-spacing: var(--tracking-mono);
+}
+.zk-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 8px 10px;
+  border: 1px solid var(--border-default); border-radius: var(--radius-md); background: var(--bg-raised);
+  font-family: var(--font-family-mono); font-size: var(--text-xs);
+}
+.zk-name { color: var(--text-primary); white-space: nowrap; }
+.zk-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zk-plain { color: var(--text-secondary); }
+.zk-cipher { color: var(--text-tertiary); }
+.zk-foot {
+  display: flex; align-items: flex-start; gap: 8px; margin-top: auto; padding-top: 8px;
+  font-size: var(--text-xs); color: var(--text-secondary);
+}
+.zk-foot svg { flex-shrink: 0; margin-top: 2px; }
+.zk-foot-key { color: var(--text-brand); }
+.zk-wire {
+  display: flex; flex-direction: column; justify-content: center; gap: 14px; text-align: center;
+  font-family: var(--font-family-mono); font-size: var(--text-xs); color: var(--text-tertiary);
+}
+.zk-hop { white-space: nowrap; }
 
 /* ─── Feature grid ──────────────────────────────── */
 .feature-grid-inner { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
@@ -743,7 +766,7 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 .feature-card p { font: 400 var(--text-sm)/var(--leading-relaxed) var(--font-family-body); color: var(--text-secondary); margin: 0; }
 
 /* ─── Assurances (crypto) ───────────────────────── */
-.assurances { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.assurances { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
 .assurance-term {
   display: block; margin-bottom: 8px;
   font-family: var(--font-family-mono); font-size: var(--text-sm); font-weight: 600;
@@ -844,6 +867,8 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
   .section { padding: 64px 24px; }
   .cta-final { padding: 72px 24px; }
   .steps, .feature-grid-inner, .assurances { grid-template-columns: 1fr; }
+  .zk-diagram { grid-template-columns: 1fr; }
+  .zk-wire { flex-direction: row; justify-content: center; gap: 20px; }
   .section-title { margin-bottom: 32px; }
   .secret-row { flex-wrap: wrap; gap: 10px; }
   .secret-row-info { min-width: 0; }
