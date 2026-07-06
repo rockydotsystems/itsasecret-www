@@ -89,6 +89,48 @@ export async function sendOrgInviteEmail({ to, orgName, inviterEmail, role, acce
   }
 }
 
+export interface SendTeamAddedEmailArgs {
+  to: string
+  teamName: string
+  orgName: string
+  addedByEmail: string
+  dashboardUrl: string
+}
+
+// Notifies an org member they were added to a team. Pure notification - there
+// is nothing to accept - so a delivery failure is logged and swallowed.
+export async function sendTeamAddedEmail({ to, teamName, orgName, addedByEmail, dashboardUrl }: SendTeamAddedEmailArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    console.log(
+      `\n[email:dev] ${to} added to team "${teamName}" in "${orgName}" by ${addedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
+    )
+    return
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+      to,
+      reply_to: addedByEmail,
+      subject: `You've been added to ${teamName} in ${orgName} on itsasecret`,
+      html: teamAddedEmailHtml({ teamName, orgName, addedByEmail, dashboardUrl }),
+      text: `${addedByEmail} added you to the team "${teamName}" in the organization "${orgName}" on itsasecret.\n\nYou now have whatever project and environment access is granted to ${teamName}.\n\n${dashboardUrl}`,
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error(`[email] Resend team-added send failed (${res.status}): ${detail}`)
+  }
+}
+
 export interface SendFeedbackEmailArgs {
   fromUserEmail: string
   fromUserName: string | null
@@ -147,6 +189,18 @@ function orgInviteEmailHtml({ orgName, inviterEmail, role, acceptUrl }: Omit<Sen
     <p><strong>${escapeHtml(inviterEmail)}</strong> invited you to join the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret as ${role === 'admin' ? 'an admin' : 'a member'}.</p>
     <p><a href="${acceptUrl}">Accept invitation</a></p>
     <p style="color:#666;font-size:12px;">This link expires in 7 days. If you weren't expecting this, ignore this email.</p>
+  </body>
+</html>`
+}
+
+function teamAddedEmailHtml({ teamName, orgName, addedByEmail, dashboardUrl }: Omit<SendTeamAddedEmailArgs, 'to'>): string {
+  return `<!doctype html>
+<html>
+  <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
+    <p><strong>${escapeHtml(addedByEmail)}</strong> added you to the team <strong>${escapeHtml(teamName)}</strong> in the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret.</p>
+    <p>You now have whatever project and environment access is granted to ${escapeHtml(teamName)}.</p>
+    <p><a href="${dashboardUrl}">Open the dashboard</a></p>
+    <p style="color:#666;font-size:12px;">No action is needed. If this seems wrong, contact an organization admin.</p>
   </body>
 </html>`
 }

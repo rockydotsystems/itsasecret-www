@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { orgMembers, teamMembers, users } from '~/lib/schema'
+import { orgs, orgMembers, teamMembers, users } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN } from '~/lib/rbac'
 import { getLiveTeam } from '~/lib/teams'
+import { sendTeamAddedEmail } from '~/lib/email'
 
 const addSchema = z.object({
   userId: z.string(),
@@ -44,10 +45,30 @@ export const Route = createFileRoute('/api/orgs/$orgId/teams/$teamId/members')({
           })
           await auditLog({ orgId, actorUserId: user.id, action: 'team.member.add', targetType: 'team', targetId: teamId, metadata: { userId } })
 
-          const emailRows = await db.select({ email: users.email }).from(users)
-            .where(eq(users.id, userId))
-            .limit(1)
-          return Response.json({ team_id: teamId, user_id: userId, email: emailRows[0]?.email ?? '' }, { status: 201 })
+          const [emailRows, orgRows] = await Promise.all([
+            db.select({ email: users.email }).from(users)
+              .where(eq(users.id, userId))
+              .limit(1),
+            db.select({ name: orgs.name }).from(orgs)
+              .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
+              .limit(1),
+          ])
+          const email = emailRows[0]?.email ?? ''
+
+          // Heads-up notification only - nothing to accept, and a delivery
+          // hiccup must not fail the add (the team_members row is in).
+          if (email && orgRows[0]) {
+            const baseUrl = process.env.APP_URL ?? new URL(request.url).origin
+            await sendTeamAddedEmail({
+              to: email,
+              teamName: team.name,
+              orgName: orgRows[0].name,
+              addedByEmail: user.email,
+              dashboardUrl: `${baseUrl}/dashboard/${orgId}/settings`,
+            })
+          }
+
+          return Response.json({ team_id: teamId, user_id: userId, email }, { status: 201 })
         } catch (err) {
           return errorResponse(err)
         }
