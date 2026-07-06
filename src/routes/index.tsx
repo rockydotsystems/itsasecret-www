@@ -5,6 +5,7 @@ import { Badge } from '~/components/badge'
 import { Navbar } from '~/components/navbar'
 import { InstallSnippet } from '~/components/installsnippet'
 import { RedactionTexture } from '~/components/redactiontexture'
+import { SiteFooter } from '~/components/sitefooter'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 import {
   IconBookBookmark,
@@ -316,20 +317,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="site-footer-inner">
-          <span>
-            itsasecret.dev &middot; a product by <a href="https://rocky.systems">rocky.systems</a>
-          </span>
-          <span className="site-footer-links">
-            <a href="/docs">docs</a>
-            <a href="/how-it-works">how it works</a>
-            <a href="https://github.com/rockydotsystems">github</a>
-            <a href="/login">log in</a>
-            <a href="/register">register</a>
-          </span>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   )
 }

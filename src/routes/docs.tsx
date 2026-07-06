@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Navbar } from '~/components/navbar'
+import { SiteFooter } from '~/components/sitefooter'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 
 export const Route = createFileRoute('/docs')({
@@ -265,17 +266,7 @@ function DocsPage() {
         </section>
       </main>
 
-      <footer className="site-footer">
-        <div className="site-footer-inner">
-          <span>itsasecret.dev &middot; shh secret set. shh pull. done.</span>
-          <span className="site-footer-links">
-            <a href="/docs">docs</a>
-            <a href="/how-it-works">how it works</a>
-            <a href="/login">log in</a>
-            <a href="/register">register</a>
-          </span>
-        </div>
-      </footer>
+      <SiteFooter />
     </>
   )
 }

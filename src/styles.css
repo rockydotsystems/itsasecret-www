@@ -129,6 +129,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Pin the marketing footer to the viewport bottom on short pages. */
+body { display: flex; flex-direction: column; min-height: 100vh; }
+body > * { flex-shrink: 0; }
+
 a { color: var(--text-brand); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -870,7 +874,7 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
   .docs-table-row { grid-template-columns: 1fr; gap: 6px; }
 }
 
-.site-footer { padding: 32px 40px; border-top: 1px solid var(--border-default); }
+.site-footer { margin-top: auto; padding: 32px 40px; border-top: 1px solid var(--border-default); }
 .site-footer-inner {
   max-width: 1040px; margin: 0 auto;
   display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
