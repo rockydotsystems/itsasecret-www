@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Button } from '~/components/button'
 import { Navbar } from '~/components/navbar'
+import { RedactionTexture } from '~/components/redactiontexture'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 import { IconHouse2, IconRocket } from 'nucleo-pixel-essential'
 
@@ -32,6 +33,7 @@ function PricingPage() {
       <Navbar loggedIn={!!user} userEmail={user?.email} />
 
       <section className="hero hero-texture">
+        <RedactionTexture rows={18} />
         <div className="hero-inner">
           <h1 className="hero-title">
             Free while in beta<span className="hero-title-flare">.</span>

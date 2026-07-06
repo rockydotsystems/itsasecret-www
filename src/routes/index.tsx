@@ -4,6 +4,7 @@ import { Button } from '~/components/button'
 import { Badge } from '~/components/badge'
 import { Navbar } from '~/components/navbar'
 import { InstallSnippet } from '~/components/installsnippet'
+import { RedactionTexture } from '~/components/redactiontexture'
 import { getCurrentUser, type CurrentUser } from '~/lib/auth-form'
 import {
   IconBookBookmark,
@@ -190,6 +191,7 @@ function LandingPage() {
       <Navbar loggedIn={!!user} userEmail={user?.email} />
 
       <section className="hero hero-texture">
+        <RedactionTexture />
         <div className="hero-inner">
           <h1 className="hero-title">
             Secrets made simple securely<span className="hero-title-flare">.</span>
@@ -285,6 +287,7 @@ function LandingPage() {
       </section>
 
       <section className="cta-final hero-texture">
+        <RedactionTexture rows={10} />
         <div className="hero-inner">
           <h2 className="cta-final-title">Stop pasting .env files into Slack.</h2>
           <div className="hero-ctas">

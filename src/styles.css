@@ -512,17 +512,32 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 }
 
 /* ─── Redaction pattern background ──────────────── */
-/* Thin horizontal bars of varying width - marketing/docs heroes only. */
+/* Thin horizontal bars of varying width - marketing/docs heroes only.
+   Rendered as DOM bars (RedactionTexture component) so a random one can
+   occasionally light up orange and "process". */
 .hero-texture {
   position: relative;
 }
-.hero-texture::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
-  opacity: 0.05;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='240'%3E%3Cg fill='%23FCFAF6'%3E%3Crect x='0' y='16' width='180' height='8' rx='2'/%3E%3Crect x='196' y='16' width='90' height='8' rx='2'/%3E%3Crect x='302' y='16' width='150' height='8' rx='2'/%3E%3Crect x='24' y='56' width='120' height='8' rx='2'/%3E%3Crect x='160' y='56' width='210' height='8' rx='2'/%3E%3Crect x='386' y='56' width='70' height='8' rx='2'/%3E%3Crect x='0' y='96' width='240' height='8' rx='2'/%3E%3Crect x='256' y='96' width='120' height='8' rx='2'/%3E%3Crect x='40' y='136' width='90' height='8' rx='2'/%3E%3Crect x='146' y='136' width='180' height='8' rx='2'/%3E%3Crect x='342' y='136' width='110' height='8' rx='2'/%3E%3Crect x='0' y='176' width='140' height='8' rx='2'/%3E%3Crect x='156' y='176' width='240' height='8' rx='2'/%3E%3Crect x='24' y='216' width='200' height='8' rx='2'/%3E%3Crect x='240' y='216' width='120' height='8' rx='2'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 480px 240px;
+.redaction-bars {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  display: flex; flex-direction: column; gap: 32px; padding-top: 16px;
   -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 0%, transparent 78%);
   mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 0%, transparent 78%);
+}
+.redaction-row { display: flex; gap: 16px; flex: 0 0 auto; }
+.redaction-bar {
+  height: 8px; border-radius: 2px; flex: 0 0 auto;
+  background: rgba(252, 250, 246, 0.05);
+}
+.redaction-bar.is-processing { animation: redaction-process 2.6s ease-in-out; }
+@keyframes redaction-process {
+  0%       { background: rgba(252, 250, 246, 0.05); box-shadow: none; }
+  12%, 22% { background: rgba(245, 88, 30, 0.7);  box-shadow: 0 0 14px rgba(245, 88, 30, 0.35); }
+  32%, 40% { background: rgba(245, 88, 30, 0.3);  box-shadow: 0 0 6px rgba(245, 88, 30, 0.15); }
+  50%, 60% { background: rgba(245, 88, 30, 0.7);  box-shadow: 0 0 14px rgba(245, 88, 30, 0.35); }
+  70%      { background: rgba(245, 88, 30, 0.3);  box-shadow: 0 0 6px rgba(245, 88, 30, 0.15); }
+  82%      { background: rgba(245, 88, 30, 0.55); box-shadow: 0 0 10px rgba(245, 88, 30, 0.25); }
+  100%     { background: rgba(252, 250, 246, 0.05); box-shadow: none; }
 }
 
 /* ─── Layout primitives ─────────────────────────── */
