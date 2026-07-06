@@ -70,6 +70,29 @@ docker compose up -d           # start Postgres 17
   `BUCKET_ENDPOINT`/`BUCKET_NAME`/`BUCKET_ACCESS_KEY_ID`/
   `BUCKET_SECRET_ACCESS_KEY` (+ optional `BUCKET_REGION`, default `auto`) -
   set on the Railway `web` service; without them the route 503s.
+- **Profile page at `/dashboard/profile`** (`src/components/profilesettings.tsx`,
+  client calls in `src/lib/profile-form.ts`): display name (`users.name`,
+  nullable - empty stores null), master-password change, and feedback.
+- **Password change follows the login trust model** (`POST
+  /api/auth/change-password`): the server sees the password transiently, never
+  stores it - verify current password, unwrap every non-pending
+  `org_members.wrapped_org_key` with the old master key, re-wrap under the new
+  one (fresh KDF salt + current default params), swap `password_hash` in one
+  transaction. Revokes all OTHER web/cli sessions (`revokeOtherInteractiveSessions`);
+  long-lived access tokens survive on purpose (separate machine-credential
+  lifecycle, org keys unchanged). The client re-seeds the vault with the new
+  password; other tabs' cached master keys go stale and re-prompt.
+- **User avatars are Gravatar with a "boring avatars" fallback**
+  (`src/components/avatar.tsx`): pass `email` for user avatars - SHA-256
+  Gravatar URL with `d=404` layered over a locally-drawn marble-variant SVG
+  (the gradient one; brand palette, no external fallback service, no
+  initials); the image only shows after `onLoad`, so no-gravatar/stock-default
+  accounts keep the marble. Team avatars pass only `name` and always render
+  the marble.
+- **Feedback is stored in the `feedback` table** (source of truth, kept
+  forever) and forwarded best-effort by email to `FEEDBACK_EMAIL` via Resend
+  (`sendFeedbackEmail`); without `RESEND_API_KEY`/`FEEDBACK_EMAIL` it logs to
+  the terminal. Per-user rate limit where every submission counts.
 
 ## Repo layout
 

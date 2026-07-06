@@ -24,7 +24,7 @@ export function Navbar({ loggedIn = false, userEmail }: NavbarProps) {
           {loggedIn ? (
             <>
               <a href="/dashboard" className="navbar-user" title={userEmail}>
-                <Avatar name={userEmail} size="sm" />
+                <Avatar name={userEmail} email={userEmail} size="sm" />
                 <span className="navbar-user-email">{userEmail}</span>
               </a>
               <button

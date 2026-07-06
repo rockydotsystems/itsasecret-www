@@ -46,6 +46,46 @@ export async function sendVerificationEmail({ to, verifyUrl }: SendVerificationE
   }
 }
 
+export interface SendFeedbackEmailArgs {
+  fromUserEmail: string
+  fromUserName: string | null
+  message: string
+}
+
+// Forwards profile-page feedback to FEEDBACK_EMAIL. Best-effort on top of the
+// DB row (the feedback table is the source of truth) - a mail hiccup must
+// never fail the submission.
+export async function sendFeedbackEmail({ fromUserEmail, fromUserName, message }: SendFeedbackEmailArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  const to = process.env.FEEDBACK_EMAIL
+
+  const who = fromUserName ? `${fromUserName} <${fromUserEmail}>` : fromUserEmail
+  if (!apiKey || !to) {
+    console.log(`\n[email:dev] Feedback from ${who}:\n${message}\n`)
+    return
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+      to,
+      reply_to: fromUserEmail,
+      subject: `itsasecret feedback from ${who}`,
+      text: message,
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error(`[email] Resend feedback send failed (${res.status}): ${detail}`)
+  }
+}
+
 function verificationEmailHtml(verifyUrl: string): string {
   return `<!doctype html>
 <html>

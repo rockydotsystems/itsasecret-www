@@ -92,7 +92,7 @@ export function EnvAccessModal({
         <div className="member-list">
           {grants.map((grant) => (
             <div key={grant.user_id} className="member-row">
-              <Avatar name={grant.email} size="sm" />
+              <Avatar name={grant.email} email={grant.email} size="sm" />
               <div className="member-row-info">
                 <span className="member-row-email">{grant.email}</span>
               </div>

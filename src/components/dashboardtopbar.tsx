@@ -1,4 +1,4 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouteContext } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { Button } from '~/components/button'
 import { Avatar } from '~/components/avatar'
@@ -8,6 +8,7 @@ import { Modal } from '~/components/modal'
 import { WorkspaceWizard } from '~/components/workspacewizard'
 import { CreateProjectForm } from '~/components/createprojectform'
 import { performLogout } from '~/lib/auth-form'
+import type { SessionUser } from '~/lib/auth-server'
 import type { Org, Project } from '~/lib/schema'
 
 function SettingsIcon() {
@@ -28,6 +29,9 @@ export type DashboardTopBarProps = {
 
 export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardTopBarProps) {
   const navigate = useNavigate()
+  // Every page with the top bar sits behind requireAuthBeforeLoad, which puts
+  // the session user into route context - no extra fetch or prop-drilling.
+  const { user } = useRouteContext({ strict: false }) as { user?: SessionUser }
   const [loggingOut, setLoggingOut] = useState(false)
   const [creating, setCreating] = useState<'org' | 'project' | null>(null)
 
@@ -117,7 +121,9 @@ export function DashboardTopBar({ orgs, orgId, projects, projectId }: DashboardT
           </div>
 
           <div className="dashboard-navbar-user">
-            <Avatar name="Hack R" size="sm" />
+            <Link to="/dashboard/profile" className="avatar-link" aria-label="Your profile" title="Your profile">
+              <Avatar name={user?.name || user?.email || '?'} email={user?.email} size="sm" />
+            </Link>
             <Button variant="ghost" size="sm" href="/dashboard/tokens" style={{ padding: '0 8px' }}>
               Tokens
             </Button>

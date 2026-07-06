@@ -219,7 +219,7 @@ function MembersSection({
             const isSelf = member.user_id === currentUserId
             return (
               <div key={member.user_id} className="member-row">
-                <Avatar name={member.email} size="md" />
+                <Avatar name={member.email} email={member.email} size="md" />
                 <div className="member-row-info">
                   <span className="member-row-email">
                     {member.email}
@@ -636,7 +636,7 @@ function TeamMembersModal({
         <div className="member-list">
           {team.members.map((member) => (
             <div key={member.user_id} className="member-row">
-              <Avatar name={member.email} size="sm" />
+              <Avatar name={member.email} email={member.email} size="sm" />
               <div className="member-row-info">
                 <span className="member-row-email">{member.email}</span>
               </div>

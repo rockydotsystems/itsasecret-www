@@ -123,6 +123,7 @@ export async function performLogout(): Promise<void> {
 export interface CurrentUser {
   id: string
   email: string
+  name: string | null
   kdf_salt: string
   kdf_params: string
   email_verified: boolean

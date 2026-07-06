@@ -20,9 +20,11 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardTokensRouteImport } from './routes/dashboard/tokens'
+import { Route as DashboardProfileRouteImport } from './routes/dashboard/profile'
 import { Route as ApiTokensRouteImport } from './routes/api/tokens'
 import { Route as ApiOnboardingRouteImport } from './routes/api/onboarding'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as DashboardOrgIdIndexRouteImport } from './routes/dashboard/$orgId/index'
 import { Route as ApiOrgsIndexRouteImport } from './routes/api/orgs/index'
 import { Route as DashboardOrgIdSettingsRouteImport } from './routes/dashboard/$orgId/settings'
@@ -37,6 +39,7 @@ import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
+import { Route as ApiAuthChangePasswordRouteImport } from './routes/api/auth/change-password'
 import { Route as DashboardOrgIdProjectIdIndexRouteImport } from './routes/dashboard/$orgId/$projectId/index'
 import { Route as DashboardOrgIdProjectIdSettingsRouteImport } from './routes/dashboard/$orgId/$projectId/settings'
 import { Route as ApiProjectsProjectIdTeamPermissionsRouteImport } from './routes/api/projects/$projectId.team-permissions'
@@ -124,6 +127,11 @@ const DashboardTokensRoute = DashboardTokensRouteImport.update({
   path: '/dashboard/tokens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardProfileRoute = DashboardProfileRouteImport.update({
+  id: '/dashboard/profile',
+  path: '/dashboard/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTokensRoute = ApiTokensRouteImport.update({
   id: '/api/tokens',
   path: '/api/tokens',
@@ -137,6 +145,11 @@ const ApiOnboardingRoute = ApiOnboardingRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
+  id: '/api/feedback',
+  path: '/api/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardOrgIdIndexRoute = DashboardOrgIdIndexRouteImport.update({
@@ -208,6 +221,11 @@ const ApiAuthLogoutRoute = ApiAuthLogoutRouteImport.update({
 const ApiAuthLoginRoute = ApiAuthLoginRouteImport.update({
   id: '/api/auth/login',
   path: '/api/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthChangePasswordRoute = ApiAuthChangePasswordRouteImport.update({
+  id: '/api/auth/change-password',
+  path: '/api/auth/change-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardOrgIdProjectIdIndexRoute =
@@ -395,11 +413,14 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/onboarding': typeof ApiOnboardingRoute
   '/api/tokens': typeof ApiTokensRouteWithChildren
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/tokens': typeof DashboardTokensRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/auth/change-password': typeof ApiAuthChangePasswordRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -456,11 +477,14 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/onboarding': typeof ApiOnboardingRoute
   '/api/tokens': typeof ApiTokensRouteWithChildren
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/tokens': typeof DashboardTokensRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/api/auth/change-password': typeof ApiAuthChangePasswordRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -518,11 +542,14 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
   '/api/onboarding': typeof ApiOnboardingRoute
   '/api/tokens': typeof ApiTokensRouteWithChildren
+  '/dashboard/profile': typeof DashboardProfileRoute
   '/dashboard/tokens': typeof DashboardTokensRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/api/auth/change-password': typeof ApiAuthChangePasswordRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -581,11 +608,14 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/verify-email'
+    | '/api/feedback'
     | '/api/health'
     | '/api/onboarding'
     | '/api/tokens'
+    | '/dashboard/profile'
     | '/dashboard/tokens'
     | '/dashboard/'
+    | '/api/auth/change-password'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -642,11 +672,14 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/verify-email'
+    | '/api/feedback'
     | '/api/health'
     | '/api/onboarding'
     | '/api/tokens'
+    | '/dashboard/profile'
     | '/dashboard/tokens'
     | '/dashboard'
+    | '/api/auth/change-password'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -703,11 +736,14 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/verify-email'
+    | '/api/feedback'
     | '/api/health'
     | '/api/onboarding'
     | '/api/tokens'
+    | '/dashboard/profile'
     | '/dashboard/tokens'
     | '/dashboard/'
+    | '/api/auth/change-password'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -765,11 +801,14 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiOnboardingRoute: typeof ApiOnboardingRoute
   ApiTokensRoute: typeof ApiTokensRouteWithChildren
+  DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardTokensRoute: typeof DashboardTokensRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  ApiAuthChangePasswordRoute: typeof ApiAuthChangePasswordRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -866,6 +905,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardTokensRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/profile': {
+      id: '/dashboard/profile'
+      path: '/dashboard/profile'
+      fullPath: '/dashboard/profile'
+      preLoaderRoute: typeof DashboardProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/tokens': {
       id: '/api/tokens'
       path: '/api/tokens'
@@ -885,6 +931,13 @@ declare module '@tanstack/react-router' {
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feedback': {
+      id: '/api/feedback'
+      path: '/api/feedback'
+      fullPath: '/api/feedback'
+      preLoaderRoute: typeof ApiFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/$orgId/': {
@@ -983,6 +1036,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/login'
       fullPath: '/api/auth/login'
       preLoaderRoute: typeof ApiAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/change-password': {
+      id: '/api/auth/change-password'
+      path: '/api/auth/change-password'
+      fullPath: '/api/auth/change-password'
+      preLoaderRoute: typeof ApiAuthChangePasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/$orgId/$projectId/': {
@@ -1451,11 +1511,14 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  ApiFeedbackRoute: ApiFeedbackRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiOnboardingRoute: ApiOnboardingRoute,
   ApiTokensRoute: ApiTokensRouteWithChildren,
+  DashboardProfileRoute: DashboardProfileRoute,
   DashboardTokensRoute: DashboardTokensRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  ApiAuthChangePasswordRoute: ApiAuthChangePasswordRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,

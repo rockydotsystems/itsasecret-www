@@ -1,4 +1,4 @@
-import { eq, and, isNull } from 'drizzle-orm'
+import { eq, and, isNull, ne, inArray } from 'drizzle-orm'
 import { db } from './db'
 import { sessions } from './schema'
 import type { Session } from './schema'
@@ -122,6 +122,21 @@ export async function rotateSessionToken(
 
 export async function revokeSession(sessionId: string): Promise<void> {
   await db.update(sessions).set({ revoked_at: new Date() }).where(eq(sessions.id, sessionId))
+}
+
+// Kicks every other interactive login after a password change. Long-lived
+// access tokens ('token' kind) survive on purpose: they are machine
+// credentials with their own lifecycle (revocable on the tokens page), and
+// the org keys they transport are unchanged by a password change.
+export async function revokeOtherInteractiveSessions(userId: string, keepSessionId: string): Promise<void> {
+  await db.update(sessions)
+    .set({ revoked_at: new Date() })
+    .where(and(
+      eq(sessions.user_id, userId),
+      ne(sessions.id, keepSessionId),
+      inArray(sessions.kind, ['web', 'cli']),
+      isNull(sessions.revoked_at)
+    ))
 }
 
 export async function revokeAllUserSessions(userId: string): Promise<void> {

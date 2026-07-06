@@ -4,6 +4,9 @@ import { pgTable, text, timestamp, boolean, primaryKey, unique, uniqueIndex, ind
 export const users = pgTable('users', {
   id: text().primaryKey(),
   email: text().notNull().unique(),
+  // Display name, shown in the UI and on avatars. Optional - accounts are
+  // email-first and the profile page fills this in later.
+  name: text(),
   password_hash: text().notNull(),
   kdf_salt: text().notNull(),
   kdf_params: text().notNull(),
@@ -250,6 +253,17 @@ export const userLastEnv = pgTable('user_last_env', {
   primaryKey({ columns: [t.user_id, t.project_id] }),
 ])
 
+// Product feedback submitted from the profile page. Kept forever (tiny table,
+// no retention concerns); also forwarded by email best-effort.
+export const feedback = pgTable('feedback', {
+  id: text().primaryKey(),
+  user_id: text().notNull().references(() => users.id),
+  message: text().notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  index('idx_feedback_user').on(t.user_id),
+])
+
 export const auditLog = pgTable('audit_log', {
   id: text().primaryKey(),
   org_id: text().references(() => orgs.id),
@@ -279,6 +293,7 @@ export type TeamMember = typeof teamMembers.$inferSelect
 export type TeamEnvPermission = typeof teamEnvPermissions.$inferSelect
 export type TeamProjectPermission = typeof teamProjectPermissions.$inferSelect
 export type Session = typeof sessions.$inferSelect
+export type Feedback = typeof feedback.$inferSelect
 export type AuditLog = typeof auditLog.$inferSelect
 export type UserLastOrg = typeof userLastOrg.$inferSelect
 export type UserLastProject = typeof userLastProject.$inferSelect
