@@ -217,7 +217,7 @@ function DocsPage() {
           <p>
             <code>--shell</code> speaks your shell&rsquo;s dialect: it auto-detects from{' '}
             <code>$SHELL</code> (POSIX inside direnv, where <code>.envrc</code> is always bash),
-            or force one with <code>--shell=posix|fish|nu|pwsh</code>.
+            or force one with&nbsp;<code>--shell=posix|fish|nu|pwsh</code>.
           </p>
         </section>
 
@@ -306,6 +306,15 @@ function DocsPage() {
             ))}
           </div>
         </section>
+
+        <div className="docs-notice">
+          <span className="docs-notice-tag">Coming soon</span>
+          <p>
+            Running your own itsasecret server is on the way. The CLI already points at a custom
+            URL today with <code>shh config set url</code> (section 07) - a full self-hosting guide
+            will land here soon.
+          </p>
+        </div>
       </main>
 
       <SiteFooter />
