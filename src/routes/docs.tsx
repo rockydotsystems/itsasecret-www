@@ -94,25 +94,10 @@ function DocsPage() {
           <p>
             The{' '}
             <a href="https://github.com/rockydotsystems/itsasecret-client">client repo</a> is a
-            flake. It builds the CLI from source and installs both the <code>itsasecret</code>{' '}
-            binary and its <code>shh</code> alias - linux and macOS, amd64 and arm64. Drop it into
-            your profile:
-          </p>
-          <CodeBlock>
-            <span className="term-prompt">$ </span><span className="term-cmd">nix profile install</span> github:rockydotsystems/itsasecret-client{'\n'}
-            <span className="term-prompt">$ </span><span className="term-cmd">shh --version</span>{'\n'}
-            itsasecret version 9bc4db5
-          </CodeBlock>
-          <p>
-            Track new releases with <code>nix profile upgrade</code>, and remove it with{' '}
-            <code>nix profile remove</code>. Just trying it?{' '}
-            <code>nix run github:rockydotsystems/itsasecret-client -- --version</code> runs the
-            compiled binary without installing anything.
-          </p>
-          <p>
-            Prefer a declarative setup? Add the flake as an input and pull the package into{' '}
-            <code>environment.systemPackages</code> (NixOS) or <code>home.packages</code>{' '}
-            (home-manager):
+            flake. It builds the CLI from source and provides both the <code>itsasecret</code>{' '}
+            binary and its <code>shh</code> alias - linux and macOS, amd64 and arm64. Add it as an
+            input and pull the package into <code>environment.systemPackages</code> (NixOS) or{' '}
+            <code>home.packages</code> (home-manager):
           </p>
           <CodeBlock>{`# flake.nix
 {
@@ -133,8 +118,7 @@ function DocsPage() {
           <p>
             Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
             Sessions roll: every command refreshes them, and after ~30 idle minutes the next
-            command simply asks for your master password again. The full story - key wrapping,
-            token rotation, what&rsquo;s on your disk - is on{' '}
+            command simply asks for your master password again. For more information, visit{' '}
             <a href="/how-it-works">how it works</a>.
           </p>
           <CodeBlock>
