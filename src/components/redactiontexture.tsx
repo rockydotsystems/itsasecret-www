@@ -37,25 +37,32 @@ function buildRows(): Row[] {
 const ROWS = buildRows()
 
 const PROCESS_MS = 2600
+const MAX_STAGGER_MS = 700
 
-// Redaction-bar texture for marketing heroes. Every now and then a random
-// bar lights up in brand orange, "processes", and settles back down.
+// Redaction-bar texture for marketing heroes. Every now and then a few
+// random bars light up in brand orange, "process", and settle back down.
 export function RedactionTexture({ rows = MAX_ROWS }: { rows?: number }) {
   const visible = ROWS.slice(0, rows)
-  const [active, setActive] = useState<string | null>(null)
+  // key "row-bar" → animation-delay in ms, so the group starts staggered.
+  const [active, setActive] = useState<ReadonlyMap<string, number>>(new Map())
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let timer: number
     const flash = () => {
-      // Stick to the upper rows - the mask fades the lower ones out anyway.
-      const row = Math.floor(Math.random() * Math.max(1, Math.floor(rows * 0.6)))
-      const bar = Math.floor(Math.random() * ROWS[row].widths.length)
-      setActive(`${row}-${bar}`)
-      timer = window.setTimeout(rest, PROCESS_MS)
+      const count = 2 + Math.floor(Math.random() * 2)
+      const picks = new Map<string, number>()
+      while (picks.size < count) {
+        // Stick to the upper rows - the mask fades the lower ones out anyway.
+        const row = Math.floor(Math.random() * Math.max(1, Math.floor(rows * 0.6)))
+        const bar = Math.floor(Math.random() * ROWS[row].widths.length)
+        picks.set(`${row}-${bar}`, Math.round(Math.random() * MAX_STAGGER_MS))
+      }
+      setActive(picks)
+      timer = window.setTimeout(rest, PROCESS_MS + MAX_STAGGER_MS)
     }
     const rest = () => {
-      setActive(null)
+      setActive(new Map())
       timer = window.setTimeout(flash, 1500 + Math.random() * 4000)
     }
     timer = window.setTimeout(flash, 800 + Math.random() * 2000)
@@ -66,13 +73,16 @@ export function RedactionTexture({ rows = MAX_ROWS }: { rows?: number }) {
     <div className="redaction-bars" aria-hidden="true">
       {visible.map((row, r) => (
         <div className="redaction-row" key={r} style={{ marginLeft: row.offset }}>
-          {row.widths.map((width, i) => (
-            <span
-              key={i}
-              className={active === `${r}-${i}` ? 'redaction-bar is-processing' : 'redaction-bar'}
-              style={{ width }}
-            />
-          ))}
+          {row.widths.map((width, i) => {
+            const delay = active.get(`${r}-${i}`)
+            return (
+              <span
+                key={i}
+                className={delay === undefined ? 'redaction-bar' : 'redaction-bar is-processing'}
+                style={delay === undefined ? { width } : { width, animationDelay: `${delay}ms` }}
+              />
+            )
+          })}
         </div>
       ))}
     </div>
