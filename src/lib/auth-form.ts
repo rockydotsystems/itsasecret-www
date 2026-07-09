@@ -57,7 +57,13 @@ export function getRedirectPath(redirect: string | undefined, origin?: string): 
     if (origin && url.origin !== origin) return '/dashboard'
     return url.pathname + url.search + url.hash
   } catch {
-    return redirect.startsWith('/') ? redirect : '/dashboard'
+    // Relative path only. Reject protocol-relative ("//evil.com") and the
+    // backslash variant ("/\evil.com") - browsers treat both as absolute
+    // cross-origin URLs, so `?redirect=//evil.com` would be an open redirect.
+    if (redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/\\')) {
+      return redirect
+    }
+    return '/dashboard'
   }
 }
 

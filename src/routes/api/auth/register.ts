@@ -10,7 +10,7 @@ import { generateKeyPair } from '~/lib/crypto/ecdh'
 import { base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
 import { createSessionCookieHeader } from '~/lib/session-cookie'
-import { getClientIP, isRateLimited } from '~/lib/rate-limit'
+import { getClientIP, isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 import { createEmailVerification, verificationUrl } from '~/lib/email-verification'
 import { sendVerificationEmail } from '~/lib/email'
 
@@ -45,6 +45,10 @@ export const Route = createFileRoute('/api/auth/register')({
               { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
             )
           }
+          // Every attempt counts against the window - this is abuse protection
+          // (account/email-send flooding), not failure tracking. Without this
+          // the isRateLimited check above never trips.
+          recordFailedAttempt(registerKey)
 
           const body = registerSchema.parse(await request.json())
           const { email, password } = body

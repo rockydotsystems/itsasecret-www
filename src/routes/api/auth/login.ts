@@ -59,6 +59,19 @@ export const Route = createFileRoute('/api/auth/login')({
             return Response.json({ error: 'Invalid credentials' }, { status: 401 })
           }
 
+          // Per-account throttle, independent of IP: without it a botnet spread
+          // across many source IPs could brute-force one account unhindered
+          // (each IP stays under its own limit). Keyed by user id, not email,
+          // so it can't be used to probe which emails exist.
+          const acctKey = `login:acct:${user.id}`
+          const acctLimit = isRateLimited(acctKey)
+          if (acctLimit.limited) {
+            return Response.json(
+              { error: 'Too many login attempts. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(acctLimit.retryAfterSeconds) } }
+            )
+          }
+
           const kdfParams: KdfParams = JSON.parse(user.kdf_params)
           const kdfSalt = base64Decode(user.kdf_salt)
 
@@ -73,6 +86,7 @@ export const Route = createFileRoute('/api/auth/login')({
           }
           if (!passwordValid) {
             recordFailedAttempt(clientIP)
+            recordFailedAttempt(acctKey)
             return Response.json({ error: 'Invalid credentials' }, { status: 401 })
           }
 
@@ -117,6 +131,7 @@ export const Route = createFileRoute('/api/auth/login')({
           }
 
           resetAttempts(clientIP)
+          resetAttempts(acctKey)
           await auditLog({ actorUserId: user.id, action: 'user.login' })
 
           const headers = new Headers()

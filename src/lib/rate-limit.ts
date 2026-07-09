@@ -42,14 +42,25 @@ export function resetAttempts(key: string): void {
   buckets.delete(key)
 }
 
+// X-Forwarded-For is fully client-settable. Proxies *append* the real peer to
+// the right of whatever the client sent, so the leftmost entry is attacker
+// controlled - taking it (the old behavior) let anyone bypass every IP-keyed
+// rate limit by rotating a fake first hop. Trust only the entries added by our
+// own proxies: with a single trusted proxy (Railway) the rightmost entry is the
+// real client; TRUSTED_PROXY_COUNT lets multi-hop deployments pick the right one.
 export function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    return forwarded.split(',')[0].trim() || 'unknown'
+    const hops = forwarded.split(',').map((p) => p.trim()).filter(Boolean)
+    if (hops.length > 0) {
+      const trusted = Math.max(1, Number(process.env.TRUSTED_PROXY_COUNT ?? '1') || 1)
+      const idx = Math.max(0, hops.length - trusted)
+      return hops[idx] || 'unknown'
+    }
   }
   const realIP = request.headers.get('x-real-ip')
   if (realIP) {
-    return realIP
+    return realIP.trim() || 'unknown'
   }
   return 'unknown'
 }

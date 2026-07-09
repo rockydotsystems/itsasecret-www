@@ -22,6 +22,19 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envId/fork'
           const parentEnvId = params.envId!
           const { name } = forkSchema.parse(await request.json())
 
+          // requireEnvRole authorizes against the env's *own* project/org. The
+          // fork is written into params.projectId, which is a separate URL
+          // segment - without this check a reader of env E could fork it into
+          // any project in any other org (cross-tenant write). Pin the two
+          // together: the env must actually live in the project being forked into.
+          const parentRows = await db.select({ project_id: environments.project_id }).from(environments)
+            .where(and(eq(environments.id, parentEnvId), isNull(environments.deleted_at)))
+            .limit(1)
+          const parentEnv = parentRows[0] ?? null
+          if (!parentEnv || parentEnv.project_id !== projectId) {
+            return Response.json({ error: 'Environment not found' }, { status: 404 })
+          }
+
           const existingRows = await db.select({ id: environments.id }).from(environments)
             .where(and(eq(environments.project_id, projectId), eq(environments.name, name), isNull(environments.deleted_at)))
             .limit(1)
