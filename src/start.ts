@@ -23,8 +23,32 @@ const sessionRotationMiddleware = createMiddleware({ type: 'request' }).server(
   }
 )
 
+// Baseline security headers on every response. Deliberately conservative: no
+// script-src CSP, because TanStack Start emits inline hydration/router scripts
+// that 'self'-only would break - so this covers clickjacking, MIME sniffing,
+// referrer leakage, and HSTS rather than XSS. (XSS is high-impact here because
+// the bearer token and vault live in the browser; a script-src CSP is worth
+// adding separately once the inline scripts carry nonces.)
+const securityHeadersMiddleware = createMiddleware({ type: 'request' }).server(
+  async ({ request, next }) => {
+    const result = await next()
+    const h = result.response.headers
+    h.set('X-Content-Type-Options', 'nosniff')
+    h.set('X-Frame-Options', 'DENY')
+    h.set('Content-Security-Policy', "frame-ancestors 'none'")
+    h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    // Only assert HSTS on a request that actually arrived over TLS, so local
+    // http dev isn't pinned to https.
+    const proto = request.headers.get('x-forwarded-proto') ?? new URL(request.url).protocol.replace(':', '')
+    if (proto === 'https') {
+      h.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    }
+    return result
+  }
+)
+
 export const startInstance = createStart(() => ({
-  requestMiddleware: [csrfMiddleware, sessionRotationMiddleware],
+  requestMiddleware: [csrfMiddleware, securityHeadersMiddleware, sessionRotationMiddleware],
 }))
 
 // Boot-time DB work touches Postgres, so it must only run on the server.

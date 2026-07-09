@@ -5,3 +5,10 @@ node_modules/
 worker-configuration.d.ts
 .direnv/
 .output/
+
+# Local SQLite databases - never commit; they can hold user rows, password
+# hashes, sessions, and secret ciphertexts.
+*.db
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
