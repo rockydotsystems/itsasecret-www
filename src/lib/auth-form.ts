@@ -1,5 +1,6 @@
 import { base64Encode } from './crypto/base64'
 import { lockVault, seedVaultFromLogin } from './vault'
+import { storeClientPrivateKey, clearClientPrivateKey } from './client-session'
 
 export interface AuthFormResult {
   token: string
@@ -12,10 +13,12 @@ export async function submitAuthForm(
   email: string,
   password: string
 ): Promise<AuthFormResult> {
+  // Private key is non-extractable: usable for ECDH derivation but its bytes can
+  // never be read back out, so it can't be lifted from storage by an XSS.
   const kp = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' },
-    true,
-    ['deriveKey', 'deriveBits']
+    false,
+    ['deriveBits']
   )
   const rawPub = await crypto.subtle.exportKey('raw', kp.publicKey)
   const clientPubkey = base64Encode(new Uint8Array(rawPub))
@@ -33,11 +36,12 @@ export async function submitAuthForm(
 
   const data = (await resp.json()) as AuthFormResult
 
-  const rawPriv = await crypto.subtle.exportKey('pkcs8', kp.privateKey)
-  localStorage.setItem('ecdhPrivKey', base64Encode(new Uint8Array(rawPriv)))
-  localStorage.setItem('sessionToken', data.token)
+  // The bearer token is carried only by the HttpOnly session_token cookie
+  // (Set-Cookie on this response) - it is deliberately never written to
+  // localStorage, where any XSS could read it. The server public key is not
+  // secret; the ECDH private key is stored non-extractable in IndexedDB.
   localStorage.setItem('serverPubkey', data.serverPubkey)
-  localStorage.setItem('orgKeys', JSON.stringify(data.orgKeys))
+  await storeClientPrivateKey(kp.privateKey)
 
   try {
     // The master password is in hand: derive and cache the master key now so
@@ -107,21 +111,19 @@ export function storeAuthFormNativeListener(
 }
 
 export async function performLogout(redirectTo = '/login'): Promise<void> {
-  const token = localStorage.getItem('sessionToken')
-  if (token) {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    } catch {
-      // Ignore network errors; still clear local storage and redirect
-    }
+  try {
+    // The HttpOnly cookie authenticates this request and is cleared by the
+    // response's Set-Cookie.
+    await fetch('/api/auth/logout', { method: 'POST' })
+  } catch {
+    // Ignore network errors; still clear local state and redirect.
   }
+  localStorage.removeItem('serverPubkey')
+  // Clean up any credentials left by older builds that used localStorage.
   localStorage.removeItem('ecdhPrivKey')
   localStorage.removeItem('sessionToken')
-  localStorage.removeItem('serverPubkey')
   localStorage.removeItem('orgKeys')
+  await clearClientPrivateKey().catch(() => {})
   lockVault()
   window.location.href = redirectTo
 }
@@ -136,13 +138,11 @@ export interface CurrentUser {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  if (typeof localStorage === 'undefined') return null
-  const token = localStorage.getItem('sessionToken')
-  if (!token) return null
+  if (typeof window === 'undefined') return null
   try {
-    const resp = await fetch('/api/auth/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    // Authenticated by the HttpOnly session_token cookie, sent automatically on
+    // this same-origin request.
+    const resp = await fetch('/api/auth/me')
     if (!resp.ok) return null
     const data = (await resp.json()) as { user: CurrentUser }
     return data.user

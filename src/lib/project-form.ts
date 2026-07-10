@@ -1,15 +1,10 @@
 import type { Project } from './schema'
 
 export async function createProject(orgId: string, name: string): Promise<Project> {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
-
+  // Authenticated by the HttpOnly session_token cookie (same-origin request).
   const resp = await fetch(`/api/orgs/${orgId}/projects`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   })
 

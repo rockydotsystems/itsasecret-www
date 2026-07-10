@@ -12,15 +12,40 @@ export interface AuthContext {
   orgId?: string
 }
 
+// Pulls the bearer token from either the Authorization header (CLI, and web
+// requests that still set it) or the HttpOnly session_token cookie (the web
+// app, which no longer keeps the token in JS-readable storage). Header wins so
+// a CLI token is never shadowed by a stale browser cookie on the same request.
+export function extractSessionToken(request: Request): string | null {
+  const authHeader = request.headers.get('Authorization')
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7)
+  }
+  const cookieHeader = request.headers.get('cookie')
+  if (cookieHeader) {
+    for (const part of cookieHeader.split(';')) {
+      const eq = part.indexOf('=')
+      if (eq === -1) continue
+      if (part.slice(0, eq).trim() !== 'session_token') continue
+      const raw = part.slice(eq + 1).trim()
+      try {
+        return decodeURIComponent(raw)
+      } catch {
+        return raw
+      }
+    }
+  }
+  return null
+}
+
 export async function requireAuth(
   request: Request,
   opts: { allowUnverified?: boolean } = {}
 ): Promise<AuthContext> {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw jsonError('Missing or invalid Authorization header', 401)
+  const token = extractSessionToken(request)
+  if (!token) {
+    throw jsonError('Missing or invalid session credentials', 401)
   }
-  const token = authHeader.slice(7)
   let tokenBytes: Uint8Array
   try {
     tokenBytes = base64Decode(token)

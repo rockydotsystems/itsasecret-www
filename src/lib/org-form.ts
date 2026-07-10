@@ -39,26 +39,11 @@ async function buildOrgKeyMaterial(password?: string): Promise<{ wrappedOrgKey: 
   return { wrappedOrgKey, encryptedOrgKey }
 }
 
-function authToken(): string {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
-  return token
-}
-
-function rememberOrgKey(orgId: string, encryptedOrgKey: string): void {
-  const storedOrgKeys = localStorage.getItem('orgKeys')
-  const orgKeys: Record<string, string> = storedOrgKeys ? JSON.parse(storedOrgKeys) : {}
-  orgKeys[orgId] = encryptedOrgKey
-  localStorage.setItem('orgKeys', JSON.stringify(orgKeys))
-}
-
-async function postJson(url: string, token: string, body: unknown, fallbackError: string): Promise<any> {
+// Authenticated by the HttpOnly session_token cookie (same-origin request).
+async function postJson(url: string, body: unknown, fallbackError: string): Promise<any> {
   const resp = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
   if (!resp.ok) {
@@ -71,27 +56,22 @@ async function postJson(url: string, token: string, body: unknown, fallbackError
 // First-workspace setup after email verification: personal org + first
 // project + first environment via the one-shot onboarding endpoint.
 export async function completeOnboarding(input: WorkspaceInput): Promise<WorkspaceResult> {
-  const token = authToken()
   const { wrappedOrgKey, encryptedOrgKey } = await buildOrgKeyMaterial(input.password)
 
-  const result = (await postJson('/api/onboarding', token, {
+  return (await postJson('/api/onboarding', {
     orgName: input.orgName,
     projectName: input.projectName,
     envName: input.envName,
     wrappedOrgKey,
     encryptedOrgKey,
   }, 'Failed to set up your workspace')) as WorkspaceResult
-
-  rememberOrgKey(result.orgId, encryptedOrgKey)
-  return result
 }
 
 // "+ New org" from the dashboard: shared org + its first project/environment.
 export async function createOrgWorkspace(input: WorkspaceInput): Promise<WorkspaceResult> {
-  const token = authToken()
   const { wrappedOrgKey, encryptedOrgKey } = await buildOrgKeyMaterial(input.password)
 
-  const result = (await postJson('/api/orgs/', token, {
+  const result = (await postJson('/api/orgs/', {
     name: input.orgName,
     projectName: input.projectName,
     envName: input.envName,
@@ -99,6 +79,5 @@ export async function createOrgWorkspace(input: WorkspaceInput): Promise<Workspa
     encryptedOrgKey,
   }, 'Failed to create organization')) as { org: { id: string }; projectId: string }
 
-  rememberOrgKey(result.org.id, encryptedOrgKey)
   return { orgId: result.org.id, projectId: result.projectId }
 }

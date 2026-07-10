@@ -2,13 +2,10 @@ import { getClientSessionKey, getSessionKeyHeader } from './client-session'
 
 export type MemberRole = 'admin' | 'member'
 
+// Auth rides the HttpOnly session_token cookie, sent automatically on these
+// same-origin requests - the bearer token is never in JS-readable storage.
 function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  }
+  return { 'Content-Type': 'application/json' }
 }
 
 async function throwResponseError(resp: Response, fallback: string): Promise<never> {

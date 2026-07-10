@@ -1,14 +1,10 @@
 // Client-side call for the /invite accept page.
 
 export async function acceptInvite(token: string): Promise<void> {
-  const sessionToken = localStorage.getItem('sessionToken')
-  if (!sessionToken) throw new Error('Not authenticated')
+  // Authenticated by the HttpOnly session_token cookie (same-origin request).
   const resp = await fetch('/api/invites/accept', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sessionToken}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token }),
   })
   if (!resp.ok) {

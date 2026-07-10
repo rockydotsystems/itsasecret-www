@@ -20,10 +20,9 @@ function VerifyEmailPage() {
   async function resend() {
     setStatus('sending')
     try {
-      const token = localStorage.getItem('sessionToken')
+      // Authenticated by the HttpOnly session_token cookie (same-origin request).
       const resp = await fetch('/api/auth/resend-verification', {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       setStatus(resp.ok ? 'sent' : 'error')
     } catch {

@@ -121,14 +121,9 @@ export async function getCachedMasterKey(): Promise<Uint8Array | null> {
   return getMasterKey()
 }
 
-function authHeader(): Record<string, string> {
-  const token = localStorage.getItem('sessionToken')
-  if (!token) throw new Error('Not authenticated')
-  return { Authorization: `Bearer ${token}` }
-}
-
 async function fetchWrappedOrgKey(orgId: string): Promise<string> {
-  const resp = await fetch(`/api/orgs/${orgId}/key`, { headers: authHeader() })
+  // Authenticated by the HttpOnly session_token cookie (same-origin request).
+  const resp = await fetch(`/api/orgs/${orgId}/key`)
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: 'Failed to fetch org key' }))
     throw new Error(err.error || 'Failed to fetch org key')
@@ -138,7 +133,7 @@ async function fetchWrappedOrgKey(orgId: string): Promise<string> {
 }
 
 async function fetchKdfSettings(): Promise<{ kdf_salt: string; kdf_params: string }> {
-  const resp = await fetch('/api/auth/me', { headers: authHeader() })
+  const resp = await fetch('/api/auth/me')
   if (!resp.ok) throw new Error('Not authenticated')
   const data = (await resp.json()) as { user: { kdf_salt: string; kdf_params: string } }
   return data.user
