@@ -2,6 +2,17 @@ export const SESSION_COOKIE_NAME = 'session_token'
 
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 // 30 days
 
+function isProduction(): boolean {
+  return process.env.APP_ENV === 'production' || process.env.NODE_ENV === 'production'
+}
+
+export function shouldSetSecureCookie(request?: Request): boolean {
+  if (isProduction()) return true
+  if (!request) return false
+  const url = new URL(request.url)
+  return request.headers.get('x-forwarded-proto') === 'https' || url.protocol === 'https:'
+}
+
 interface CookieOptions {
   path?: string
   maxAge?: number

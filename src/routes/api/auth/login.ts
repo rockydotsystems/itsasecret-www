@@ -12,7 +12,7 @@ import { isPendingOrgKey, unwrapPendingOrgKey } from '~/lib/pending-org-key'
 import { generateKeyPair, deriveSessionKey } from '~/lib/crypto/ecdh'
 import { base64Decode, base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
-import { createSessionCookieHeader } from '~/lib/session-cookie'
+import { createSessionCookieHeader, shouldSetSecureCookie } from '~/lib/session-cookie'
 import { getClientIP, isRateLimited, recordFailedAttempt, resetAttempts } from '~/lib/rate-limit'
 import { runDummyPasswordHash } from '~/lib/crypto/kdf'
 
@@ -24,12 +24,6 @@ const loginSchema = z.object({
   // request (see lib/sessions.ts); the default 'web' keeps long sessions.
   client: z.enum(['web', 'cli']).optional(),
 })
-
-function isSecureRequest(request: Request): boolean {
-  const url = new URL(request.url)
-  const forwardedProto = request.headers.get('x-forwarded-proto')
-  return forwardedProto === 'https' || url.protocol === 'https:'
-}
 
 export const Route = createFileRoute('/api/auth/login')({
   server: {
@@ -135,7 +129,7 @@ export const Route = createFileRoute('/api/auth/login')({
           await auditLog({ actorUserId: user.id, action: 'user.login' })
 
           const headers = new Headers()
-          headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
+          headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
 
           return Response.json({
             token,

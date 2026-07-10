@@ -9,7 +9,7 @@ import { hashPassword, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
 import { generateKeyPair } from '~/lib/crypto/ecdh'
 import { base64Encode } from '~/lib/crypto/base64'
 import { errorResponse } from '~/lib/auth'
-import { createSessionCookieHeader } from '~/lib/session-cookie'
+import { createSessionCookieHeader, shouldSetSecureCookie } from '~/lib/session-cookie'
 import { getClientIP, isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 import { createEmailVerification, verificationUrl } from '~/lib/email-verification'
 import { sendVerificationEmail } from '~/lib/email'
@@ -23,12 +23,6 @@ const registerSchema = z.object({
 function isDuplicateEmailError(err: unknown): boolean {
   const cause = (err as { cause?: { code?: string; constraint_name?: string } })?.cause
   return cause?.code === '23505' && cause?.constraint_name === 'users_email_unique'
-}
-
-function isSecureRequest(request: Request): boolean {
-  const url = new URL(request.url)
-  const forwardedProto = request.headers.get('x-forwarded-proto')
-  return forwardedProto === 'https' || url.protocol === 'https:'
 }
 
 export const Route = createFileRoute('/api/auth/register')({
@@ -97,7 +91,7 @@ export const Route = createFileRoute('/api/auth/register')({
           await auditLog({ actorUserId: userId, action: 'user.register', targetType: 'user', targetId: userId })
 
           const headers = new Headers()
-          headers.set('Set-Cookie', createSessionCookieHeader(token, isSecureRequest(request)))
+          headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
 
           return Response.json({ token, serverPubkey, orgKeys }, { status: 201, headers })
         } catch (err) {
