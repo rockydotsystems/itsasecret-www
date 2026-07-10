@@ -44,10 +44,9 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
           const org = orgRows[0] ?? null
           if (!org) return Response.json({ error: 'Org not found' }, { status: 404 })
 
-          if (body.name) {
-            await db.update(orgs).set({ name: body.name }).where(eq(orgs.id, orgId))
-          }
-
+          // Validate ownership transfer before any writes so a failed transfer
+          // doesn't leave a partial name change committed.
+          let transfer: { newOwnerId: string } | null = null
           if (body.ownerUserId && body.ownerUserId !== org.owner_user_id) {
             if (org.owner_user_id !== user.id) {
               return Response.json({ error: 'Only the org owner can transfer ownership' }, { status: 403 })
@@ -60,17 +59,26 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
               .limit(1)
             const newOwner = newOwnerRows[0] ?? null
             if (!newOwner) return Response.json({ error: 'New owner is not a member' }, { status: 404 })
-            const newOwnerId = body.ownerUserId
+            transfer = { newOwnerId: body.ownerUserId }
+          }
 
+          if (body.name || transfer) {
             await db.transaction(async (tx) => {
-              await tx.update(orgs).set({ owner_user_id: newOwnerId }).where(eq(orgs.id, orgId))
-              await tx.update(orgMembers).set({ role: ORG_ROLE_OWNER })
-                .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, newOwnerId)))
-              await tx.update(orgMembers).set({ role: ORG_ROLE_ADMIN })
-                .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, org.owner_user_id)))
+              if (body.name) {
+                await tx.update(orgs).set({ name: body.name }).where(eq(orgs.id, orgId))
+              }
+              if (transfer) {
+                await tx.update(orgs).set({ owner_user_id: transfer.newOwnerId }).where(eq(orgs.id, orgId))
+                await tx.update(orgMembers).set({ role: ORG_ROLE_OWNER })
+                  .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, transfer.newOwnerId)))
+                await tx.update(orgMembers).set({ role: ORG_ROLE_ADMIN })
+                  .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, org.owner_user_id)))
+              }
             })
+          }
 
-            await auditLog({ orgId, actorUserId: user.id, action: 'org.transfer', targetType: 'org', targetId: orgId, metadata: { newOwner: body.ownerUserId } })
+          if (transfer) {
+            await auditLog({ orgId, actorUserId: user.id, action: 'org.transfer', targetType: 'org', targetId: orgId, metadata: { newOwner: transfer.newOwnerId } })
           }
 
           const updatedRows = await db.select().from(orgs).where(eq(orgs.id, orgId)).limit(1)
