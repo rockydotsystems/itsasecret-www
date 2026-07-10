@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { projects, environments, orgMembers, envPermissions, envVars, secrets } from '~/lib/schema'
+import { projects, environments, envVars, secrets } from '~/lib/schema'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
-import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { decrypt, encrypt } from '~/lib/crypto/envelope'
 
 export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pull')({
@@ -12,7 +12,6 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pul
       GET: async ({ request, params }) => {
         try {
           const { user, session } = await requireAuth(request)
-          const orgId = await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
           const projectId = params.projectId!
           const envName = params.envName!
 
@@ -28,18 +27,8 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pul
           const env = envRows[0] ?? null
           if (!env) return Response.json({ error: 'Environment not found' }, { status: 404 })
 
-          const memberRows = await db.select().from(orgMembers)
-            .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, user.id)))
-            .limit(1)
-          const member = memberRows[0] ?? null
-
-          if (!member || (member.role !== ORG_ROLE_OWNER && member.role !== ORG_ROLE_ADMIN)) {
-            const permRows = await db.select().from(envPermissions)
-              .where(and(eq(envPermissions.env_id, env.id), eq(envPermissions.user_id, user.id)))
-              .limit(1)
-            const perm = permRows[0] ?? null
-            if (!perm) return Response.json({ error: 'No access to this environment' }, { status: 403 })
-          }
+          const envParams: Record<string, string | undefined> = { envId: env.id }
+          const orgId = await requireEnvRole(envParams, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
 
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const orgKey = await getOrgKey(session, sessionKey, orgId)
