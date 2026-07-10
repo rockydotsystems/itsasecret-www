@@ -20,6 +20,13 @@ export async function getServerSecretKey(): Promise<Uint8Array> {
     throw new Error('SERVER_WRAP_SECRET must be set outside local development')
   }
   const secret = process.env.SERVER_WRAP_SECRET ?? 'dev-only-insecure-server-wrap-secret'
+  // A short or low-entropy SERVER_WRAP_SECRET is brute-forceable offline if the
+  // database leaks (pending org keys and var-history values would be exposed).
+  // PBKDF2 slows this down but cannot save a tiny secret, so require at least
+  // 32 bytes in any non-dev environment.
+  if (process.env.SERVER_WRAP_SECRET && !isDev && secret.length < 32) {
+    throw new Error('SERVER_WRAP_SECRET must be at least 32 characters outside local development (use a random hex/base64 string)')
+  }
   // Derive the wrapping key with PBKDF2 instead of a bare SHA-256 digest so a
   // low-entropy SERVER_WRAP_SECRET cannot be brute-forced offline if the
   // database leaks (pending org keys and var-history values would be exposed).

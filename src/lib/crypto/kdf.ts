@@ -83,6 +83,13 @@ export async function verifyPassword(password: string, encodedHash: string): Pro
   if (!m || !t || !p) {
     return false;
   }
+  // Clamp parameters parsed from the stored hash to sane maxima. A DB-write
+  // attacker (or a misconfigured row) could otherwise plant m=4294967295 to
+  // hang the login thread on a single argon2id call (DoS). The legitimate
+  // values set by hashPassword are m<=65536, t<=2, p<=1, well under these caps.
+  if (m > 1_073_741_824 || t > 100 || p > 16) {
+    return false;
+  }
 
   const salt = base64Decode(saltPart);
   const expected = base64Decode(hashPart);
@@ -124,11 +131,11 @@ export async function verifyLegacyPasswordHash(
 }
 
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
+  // Fold the length check into the constant-time accumulator rather than
+  // early-exiting, so the timing does not leak the length of either side.
+  let diff = a.length ^ b.length;
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) {
     diff |= a[i] ^ b[i];
   }
   return diff === 0;
