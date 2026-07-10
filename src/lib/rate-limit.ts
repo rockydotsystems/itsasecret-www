@@ -42,6 +42,13 @@ export function resetAttempts(key: string): void {
   buckets.delete(key)
 }
 
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, bucket] of buckets) {
+    if (now > bucket.resetAt) buckets.delete(key)
+  }
+}, 60 * 1000).unref()
+
 // X-Forwarded-For is fully client-settable. Proxies *append* the real peer to
 // the right of whatever the client sent, so the leftmost entry is attacker
 // controlled - taking it (the old behavior) let anyone bypass every IP-keyed

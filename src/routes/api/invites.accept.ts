@@ -6,6 +6,7 @@ import { users, orgs, orgMembers, orgInvites } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { findPendingInviteByToken } from '~/lib/org-invites'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 const acceptSchema = z.object({
   token: z.string(),
@@ -25,6 +26,15 @@ export const Route = createFileRoute('/api/invites/accept')({
       POST: async ({ request }) => {
         try {
           const { user } = await requireAuth(request, { allowUnverified: true })
+          const rateKey = `invite-accept:${user.id}`
+          const rateLimit = isRateLimited(rateKey)
+          if (rateLimit.limited) {
+            return Response.json(
+              { error: 'Too many requests. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(rateKey)
           const { token } = acceptSchema.parse(await request.json())
 
           const invite = await findPendingInviteByToken(token)
