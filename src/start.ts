@@ -4,6 +4,24 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === 'serverFn',
 })
 
+const apiCsrfMiddleware = createMiddleware({ type: 'request' }).server(
+  async ({ request, pathname, next }) => {
+    if (pathname.startsWith('/api/')) {
+      const method = request.method.toUpperCase()
+      if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+        const hasBearer = request.headers.get('authorization')?.startsWith('Bearer ')
+        if (!hasBearer && !request.headers.get('x-requested-with')) {
+          return new Response(JSON.stringify({ error: 'Missing CSRF header' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      }
+    }
+    return next()
+  }
+)
+
 // Rolling CLI sessions: successful authenticated /api responses carry a fresh
 // session token (X-New-Session-Token). Server-only work is behind a dynamic
 // import so postgres never reaches the client bundle (same trick as the
@@ -48,7 +66,7 @@ const securityHeadersMiddleware = createMiddleware({ type: 'request' }).server(
 )
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [csrfMiddleware, securityHeadersMiddleware, sessionRotationMiddleware],
+  requestMiddleware: [apiCsrfMiddleware, csrfMiddleware, securityHeadersMiddleware, sessionRotationMiddleware],
 }))
 
 // Boot-time DB work touches Postgres, so it must only run on the server.

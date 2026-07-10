@@ -23,6 +23,7 @@ function VerifyEmailPage() {
       // Authenticated by the HttpOnly session_token cookie (same-origin request).
       const resp = await fetch('/api/auth/resend-verification', {
         method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
       })
       setStatus(resp.ok ? 'sent' : 'error')
     } catch {

@@ -43,7 +43,7 @@ async function buildOrgKeyMaterial(password?: string): Promise<{ wrappedOrgKey: 
 async function postJson(url: string, body: unknown, fallbackError: string): Promise<any> {
   const resp = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     body: JSON.stringify(body),
   })
   if (!resp.ok) {

@@ -4,7 +4,7 @@ export async function createProject(orgId: string, name: string): Promise<Projec
   // Authenticated by the HttpOnly session_token cookie (same-origin request).
   const resp = await fetch(`/api/orgs/${orgId}/projects`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     body: JSON.stringify({ name }),
   })
 

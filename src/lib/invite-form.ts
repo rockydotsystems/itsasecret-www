@@ -4,7 +4,7 @@ export async function acceptInvite(token: string): Promise<void> {
   // Authenticated by the HttpOnly session_token cookie (same-origin request).
   const resp = await fetch('/api/invites/accept', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     body: JSON.stringify({ token }),
   })
   if (!resp.ok) {

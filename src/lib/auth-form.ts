@@ -25,7 +25,7 @@ export async function submitAuthForm(
 
   const resp = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     body: JSON.stringify({ email, password, clientPubkey }),
   })
 
@@ -114,7 +114,7 @@ export async function performLogout(redirectTo = '/login'): Promise<void> {
   try {
     // The HttpOnly cookie authenticates this request and is cleared by the
     // response's Set-Cookie.
-    await fetch('/api/auth/logout', { method: 'POST' })
+    await fetch('/api/auth/logout', { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
   } catch {
     // Ignore network errors; still clear local state and redirect.
   }

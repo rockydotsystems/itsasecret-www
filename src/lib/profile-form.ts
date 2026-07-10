@@ -3,7 +3,7 @@ import { seedVaultFromLogin } from './vault'
 // Auth rides the HttpOnly session_token cookie, sent automatically on these
 // same-origin requests - the bearer token is never in JS-readable storage.
 function authHeaders(): Record<string, string> {
-  return { 'Content-Type': 'application/json' }
+  return { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
 }
 
 async function throwResponseError(resp: Response, fallback: string): Promise<never> {
