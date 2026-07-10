@@ -4,6 +4,9 @@
 
 let serverSecretKey: Uint8Array | null = null
 
+const PBKDF2_ITERATIONS = 100_000
+const PBKDF2_SALT = new TextEncoder().encode('itsasecret-server-wrap-v1')
+
 export async function getServerSecretKey(): Promise<Uint8Array> {
   if (serverSecretKey) return serverSecretKey
   // Refuse to boot on the insecure default in any environment that looks like
@@ -17,7 +20,22 @@ export async function getServerSecretKey(): Promise<Uint8Array> {
     throw new Error('SERVER_WRAP_SECRET must be set outside local development')
   }
   const secret = process.env.SERVER_WRAP_SECRET ?? 'dev-only-insecure-server-wrap-secret'
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
-  serverSecretKey = new Uint8Array(digest)
+  // Derive the wrapping key with PBKDF2 instead of a bare SHA-256 digest so a
+  // low-entropy SERVER_WRAP_SECRET cannot be brute-forced offline if the
+  // database leaks (pending org keys and var-history values would be exposed).
+  // The result is cached, so the iteration cost is paid once per process boot.
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  )
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: PBKDF2_SALT, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  )
+  serverSecretKey = new Uint8Array(bits)
   return serverSecretKey
 }
