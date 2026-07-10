@@ -60,12 +60,15 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
               .limit(1)
             const newOwner = newOwnerRows[0] ?? null
             if (!newOwner) return Response.json({ error: 'New owner is not a member' }, { status: 404 })
+            const newOwnerId = body.ownerUserId
 
-            await db.update(orgs).set({ owner_user_id: body.ownerUserId }).where(eq(orgs.id, orgId))
-            await db.update(orgMembers).set({ role: ORG_ROLE_OWNER })
-              .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, body.ownerUserId)))
-            await db.update(orgMembers).set({ role: ORG_ROLE_ADMIN })
-              .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, org.owner_user_id)))
+            await db.transaction(async (tx) => {
+              await tx.update(orgs).set({ owner_user_id: newOwnerId }).where(eq(orgs.id, orgId))
+              await tx.update(orgMembers).set({ role: ORG_ROLE_OWNER })
+                .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, newOwnerId)))
+              await tx.update(orgMembers).set({ role: ORG_ROLE_ADMIN })
+                .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, org.owner_user_id)))
+            })
 
             await auditLog({ orgId, actorUserId: user.id, action: 'org.transfer', targetType: 'org', targetId: orgId, metadata: { newOwner: body.ownerUserId } })
           }
