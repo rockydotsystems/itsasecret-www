@@ -10,10 +10,11 @@ export async function getServerSecretKey(): Promise<Uint8Array> {
   // production. The app signals prod via APP_ENV (see .dev.vars.example), so
   // checking only NODE_ENV could leave a real deploy silently wrapping pending
   // invites and env-var history under a public constant.
-  const isProd =
-    process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production'
-  if (!process.env.SERVER_WRAP_SECRET && isProd) {
-    throw new Error('SERVER_WRAP_SECRET must be set in production')
+  const isDev =
+    process.env.APP_ENV === 'development' ||
+    (process.env.NODE_ENV !== 'production' && !process.env.APP_ENV)
+  if (!process.env.SERVER_WRAP_SECRET && !isDev) {
+    throw new Error('SERVER_WRAP_SECRET must be set outside local development')
   }
   const secret = process.env.SERVER_WRAP_SECRET ?? 'dev-only-insecure-server-wrap-secret'
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
