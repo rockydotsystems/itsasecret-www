@@ -1,4 +1,4 @@
-export const SESSION_COOKIE_NAME = 'session_token'
+export const SESSION_COOKIE_NAME = '__Host-session_token'
 
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 // 30 days
 

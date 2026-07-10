@@ -5,6 +5,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgs, orgMembers } from '~/lib/schema'
 import { getCurrentUserFromRequest } from '~/lib/auth'
+import { SESSION_COOKIE_NAME } from '~/lib/session-cookie'
 import { findPendingInviteByToken } from '~/lib/org-invites'
 
 // Everything the public /invite accept page needs. The page is reachable
@@ -38,7 +39,7 @@ export const getInvitePageFn = createServerFn({ method: 'POST' })
       .limit(1)
 
     let viewer: { email: string; matches: boolean; alreadyMember: boolean } | null = null
-    const token = getCookie('session_token')
+    const token = getCookie(SESSION_COOKIE_NAME)
     if (token) {
       const request = new Request('http://localhost', {
         headers: { Authorization: `Bearer ${token}` },

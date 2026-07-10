@@ -4,6 +4,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { orgs, orgMembers } from '~/lib/schema'
 import { getCurrentUserFromRequest } from '~/lib/auth'
+import { SESSION_COOKIE_NAME } from '~/lib/session-cookie'
 import type { CurrentUser } from '~/lib/auth-form'
 
 // What route guards see: the session user plus whether they belong to any
@@ -14,7 +15,7 @@ export interface SessionUser extends CurrentUser {
 
 export const getCurrentUserFn = createServerFn({ method: 'GET' })
   .handler(async (): Promise<SessionUser | null> => {
-    const token = getCookie('session_token')
+    const token = getCookie(SESSION_COOKIE_NAME)
     if (!token) return null
 
     const request = new Request('http://localhost', {

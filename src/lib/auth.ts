@@ -5,6 +5,7 @@ import { users, sessions } from './schema'
 import type { User, Session } from './schema'
 import { base64Encode, base64Decode } from './crypto/base64'
 import { decrypt } from './crypto/envelope'
+import { SESSION_COOKIE_NAME } from './session-cookie'
 
 export interface AuthContext {
   user: User
@@ -13,8 +14,8 @@ export interface AuthContext {
 }
 
 // Pulls the bearer token from either the Authorization header (CLI, and web
-// requests that still set it) or the HttpOnly session_token cookie (the web
-// app, which no longer keeps the token in JS-readable storage). Header wins so
+// requests that still set it) or the HttpOnly __Host-session_token cookie (the
+// web app, which no longer keeps the token in JS-readable storage). Header wins so
 // a CLI token is never shadowed by a stale browser cookie on the same request.
 export function extractSessionToken(request: Request): string | null {
   const authHeader = request.headers.get('Authorization')
@@ -26,7 +27,7 @@ export function extractSessionToken(request: Request): string | null {
     for (const part of cookieHeader.split(';')) {
       const eq = part.indexOf('=')
       if (eq === -1) continue
-      if (part.slice(0, eq).trim() !== 'session_token') continue
+      if (part.slice(0, eq).trim() !== SESSION_COOKIE_NAME) continue
       const raw = part.slice(eq + 1).trim()
       try {
         return decodeURIComponent(raw)
