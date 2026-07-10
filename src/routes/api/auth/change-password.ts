@@ -14,8 +14,8 @@ import { revokeOtherInteractiveSessions } from '~/lib/sessions'
 import { isRateLimited, recordFailedAttempt, resetAttempts } from '~/lib/rate-limit'
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string(),
-  newPassword: z.string().min(12),
+  currentPassword: z.string().max(1024),
+  newPassword: z.string().min(12).max(1024),
 })
 
 // Changing the master password re-keys everything it protects, following the
