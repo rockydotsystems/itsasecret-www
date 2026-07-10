@@ -58,6 +58,7 @@ export function getRedirectPath(redirect: string | undefined, origin?: string): 
   if (!redirect) return '/dashboard'
   try {
     const url = new URL(redirect)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return '/dashboard'
     if (origin && url.origin !== origin) return '/dashboard'
     return url.pathname + url.search + url.hash
   } catch {

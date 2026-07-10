@@ -3,7 +3,7 @@ import { base64Encode, base64Decode } from './base64';
 export async function generateKeyPair(): Promise<{ publicKey: string; privateKey: CryptoKey }> {
   const result = await crypto.subtle.generateKey(
     { name: 'ECDH', namedCurve: 'P-256' },
-    true,
+    false,
     ['deriveBits']
   );
   if (!('privateKey' in result)) {
