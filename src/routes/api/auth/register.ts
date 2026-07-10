@@ -17,7 +17,7 @@ import { sendVerificationEmail } from '~/lib/email'
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12).max(1024),
-  clientPubkey: z.string(),
+  clientPubkey: z.string().max(256),
 })
 
 function isDuplicateEmailError(err: unknown): boolean {

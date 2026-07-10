@@ -19,7 +19,7 @@ import { runDummyPasswordHash } from '~/lib/crypto/kdf'
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().max(1024),
-  clientPubkey: z.string(),
+  clientPubkey: z.string().max(256),
   // 'cli' sessions are short-lived and roll their token on every successful
   // request (see lib/sessions.ts); the default 'web' keeps long sessions.
   client: z.enum(['web', 'cli']).optional(),
