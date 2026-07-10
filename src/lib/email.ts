@@ -228,7 +228,7 @@ function orgInviteEmailHtml({ orgName, inviterEmail, role, acceptUrl }: Omit<Sen
 <html>
   <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
     <p><strong>${escapeHtml(inviterEmail)}</strong> invited you to join the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret as ${role === 'admin' ? 'an admin' : 'a member'}.</p>
-    <p><a href="${acceptUrl}">Accept invitation</a></p>
+    <p><a href="${escapeHtml(acceptUrl)}">Accept invitation</a></p>
     <p style="color:#666;font-size:12px;">This link expires in 7 days. If you weren't expecting this, ignore this email.</p>
   </body>
 </html>`
@@ -240,7 +240,7 @@ function teamAddedEmailHtml({ teamName, orgName, addedByEmail, dashboardUrl }: O
   <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
     <p><strong>${escapeHtml(addedByEmail)}</strong> added you to the team <strong>${escapeHtml(teamName)}</strong> in the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret.</p>
     <p>You now have whatever project and environment access is granted to ${escapeHtml(teamName)}.</p>
-    <p><a href="${dashboardUrl}">Open the dashboard</a></p>
+    <p><a href="${escapeHtml(dashboardUrl)}">Open the dashboard</a></p>
     <p style="color:#666;font-size:12px;">No action is needed. If this seems wrong, contact an organization admin.</p>
   </body>
 </html>`
@@ -263,7 +263,7 @@ function verificationEmailHtml(verifyUrl: string): string {
   <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
     <p>Welcome to itsasecret.</p>
     <p>Confirm your email address to finish setting up your account:</p>
-    <p><a href="${verifyUrl}">Verify email</a></p>
+    <p><a href="${escapeHtml(verifyUrl)}">Verify email</a></p>
     <p style="color:#666;font-size:12px;">This link expires in 24 hours. If you didn't sign up, ignore this email.</p>
   </body>
 </html>`

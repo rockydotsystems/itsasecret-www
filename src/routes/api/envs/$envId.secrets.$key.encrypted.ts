@@ -5,6 +5,7 @@ import { secrets } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 // Returns the stored org-key ciphertext verbatim for client-side decryption
 // (web E2E flow). The server never handles the plaintext or the org key here;
@@ -19,6 +20,16 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key/encrypted')(
           const envId = params.envId!
           const key = params.key!
           validateKey(key)
+
+          const revealKey = `reveal:${user.id}`
+          const revealLimit = isRateLimited(revealKey)
+          if (revealLimit.limited) {
+            return Response.json(
+              { error: 'Too many reveal requests. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(revealLimit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(revealKey)
 
           const secretRows = await db.select({ encrypted_value: secrets.encrypted_value }).from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
