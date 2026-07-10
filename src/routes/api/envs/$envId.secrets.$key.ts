@@ -15,7 +15,7 @@ import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 // already encrypted under the org key in the client and is stored verbatim -
 // the server never sees the plaintext (web E2E flow).
 const upsertSchema = z.object({
-  encryptedValue: z.string(),
+  encryptedValue: z.string().max(102400),
   cipher: z.enum(['session', 'org']).optional().default('session'),
 })
 

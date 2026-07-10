@@ -9,7 +9,7 @@ import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { recordVarHistory } from '~/lib/history'
 
 const upsertSchema = z.object({
-  value: z.string(),
+  value: z.string().max(65536),
 })
 
 export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
