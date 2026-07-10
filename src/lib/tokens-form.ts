@@ -54,7 +54,7 @@ export async function createAccessToken(
 }
 
 export async function revokeAccessToken(tokenId: string): Promise<void> {
-  const resp = await fetch(`/api/tokens/${tokenId}`, {
+  const resp = await fetch(`/api/tokens/${encodeURIComponent(tokenId)}`, {
     method: 'DELETE',
     headers: authHeaders(),
   })
