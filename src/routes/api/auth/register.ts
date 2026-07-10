@@ -45,7 +45,8 @@ export const Route = createFileRoute('/api/auth/register')({
           recordFailedAttempt(registerKey)
 
           const body = registerSchema.parse(await request.json())
-          const { email, password } = body
+          const email = body.email.trim().toLowerCase()
+          const { password } = body
 
           const existingRows = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
           if (existingRows[0]) {

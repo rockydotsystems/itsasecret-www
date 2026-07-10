@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
@@ -43,7 +43,7 @@ export const Route = createFileRoute('/api/auth/login')({
           const { email, password, clientPubkey } = body
           const kind = body.client ?? 'web'
 
-          const userRows = await db.select().from(users).where(eq(users.email, email)).limit(1)
+          const userRows = await db.select().from(users).where(sql`lower(${users.email}) = lower(${email})`).limit(1)
           const user = userRows[0] ?? null
           if (!user) {
             // Run a dummy password hash to keep timing similar to a valid user,
