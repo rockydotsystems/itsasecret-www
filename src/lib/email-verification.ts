@@ -34,6 +34,8 @@ export async function createEmailVerification(userId: string): Promise<{ token: 
 
 // Consume a verification token: marks the row used and stamps the user as
 // verified. Returns false for unknown, already-used, or expired tokens.
+// The claim is atomic (UPDATE … WHERE … RETURNING) so two concurrent
+// requests with the same token cannot both succeed.
 export async function consumeEmailVerification(token: string): Promise<boolean> {
   let tokenBytes: Uint8Array
   try {
@@ -44,20 +46,17 @@ export async function consumeEmailVerification(token: string): Promise<boolean> 
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes as BufferSource)
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
 
-  const rows = await db
-    .select()
-    .from(emailVerifications)
+  const now = new Date()
+  const claimed = await db.update(emailVerifications)
+    .set({ verified_at: now })
     .where(and(
       eq(emailVerifications.token_hash, tokenHash),
       isNull(emailVerifications.verified_at),
-      gt(emailVerifications.expires_at, new Date())
+      gt(emailVerifications.expires_at, now)
     ))
-    .limit(1)
-  const record = rows[0] ?? null
-  if (!record) return false
+    .returning({ user_id: emailVerifications.user_id })
+  if (claimed.length === 0) return false
 
-  const now = new Date()
-  await db.update(emailVerifications).set({ verified_at: now }).where(eq(emailVerifications.id, record.id))
-  await db.update(users).set({ email_verified_at: now }).where(eq(users.id, record.user_id))
+  await db.update(users).set({ email_verified_at: now }).where(eq(users.id, claimed[0].user_id))
   return true
 }
