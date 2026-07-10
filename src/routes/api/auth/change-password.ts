@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, ne, isNull, inArray } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgMembers } from '~/lib/schema'
+import { users, orgMembers, sessions } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { deriveKey, hashPassword, verifyPassword, isLegacyPasswordHash, verifyLegacyPasswordHash, DEFAULT_KDF_PARAMS } from '~/lib/crypto/kdf'
@@ -10,7 +10,6 @@ import type { KdfParams } from '~/lib/crypto/kdf'
 import { unwrapKey, wrapKey } from '~/lib/crypto/envelope'
 import { isPendingOrgKey } from '~/lib/pending-org-key'
 import { base64Decode, base64Encode } from '~/lib/crypto/base64'
-import { revokeOtherInteractiveSessions } from '~/lib/sessions'
 import { isRateLimited, recordFailedAttempt, resetAttempts } from '~/lib/rate-limit'
 
 const changePasswordSchema = z.object({
@@ -91,9 +90,20 @@ export const Route = createFileRoute('/api/auth/change-password')({
                 .set({ wrapped_org_key: row.wrapped_org_key })
                 .where(and(eq(orgMembers.org_id, row.org_id), eq(orgMembers.user_id, user.id)))
             }
+            // Revoke other interactive sessions inside the same transaction so
+            // the invariant "password change kills other sessions" holds even
+            // if a DB blip hits after the hash swap. Long-lived access tokens
+            // ('token' kind) survive on purpose.
+            await tx.update(sessions)
+              .set({ revoked_at: new Date() })
+              .where(and(
+                eq(sessions.user_id, user.id),
+                ne(sessions.id, session.id),
+                inArray(sessions.kind, ['web', 'cli']),
+                isNull(sessions.revoked_at),
+              ))
           })
 
-          await revokeOtherInteractiveSessions(user.id, session.id)
           resetAttempts(rateKey)
           await auditLog({ actorUserId: user.id, action: 'user.change_password', targetType: 'user', targetId: user.id })
 

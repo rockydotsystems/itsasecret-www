@@ -35,7 +35,9 @@ export async function createEmailVerification(userId: string): Promise<{ token: 
 // Consume a verification token: marks the row used and stamps the user as
 // verified. Returns false for unknown, already-used, or expired tokens.
 // The claim is atomic (UPDATE … WHERE … RETURNING) so two concurrent
-// requests with the same token cannot both succeed.
+// requests with the same token cannot both succeed. The user update runs in
+// the same transaction so a failure can't burn the token while leaving the
+// user unverified.
 export async function consumeEmailVerification(token: string): Promise<boolean> {
   let tokenBytes: Uint8Array
   try {
@@ -47,16 +49,21 @@ export async function consumeEmailVerification(token: string): Promise<boolean> 
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
 
   const now = new Date()
-  const claimed = await db.update(emailVerifications)
-    .set({ verified_at: now })
-    .where(and(
-      eq(emailVerifications.token_hash, tokenHash),
-      isNull(emailVerifications.verified_at),
-      gt(emailVerifications.expires_at, now)
-    ))
-    .returning({ user_id: emailVerifications.user_id })
-  if (claimed.length === 0) return false
-
-  await db.update(users).set({ email_verified_at: now }).where(eq(users.id, claimed[0].user_id))
-  return true
+  try {
+    return await db.transaction(async (tx) => {
+      const claimed = await tx.update(emailVerifications)
+        .set({ verified_at: now })
+        .where(and(
+          eq(emailVerifications.token_hash, tokenHash),
+          isNull(emailVerifications.verified_at),
+          gt(emailVerifications.expires_at, now)
+        ))
+        .returning({ user_id: emailVerifications.user_id })
+      if (claimed.length === 0) return false
+      await tx.update(users).set({ email_verified_at: now }).where(eq(users.id, claimed[0].user_id))
+      return true
+    })
+  } catch {
+    return false
+  }
 }

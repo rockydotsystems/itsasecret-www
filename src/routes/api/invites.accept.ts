@@ -52,32 +52,44 @@ export const Route = createFileRoute('/api/invites/accept')({
 
           const now = new Date()
 
-          const memberRows = await db.select().from(orgMembers)
-            .where(and(eq(orgMembers.org_id, org.id), eq(orgMembers.user_id, user.id)))
-            .limit(1)
-          if (memberRows[0]) {
-            // Already in (e.g. double-click, or added through another invite):
-            // consume the token and report success rather than erroring.
-            await db.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
-            return Response.json({ org_id: org.id, org_name: org.name, role: memberRows[0].role }, { status: 200 })
-          }
+          // All membership/invite/verification writes happen in one
+          // transaction so a mid-sequence failure can't leave the invite
+          // half-accepted or the user unverified after their token is burned.
+          const result = await db.transaction(async (tx) => {
+            const memberRows = await tx.select().from(orgMembers)
+              .where(and(eq(orgMembers.org_id, org.id), eq(orgMembers.user_id, user.id)))
+              .limit(1)
+            if (memberRows[0]) {
+              // Already in (e.g. double-click, or added through another invite):
+              // consume the token and report success rather than erroring.
+              await tx.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
+              // The token proves inbox control of the invited address, so
+              // stamp the account verified if it wasn't already (matches the
+              // new-member branch below).
+              if (user.email_verified_at === null) {
+                await tx.update(users).set({ email_verified_at: now }).where(eq(users.id, user.id))
+              }
+              return { role: memberRows[0].role }
+            }
 
-          await db.insert(orgMembers).values({
-            org_id: org.id,
-            user_id: user.id,
-            role: invite.role,
-            wrapped_org_key: invite.wrapped_org_key,
-            invited_by: invite.invited_by,
+            await tx.insert(orgMembers).values({
+              org_id: org.id,
+              user_id: user.id,
+              role: invite.role,
+              wrapped_org_key: invite.wrapped_org_key,
+              invited_by: invite.invited_by,
+            })
+            await tx.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
+
+            if (user.email_verified_at === null) {
+              await tx.update(users).set({ email_verified_at: now }).where(eq(users.id, user.id))
+            }
+            return { role: invite.role }
           })
-          await db.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
 
-          if (user.email_verified_at === null) {
-            await db.update(users).set({ email_verified_at: now }).where(eq(users.id, user.id))
-          }
+          await auditLog({ orgId: org.id, actorUserId: user.id, action: 'member.invite.accept', targetType: 'user', targetId: user.id, metadata: { role: result.role } })
 
-          await auditLog({ orgId: org.id, actorUserId: user.id, action: 'member.invite.accept', targetType: 'user', targetId: user.id, metadata: { role: invite.role } })
-
-          return Response.json({ org_id: org.id, org_name: org.name, role: invite.role }, { status: 200 })
+          return Response.json({ org_id: org.id, org_name: org.name, role: result.role }, { status: 200 })
         } catch (err) {
           return errorResponse(err)
         }
