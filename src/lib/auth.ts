@@ -139,6 +139,13 @@ export function jsonError(message: string, status: number): HttpError {
   return new HttpError(status, { error: message })
 }
 
+const KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/
+export function validateKey(key: string): void {
+  if (!KEY_PATTERN.test(key)) {
+    throw jsonError('Invalid key: must be a valid identifier (letters, digits, underscore; not starting with a digit)', 400)
+  }
+}
+
 export async function getCurrentUserFromRequest(request: Request): Promise<User | null> {
   try {
     // Identity lookup only - verification is enforced by callers/route guards

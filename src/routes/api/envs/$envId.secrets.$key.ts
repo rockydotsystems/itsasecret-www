@@ -4,7 +4,7 @@ import { eq, and, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { secrets } from '~/lib/schema'
 import { generateId, auditLog, softDeleteSecret } from '~/lib/db-utils'
-import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
+import { requireAuth, getSessionKey, getOrgKey, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { encrypt, decrypt } from '~/lib/crypto/envelope'
 import { recordSecretHistory } from '~/lib/history'
@@ -27,6 +27,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const secretRows = await db.select().from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
@@ -54,6 +55,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
           const { encryptedValue, cipher } = upsertSchema.parse(await request.json())
 
           let storedEncrypted: string
@@ -126,6 +128,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const existingRows = await db.select().from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))

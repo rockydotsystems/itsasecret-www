@@ -3,7 +3,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { envVarHistory, users } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
-import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireAuth, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { decrypt } from '~/lib/crypto/envelope'
 import { getServerSecretKey } from '~/lib/server-secret'
@@ -20,6 +20,7 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key/history')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const rows = await db.select({
             id: envVarHistory.id,

@@ -4,7 +4,7 @@ import { eq, and, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { envVars } from '~/lib/schema'
 import { generateId, auditLog, softDeleteEnvVar } from '~/lib/db-utils'
-import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireAuth, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { recordVarHistory } from '~/lib/history'
 
@@ -21,6 +21,7 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
           const { value } = upsertSchema.parse(await request.json())
 
           const existingRows = await db.select().from(envVars)
@@ -76,6 +77,7 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const existingRows = await db.select().from(envVars)
             .where(and(eq(envVars.env_id, envId), eq(envVars.key, key), isNull(envVars.deleted_at)))

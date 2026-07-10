@@ -3,7 +3,7 @@ import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { secrets } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
-import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireAuth, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 // Returns the stored org-key ciphertext verbatim for client-side decryption
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key/encrypted')(
           const orgId = await requireEnvRole(params, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const secretRows = await db.select({ encrypted_value: secrets.encrypted_value }).from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))

@@ -3,7 +3,7 @@ import { eq, and, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { envVars } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
-import { requireAuth, errorResponse } from '~/lib/auth'
+import { requireAuth, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 // "Perma delete" a soft-deleted var: hides it from the recently-deleted UI.
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key/hide')({
           const orgId = await requireEnvRole(params, user.id, [ROLE_WRITE, ROLE_ADMIN])
           const envId = params.envId!
           const key = params.key!
+          validateKey(key)
 
           const rows = await db.select({ id: envVars.id }).from(envVars)
             .where(and(
