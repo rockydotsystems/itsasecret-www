@@ -8,6 +8,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN } from '~/lib/rbac'
 import { getLiveTeam } from '~/lib/teams'
 import { sendTeamAddedEmail } from '~/lib/email'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 const addSchema = z.object({
   userId: z.string(),
@@ -37,6 +38,18 @@ export const Route = createFileRoute('/api/orgs/$orgId/teams/$teamId/members')({
             .where(and(eq(teamMembers.team_id, teamId), eq(teamMembers.user_id, userId)))
             .limit(1)
           if (existingRows[0]) return Response.json({ error: 'User is already in this team' }, { status: 409 })
+
+          // Rate limit per actor: each add sends a notification email, so a
+          // malicious admin could otherwise spam members. Count every attempt
+          // (the email is best-effort, but the cost is real).
+          const limit = isRateLimited(`team-add:${user.id}`)
+          if (limit.limited) {
+            return Response.json(
+              { error: 'Too many team changes. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(`team-add:${user.id}`)
 
           await db.insert(teamMembers).values({
             team_id: teamId,

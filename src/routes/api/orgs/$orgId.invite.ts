@@ -9,6 +9,7 @@ import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from 
 import { wrapPendingOrgKey } from '~/lib/pending-org-key'
 import { createOrgInvite, inviteAcceptUrl, normalizeInviteEmail } from '~/lib/org-invites'
 import { sendOrgInviteEmail } from '~/lib/email'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -33,6 +34,27 @@ export const Route = createFileRoute('/api/orgs/$orgId/invite')({
           const body = inviteSchema.parse(await request.json())
           const email = normalizeInviteEmail(body.email)
           const { role } = body
+
+          // Rate limit per inviter and per org: each invite sends a real email
+          // via Resend, so an abusive admin could spam inboxes and inflate
+          // costs. The shared 15-min/10-attempt bucket is tight enough to stop
+          // a burst while leaving normal use unaffected.
+          const inviterLimit = isRateLimited(`invite:${user.id}`)
+          if (inviterLimit.limited) {
+            return Response.json(
+              { error: 'Too many invites. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(inviterLimit.retryAfterSeconds) } }
+            )
+          }
+          const orgLimit = isRateLimited(`invite-org:${orgId}`)
+          if (orgLimit.limited) {
+            return Response.json(
+              { error: 'Too many invites from this organization. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(orgLimit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(`invite:${user.id}`)
+          recordFailedAttempt(`invite-org:${orgId}`)
 
           const orgRows = await db.select().from(orgs)
             .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
