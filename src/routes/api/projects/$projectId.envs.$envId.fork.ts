@@ -41,49 +41,51 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envId/fork'
           if (existingRows[0]) return Response.json({ error: 'Environment name already exists' }, { status: 409 })
 
           const newEnvId = generateId()
-          await db.insert(environments).values({
-            id: newEnvId,
-            project_id: projectId,
-            name,
-            parent_env_id: parentEnvId,
-            created_by: user.id,
-          })
-
-          await db.insert(envPermissions).values({
-            env_id: newEnvId,
-            user_id: user.id,
-            role: ROLE_ADMIN,
-          })
-
-          const parentVars = await db.select({
-            key: envVars.key,
-            value: envVars.value,
-          }).from(envVars)
-            .where(and(eq(envVars.env_id, parentEnvId), isNull(envVars.deleted_at)))
-          for (const v of parentVars) {
-            await db.insert(envVars).values({
-              id: generateId(),
-              env_id: newEnvId,
-              key: v.key,
-              value: v.value,
+          await db.transaction(async (tx) => {
+            await tx.insert(environments).values({
+              id: newEnvId,
+              project_id: projectId,
+              name,
+              parent_env_id: parentEnvId,
               created_by: user.id,
             })
-          }
 
-          const parentSecrets = await db.select({
-            key: secrets.key,
-            encrypted_value: secrets.encrypted_value,
-          }).from(secrets)
-            .where(and(eq(secrets.env_id, parentEnvId), isNull(secrets.deleted_at)))
-          for (const s of parentSecrets) {
-            await db.insert(secrets).values({
-              id: generateId(),
+            await tx.insert(envPermissions).values({
               env_id: newEnvId,
-              key: s.key,
-              encrypted_value: s.encrypted_value,
-              created_by: user.id,
+              user_id: user.id,
+              role: ROLE_ADMIN,
             })
-          }
+
+            const parentVars = await tx.select({
+              key: envVars.key,
+              value: envVars.value,
+            }).from(envVars)
+              .where(and(eq(envVars.env_id, parentEnvId), isNull(envVars.deleted_at)))
+            for (const v of parentVars) {
+              await tx.insert(envVars).values({
+                id: generateId(),
+                env_id: newEnvId,
+                key: v.key,
+                value: v.value,
+                created_by: user.id,
+              })
+            }
+
+            const parentSecrets = await tx.select({
+              key: secrets.key,
+              encrypted_value: secrets.encrypted_value,
+            }).from(secrets)
+              .where(and(eq(secrets.env_id, parentEnvId), isNull(secrets.deleted_at)))
+            for (const s of parentSecrets) {
+              await tx.insert(secrets).values({
+                id: generateId(),
+                env_id: newEnvId,
+                key: s.key,
+                encrypted_value: s.encrypted_value,
+                created_by: user.id,
+              })
+            }
+          })
 
           await auditLog({ orgId, actorUserId: user.id, action: 'env.fork', targetType: 'env', targetId: newEnvId, metadata: { parentEnvId } })
 

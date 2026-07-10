@@ -38,27 +38,31 @@ export const Route = createFileRoute('/api/onboarding')({
           }
 
           const orgId = generateId()
-          await db.insert(orgs).values({
-            id: orgId,
-            name: orgName,
-            kind: 'personal',
-            owner_user_id: user.id,
+          const projectId = await db.transaction(async (tx) => {
+            await tx.insert(orgs).values({
+              id: orgId,
+              name: orgName,
+              kind: 'personal',
+              owner_user_id: user.id,
+            })
+
+            await tx.insert(orgMembers).values({
+              org_id: orgId,
+              user_id: user.id,
+              role: ORG_ROLE_OWNER,
+              wrapped_org_key: wrappedOrgKey,
+            })
+
+            const pid = await createProjectWithEnv(orgId, projectName, user.id, envName, tx)
+
+            const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
+            encryptedOrgKeys[orgId] = encryptedOrgKey
+            await tx.update(sessions)
+              .set({ encrypted_org_keys: JSON.stringify(encryptedOrgKeys) })
+              .where(eq(sessions.id, session.id))
+
+            return pid
           })
-
-          await db.insert(orgMembers).values({
-            org_id: orgId,
-            user_id: user.id,
-            role: ORG_ROLE_OWNER,
-            wrapped_org_key: wrappedOrgKey,
-          })
-
-          const projectId = await createProjectWithEnv(orgId, projectName, user.id, envName)
-
-          const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
-          encryptedOrgKeys[orgId] = encryptedOrgKey
-          await db.update(sessions)
-            .set({ encrypted_org_keys: JSON.stringify(encryptedOrgKeys) })
-            .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
           await auditLog({ orgId, actorUserId: user.id, action: 'project.create', targetType: 'project', targetId: projectId })

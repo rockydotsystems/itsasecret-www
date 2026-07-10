@@ -47,29 +47,33 @@ export const Route = createFileRoute('/api/orgs/')({
           const { name, wrappedOrgKey, encryptedOrgKey, projectName, envName } = body
 
           const orgId = generateId()
-          await db.insert(orgs).values({
-            id: orgId,
-            name,
-            kind: 'shared',
-            owner_user_id: user.id,
+          const projectId = await db.transaction(async (tx) => {
+            await tx.insert(orgs).values({
+              id: orgId,
+              name,
+              kind: 'shared',
+              owner_user_id: user.id,
+            })
+
+            await tx.insert(orgMembers).values({
+              org_id: orgId,
+              user_id: user.id,
+              role: ORG_ROLE_OWNER,
+              wrapped_org_key: wrappedOrgKey,
+            })
+
+            const pid = projectName
+              ? await createProjectWithEnv(orgId, projectName, user.id, envName ?? 'production', tx)
+              : null
+
+            const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
+            encryptedOrgKeys[orgId] = encryptedOrgKey
+            await tx.update(sessions)
+              .set({ encrypted_org_keys: JSON.stringify(encryptedOrgKeys) })
+              .where(eq(sessions.id, session.id))
+
+            return pid
           })
-
-          await db.insert(orgMembers).values({
-            org_id: orgId,
-            user_id: user.id,
-            role: ORG_ROLE_OWNER,
-            wrapped_org_key: wrappedOrgKey,
-          })
-
-          const projectId = projectName
-            ? await createProjectWithEnv(orgId, projectName, user.id, envName ?? 'production')
-            : null
-
-          const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
-          encryptedOrgKeys[orgId] = encryptedOrgKey
-          await db.update(sessions)
-            .set({ encrypted_org_keys: JSON.stringify(encryptedOrgKeys) })
-            .where(eq(sessions.id, session.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'org.create', targetType: 'org', targetId: orgId })
           if (projectId) {

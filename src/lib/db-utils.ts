@@ -7,21 +7,26 @@ export function generateId(): string {
   return createId()
 }
 
+type DbOrTx = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0]
+
 // Every project starts with one environment - 'production' by default
-// (product spec); onboarding lets the user name their first one.
+// (product spec); onboarding lets the user name their first one. The optional
+// tx lets callers run this inside a db.transaction so the project + env land
+// atomically with the surrounding writes.
 export async function createProjectWithEnv(
   orgId: string,
   name: string,
   createdBy: string,
-  envName = 'production'
+  envName = 'production',
+  tx: DbOrTx = db,
 ): Promise<string> {
   const projectId = generateId()
-  await db.insert(schema.projects).values({
+  await tx.insert(schema.projects).values({
     id: projectId,
     org_id: orgId,
     name,
   })
-  await db.insert(schema.environments).values({
+  await tx.insert(schema.environments).values({
     id: generateId(),
     project_id: projectId,
     name: envName,
