@@ -6,6 +6,7 @@ import { teamProjectPermissions } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+import { getLiveTeam } from '~/lib/teams'
 
 const updateSchema = z.object({
   role: z.enum([ROLE_READ, ROLE_WRITE, ROLE_ADMIN]),
@@ -21,6 +22,9 @@ export const Route = createFileRoute('/api/projects/$projectId/team-permissions/
           const projectId = params.projectId!
           const teamId = params.teamId!
           const { role } = updateSchema.parse(await request.json())
+
+          const team = await getLiveTeam(orgId, teamId)
+          if (!team) return Response.json({ error: 'Team not found in this organization' }, { status: 404 })
 
           const permRows = await db.select().from(teamProjectPermissions)
             .where(and(eq(teamProjectPermissions.project_id, projectId), eq(teamProjectPermissions.team_id, teamId)))
@@ -43,6 +47,9 @@ export const Route = createFileRoute('/api/projects/$projectId/team-permissions/
           const orgId = await requireOrgRole(params, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
           const projectId = params.projectId!
           const teamId = params.teamId!
+
+          const team = await getLiveTeam(orgId, teamId)
+          if (!team) return Response.json({ error: 'Team not found in this organization' }, { status: 404 })
 
           await db.delete(teamProjectPermissions)
             .where(and(eq(teamProjectPermissions.project_id, projectId), eq(teamProjectPermissions.team_id, teamId)))

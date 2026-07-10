@@ -6,6 +6,7 @@ import { teamEnvPermissions } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+import { getLiveTeam } from '~/lib/teams'
 
 const updateSchema = z.object({
   role: z.enum([ROLE_READ, ROLE_WRITE, ROLE_ADMIN]),
@@ -21,6 +22,9 @@ export const Route = createFileRoute('/api/envs/$envId/team-permissions/$teamId'
           const envId = params.envId!
           const teamId = params.teamId!
           const { role } = updateSchema.parse(await request.json())
+
+          const team = await getLiveTeam(orgId, teamId)
+          if (!team) return Response.json({ error: 'Team not found in this organization' }, { status: 404 })
 
           const permRows = await db.select().from(teamEnvPermissions)
             .where(and(eq(teamEnvPermissions.env_id, envId), eq(teamEnvPermissions.team_id, teamId)))
@@ -43,6 +47,9 @@ export const Route = createFileRoute('/api/envs/$envId/team-permissions/$teamId'
           const orgId = await requireEnvRole(params, user.id, [ROLE_ADMIN])
           const envId = params.envId!
           const teamId = params.teamId!
+
+          const team = await getLiveTeam(orgId, teamId)
+          if (!team) return Response.json({ error: 'Team not found in this organization' }, { status: 404 })
 
           await db.delete(teamEnvPermissions)
             .where(and(eq(teamEnvPermissions.env_id, envId), eq(teamEnvPermissions.team_id, teamId)))
