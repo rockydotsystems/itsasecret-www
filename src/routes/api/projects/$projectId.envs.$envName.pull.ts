@@ -5,6 +5,7 @@ import { projects, environments, envVars, secrets } from '~/lib/schema'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { decrypt, encrypt } from '~/lib/crypto/envelope'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pull')({
   server: {
@@ -29,6 +30,16 @@ export const Route = createFileRoute('/api/projects/$projectId/envs/$envName/pul
 
           const envParams: Record<string, string | undefined> = { envId: env.id }
           const orgId = await requireEnvRole(envParams, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
+
+          const pullKey = `pull:${user.id}`
+          const pullLimit = isRateLimited(pullKey)
+          if (pullLimit.limited) {
+            return Response.json(
+              { error: 'Too many pull requests. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(pullLimit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(pullKey)
 
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const orgKey = await getOrgKey(session, sessionKey, orgId)

@@ -8,6 +8,7 @@ import { requireAuth, getSessionKey, getOrgKey, errorResponse, validateKey } fro
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { encrypt, decrypt } from '~/lib/crypto/envelope'
 import { recordSecretHistory } from '~/lib/history'
+import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 // cipher 'session': value is encrypted under the ECDH transport key and the
 // server re-encrypts it under the org key (CLI flow). cipher 'org': value is
@@ -28,6 +29,16 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           const envId = params.envId!
           const key = params.key!
           validateKey(key)
+
+          const revealKey = `reveal:${user.id}`
+          const revealLimit = isRateLimited(revealKey)
+          if (revealLimit.limited) {
+            return Response.json(
+              { error: 'Too many reveal requests. Please try again later.' },
+              { status: 429, headers: { 'Retry-After': String(revealLimit.retryAfterSeconds) } }
+            )
+          }
+          recordFailedAttempt(revealKey)
 
           const secretRows = await db.select().from(secrets)
             .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
