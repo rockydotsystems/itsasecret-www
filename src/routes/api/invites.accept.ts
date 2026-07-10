@@ -9,7 +9,7 @@ import { findPendingInviteByToken } from '~/lib/org-invites'
 import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 const acceptSchema = z.object({
-  token: z.string(),
+  token: z.string().max(256),
 })
 
 // Accepting an invite creates the org_members row with the invite's
