@@ -16,11 +16,13 @@ RUN pnpm build
 
 # --- runner: Nitro .output is self-contained (bundles its own node_modules) ---
 FROM base AS runner
+RUN useradd --system --create-home --uid 1001 appuser
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-COPY --from=build /app/.output ./.output
+COPY --from=build --chown=appuser:appuser /app/.output ./.output
 # Migration SQL + journal for the boot-time migrator (MIGRATE_ON_BOOT)
-COPY --from=build /app/drizzle ./drizzle
+COPY --from=build --chown=appuser:appuser /app/drizzle ./drizzle
+USER appuser
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
