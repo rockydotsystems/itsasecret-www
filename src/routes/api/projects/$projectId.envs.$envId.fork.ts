@@ -8,7 +8,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 
 const forkSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
 })
 
 export const Route = createFileRoute('/api/projects/$projectId/envs/$envId/fork')({

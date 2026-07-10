@@ -8,7 +8,7 @@ import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 
 const createEnvSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
 })
 
 export const Route = createFileRoute('/api/projects/$projectId/envs')({
