@@ -48,13 +48,16 @@ const sessionRotationMiddleware = createMiddleware({ type: 'request' }).server(
 // the bearer token and vault live in the browser; a script-src CSP is worth
 // adding separately once the inline scripts carry nonces.)
 const securityHeadersMiddleware = createMiddleware({ type: 'request' }).server(
-  async ({ request, next }) => {
+  async ({ request, pathname, next }) => {
     const result = await next()
     const h = result.response.headers
     h.set('X-Content-Type-Options', 'nosniff')
     h.set('X-Frame-Options', 'DENY')
     h.set('Content-Security-Policy', "frame-ancestors 'none'")
     h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    if (pathname.startsWith('/api/')) {
+      h.set('Cache-Control', 'no-store')
+    }
     // Only assert HSTS on a request that actually arrived over TLS, so local
     // http dev isn't pinned to https.
     const proto = request.headers.get('x-forwarded-proto') ?? new URL(request.url).protocol.replace(':', '')
