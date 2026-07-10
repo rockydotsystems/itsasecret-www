@@ -62,6 +62,10 @@ const ASSURANCES = [
 
 const SHELL_FEATURES = [
   {
+    cmd: 'shh load',
+    body: 'Enable the shell integration once, then load the secrets in a directory into your current shell with a single command - it evaluates for you and says so loudly, so you always know live values are in your shell.',
+  },
+  {
     cmd: 'shh pull --shell',
     body: 'Works with every shell - bash, zsh, fish, nushell, PowerShell. Each gets its native syntax, picked from $SHELL automatically.',
   },

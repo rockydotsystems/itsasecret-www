@@ -204,6 +204,22 @@ function DocsPage() {
             <code>$SHELL</code> (POSIX inside direnv, where <code>.envrc</code> is always bash),
             or force one with&nbsp;<code>--shell=posix|fish|nu|pwsh</code>.
           </p>
+          <p>
+            Rather not type <code>eval</code> every time? Enable the shell integration once, then
+            just run <code>shh load</code> - it pulls and evaluates the values into your current
+            shell for you, and prints a clear notice that live secret values are now in this
+            shell&rsquo;s environment. A subprocess can&rsquo;t change its parent shell on its own,
+            so this is a one-time function you source from your startup file.
+          </p>
+          <CodeBlock>
+            <span className="term-dim"># one-time setup, in your shell startup file</span>{'\n'}
+            eval &quot;$(<span className="term-cmd">shh shell-init</span> bash)&quot;{'  '}
+            <span className="term-dim"># or: zsh, fish, pwsh, nu</span>{'\n'}
+            {'\n'}
+            <span className="term-prompt">$ </span><span className="term-cmd">shh load</span>{'\n'}
+            <span className="term-dim">shh loaded secrets into your CURRENT shell - live values,</span>{'\n'}
+            <span className="term-dim">readable by every command you run here and by env.</span>
+          </CodeBlock>
         </section>
 
         <section className="docs-section">
