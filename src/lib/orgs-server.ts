@@ -443,12 +443,16 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
         memberEnvRole(user.id, envId, projectId),
       ])
       envSecrets = secretRows
-      envVarList = varRows
       deletedSecrets = deletedSecretRows as DeletedItemSummary[]
       deletedVars = deletedVarRows as DeletedItemSummary[]
       envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
         ? 'admin'
         : grantedRole
+      // Env vars are plaintext by design but still gated by env-level RBAC.
+      // Only return values to callers with an actual env role; a plain org
+      // member with no env grant gets an empty list. (Secrets already return
+      // keys only, so they are safe regardless.)
+      envVarList = envRole !== '' ? varRows : []
 
       // Env admins can manage access from the dashboard; nobody else needs
       // the grant list or the org roster (emails), so don't send them.
