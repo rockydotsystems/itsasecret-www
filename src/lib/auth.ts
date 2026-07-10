@@ -98,7 +98,11 @@ export async function requireAuth(
 
 export function getSessionKey(headerValue: string | null): Uint8Array {
   if (!headerValue) throw jsonError('Missing X-Session-Key header', 400)
-  return base64Decode(headerValue)
+  try {
+    return base64Decode(headerValue)
+  } catch {
+    throw jsonError('Invalid X-Session-Key header', 400)
+  }
 }
 
 export async function getOrgKey(
@@ -106,11 +110,20 @@ export async function getOrgKey(
   sessionKey: Uint8Array,
   orgId: string
 ): Promise<Uint8Array> {
-  const encryptedOrgKeys: Record<string, string> = JSON.parse(session.encrypted_org_keys)
+  let encryptedOrgKeys: Record<string, string>
+  try {
+    encryptedOrgKeys = JSON.parse(session.encrypted_org_keys)
+  } catch {
+    throw jsonError('Session has corrupted org key data', 500)
+  }
   const encryptedOrgKey = encryptedOrgKeys[orgId]
   if (!encryptedOrgKey) throw jsonError('No org key for this organization', 403)
-  const orgKeyB64 = await decrypt(sessionKey, encryptedOrgKey)
-  return base64Decode(orgKeyB64)
+  try {
+    const orgKeyB64 = await decrypt(sessionKey, encryptedOrgKey)
+    return base64Decode(orgKeyB64)
+  } catch {
+    throw jsonError('Failed to decrypt org key', 403)
+  }
 }
 
 export class HttpError extends Error {
