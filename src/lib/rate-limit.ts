@@ -55,6 +55,14 @@ setInterval(() => {
 // rate limit by rotating a fake first hop. Trust only the entries added by our
 // own proxies: with a single trusted proxy (Railway) the rightmost entry is the
 // real client; TRUSTED_PROXY_COUNT lets multi-hop deployments pick the right one.
+//
+// X-Real-IP is NOT trusted: like X-Forwarded-For it is a client-settable header,
+// but unlike it there is no proxy-appended chain to pick the trustworthy entry
+// from. When X-Forwarded-For is absent (no proxy in the chain) X-Real-IP is
+// entirely attacker-controlled - trusting it let a direct-to-app attacker bypass
+// every IP-keyed rate limit (notably registration, which has only per-IP limits)
+// by rotating a fake value on each request. Fall back to 'unknown' instead: all
+// unproxied requests share one bucket, which is overly restrictive but safe.
 export function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
@@ -64,10 +72,6 @@ export function getClientIP(request: Request): string {
       const idx = Math.max(0, hops.length - trusted)
       return hops[idx] || 'unknown'
     }
-  }
-  const realIP = request.headers.get('x-real-ip')
-  if (realIP) {
-    return realIP.trim() || 'unknown'
   }
   return 'unknown'
 }
