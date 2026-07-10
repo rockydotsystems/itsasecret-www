@@ -11,8 +11,8 @@ const onboardingSchema = z.object({
   orgName: z.string().min(1).max(100),
   projectName: z.string().min(1).max(100),
   envName: z.string().min(1).max(100),
-  wrappedOrgKey: z.string(),
-  encryptedOrgKey: z.string(),
+  wrappedOrgKey: z.string().max(10000),
+  encryptedOrgKey: z.string().max(10000),
 })
 
 export const Route = createFileRoute('/api/onboarding')({

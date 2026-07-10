@@ -9,8 +9,8 @@ import { ORG_ROLE_OWNER } from '~/lib/rbac'
 
 const createOrgSchema = z.object({
   name: z.string().min(1).max(100),
-  wrappedOrgKey: z.string(),
-  encryptedOrgKey: z.string(),
+  wrappedOrgKey: z.string().max(10000),
+  encryptedOrgKey: z.string().max(10000),
   // The "+ New org" wizard sets up the org's first project + environment in
   // the same request; both are optional so the endpoint can also create a
   // bare org.
