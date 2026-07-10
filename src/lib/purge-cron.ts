@@ -32,4 +32,5 @@ export function startPurgeCron(): void {
   purgeTimer = setInterval(() => {
     purgeExpired().catch((err) => console.error('Purge failed:', err))
   }, PURGE_INTERVAL)
+  purgeTimer.unref()
 }

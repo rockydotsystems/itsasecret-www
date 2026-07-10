@@ -1,6 +1,6 @@
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from './db'
-import { projects, environments, orgMembers, envPermissions, teams, teamMembers, teamEnvPermissions, teamProjectPermissions } from './schema'
+import { orgs, projects, environments, orgMembers, envPermissions, teams, teamMembers, teamEnvPermissions, teamProjectPermissions } from './schema'
 import { HttpError } from './auth'
 
 export const ORG_ROLE_OWNER = 'owner'
@@ -50,6 +50,11 @@ export async function requireOrgRole(
   allowedRoles: string[]
 ): Promise<string> {
   const orgId = await resolveOrgId(params)
+
+  const orgRows = await db.select({ id: orgs.id }).from(orgs)
+    .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
+    .limit(1)
+  if (!orgRows[0]) throw new HttpError(404, { error: 'Organization not found' })
 
   const rows = await db.select().from(orgMembers)
     .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, userId)))
@@ -130,6 +135,11 @@ export async function requireEnvRole(
   if (!project) throw new HttpError(404, { error: 'Project not found' })
 
   const orgId = project.org_id
+
+  const orgRows = await db.select({ id: orgs.id }).from(orgs)
+    .where(and(eq(orgs.id, orgId), isNull(orgs.deleted_at)))
+    .limit(1)
+  if (!orgRows[0]) throw new HttpError(404, { error: 'Organization not found' })
 
   const memberRows = await db.select().from(orgMembers)
     .where(and(eq(orgMembers.org_id, orgId), eq(orgMembers.user_id, userId)))
