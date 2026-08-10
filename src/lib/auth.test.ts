@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { extractSessionToken } from './auth'
-import { SESSION_COOKIE_NAME } from './session-cookie'
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE, sessionCookieName } from './session-cookie'
 
 function req(headers: Record<string, string>): Request {
   return new Request('http://localhost/api/thing', { headers })
@@ -34,6 +34,21 @@ describe('extractSessionToken', () => {
 
   it('ignores cookies whose name merely ends with the session cookie name', () => {
     expect(extractSessionToken(req({ cookie: `x_${SESSION_COOKIE_NAME}=nope` }))).toBeNull()
+  })
+
+  it('reads the unprefixed dev cookie name too (http-only environments)', () => {
+    expect(extractSessionToken(req({ cookie: `${SESSION_COOKIE_NAME_INSECURE}=devtoken` }))).toBe('devtoken')
+  })
+
+  it('prefers the __Host- cookie over the unprefixed one when both are present', () => {
+    expect(
+      extractSessionToken(req({ cookie: `${SESSION_COOKIE_NAME_INSECURE}=dev; ${SESSION_COOKIE_NAME}=prod` }))
+    ).toBe('prod')
+  })
+
+  it('picks the cookie name based on transport security', () => {
+    expect(sessionCookieName(true)).toBe('__Host-session_token')
+    expect(sessionCookieName(false)).toBe('session_token')
   })
 
   it('returns null when neither header nor cookie is present', () => {

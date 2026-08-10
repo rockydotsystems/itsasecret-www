@@ -5,7 +5,7 @@ import { users, sessions } from './schema'
 import type { User, Session } from './schema'
 import { base64Encode, base64Decode } from './crypto/base64'
 import { decrypt } from './crypto/envelope'
-import { SESSION_COOKIE_NAME } from './session-cookie'
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE } from './session-cookie'
 
 export interface AuthContext {
   user: User
@@ -24,17 +24,20 @@ export function extractSessionToken(request: Request): string | null {
   }
   const cookieHeader = request.headers.get('cookie')
   if (cookieHeader) {
+    let insecure: string | null = null
     for (const part of cookieHeader.split(';')) {
       const eq = part.indexOf('=')
       if (eq === -1) continue
-      if (part.slice(0, eq).trim() !== SESSION_COOKIE_NAME) continue
-      const raw = part.slice(eq + 1).trim()
+      const name = part.slice(0, eq).trim()
+      if (name !== SESSION_COOKIE_NAME && name !== SESSION_COOKIE_NAME_INSECURE) continue
+      let value = part.slice(eq + 1).trim()
       try {
-        return decodeURIComponent(raw)
-      } catch {
-        return raw
-      }
+        value = decodeURIComponent(value)
+      } catch { /* keep raw */ }
+      if (name === SESSION_COOKIE_NAME) return value
+      insecure = value
     }
+    return insecure
   }
   return null
 }

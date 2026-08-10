@@ -5,7 +5,7 @@ import { eq, and, isNull, isNotNull, inArray, gt } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { users, orgs, orgMembers, orgInvites, projects, environments, envPermissions, secrets, envVars, teams, teamEnvPermissions, teamProjectPermissions, userLastOrg, userLastProject, userLastEnv } from '~/lib/schema'
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
-import { SESSION_COOKIE_NAME } from '~/lib/session-cookie'
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE } from '~/lib/session-cookie'
 import { requireOrgRole, memberEnvRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { listOrgTeams } from '~/lib/teams'
 import type { TeamView } from '~/lib/teams'
@@ -51,7 +51,7 @@ async function listTeamProjectGrants(projectId: string): Promise<TeamProjectPerm
 }
 
 function buildAuthRequest(): Request | null {
-  const token = getCookie(SESSION_COOKIE_NAME)
+  const token = getCookie(SESSION_COOKIE_NAME) ?? getCookie(SESSION_COOKIE_NAME_INSECURE)
   if (!token) return null
   return new Request('http://localhost', {
     headers: { Authorization: `Bearer ${token}` },

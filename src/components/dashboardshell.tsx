@@ -12,6 +12,7 @@ import { HistoryModal } from '~/components/historymodal'
 import type { HistoryModalEntry } from '~/components/historymodal'
 import { DashboardTopBar } from '~/components/dashboardtopbar'
 import { EnvAccessModal } from '~/components/envaccessmodal'
+import { ImportEnvModal } from '~/components/importenvmodal'
 import { createEnvironment, forkEnvironment } from '~/lib/project-settings-form'
 import {
   setSecret, setVar, deleteSecret, deleteVar, revealSecret,
@@ -151,6 +152,7 @@ export function DashboardShell({
   const [forkingEnv, setForkingEnv] = useState(false)
   const [managingAccess, setManagingAccess] = useState(false)
   const [creatingItem, setCreatingItem] = useState<'secret' | 'var' | null>(null)
+  const [importingEnv, setImportingEnv] = useState(false)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [deletingItem, setDeletingItem] = useState<DeletingItem | null>(null)
   const [hidingItem, setHidingItem] = useState<DeletingItem | null>(null)
@@ -352,8 +354,14 @@ export function DashboardShell({
           </button>
         )}
       </div>
-      {(canFork || canManageAccess) && (
+      {(canFork || canManageAccess || canWrite) && (
         <div style={{ display: 'flex', gap: '8px' }}>
+          {canWrite && (
+            <Button size="sm" variant="ghost" onClick={() => setImportingEnv(true)}>
+              <IconFile size={16} aria-hidden="true" />
+              Import .env
+            </Button>
+          )}
           {canFork && (
             <Button size="sm" variant="ghost" onClick={() => setForkingEnv(true)}>
               <IconSquareDottedArrowBottomRight size={16} aria-hidden="true" />
@@ -422,14 +430,20 @@ export function DashboardShell({
                 or .env file.
               </p>
               {canWrite ? (
-                <div className="env-empty-actions">
-                  <Button size="lg" onClick={() => setCreatingItem('secret')}>
-                    <IconLock size={16} aria-hidden="true" />
-                    Create your first secret
-                  </Button>
-                  <Button size="lg" variant="secondary" onClick={() => setCreatingItem('var')}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                  <div className="env-empty-actions">
+                    <Button size="lg" onClick={() => setCreatingItem('secret')}>
+                      <IconLock size={16} aria-hidden="true" />
+                      Create your first secret
+                    </Button>
+                    <Button size="lg" variant="secondary" onClick={() => setCreatingItem('var')}>
+                      <IconFile size={16} aria-hidden="true" />
+                      Create your first variable
+                    </Button>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => setImportingEnv(true)}>
                     <IconFile size={16} aria-hidden="true" />
-                    Create your first variable
+                    or import an existing .env file
                   </Button>
                 </div>
               ) : (
@@ -710,6 +724,19 @@ export function DashboardShell({
           kind={historyItem.type}
           loadEntries={() => loadHistoryEntries(historyItem)}
           onClose={() => setHistoryItem(null)}
+        />
+      )}
+
+      {importingEnv && (
+        <ImportEnvModal
+          orgId={orgId}
+          envId={envId}
+          envName={envName}
+          existingSecretKeys={envSecrets.map((s) => s.key)}
+          existingVarKeys={envVars.map((v) => v.key)}
+          ensureUnlocked={ensureUnlocked}
+          onClose={() => setImportingEnv(false)}
+          onImported={async () => { await router.invalidate() }}
         />
       )}
 

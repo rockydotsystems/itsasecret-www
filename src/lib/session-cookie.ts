@@ -1,4 +1,11 @@
 export const SESSION_COOKIE_NAME = '__Host-session_token'
+// __Host- cookies are only settable over HTTPS (browsers reject the prefix
+// without Secure), so plain-HTTP dev uses this unprefixed name instead.
+export const SESSION_COOKIE_NAME_INSECURE = 'session_token'
+
+export function sessionCookieName(secure: boolean): string {
+  return secure ? SESSION_COOKIE_NAME : SESSION_COOKIE_NAME_INSECURE
+}
 
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 // 30 days
 
@@ -32,7 +39,7 @@ function serializeCookie(name: string, value: string, options: CookieOptions): s
 }
 
 export function createSessionCookieHeader(token: string, secure = false): string {
-  return serializeCookie(SESSION_COOKIE_NAME, encodeURIComponent(token), {
+  return serializeCookie(sessionCookieName(secure), encodeURIComponent(token), {
     path: '/',
     maxAge: COOKIE_MAX_AGE,
     sameSite: 'Lax',
@@ -41,8 +48,10 @@ export function createSessionCookieHeader(token: string, secure = false): string
   })
 }
 
+// Clears under whichever prefix the current transport would use, so logout
+// works for cookies set over both HTTP (dev) and HTTPS.
 export function createClearSessionCookieHeader(secure = false): string {
-  return serializeCookie(SESSION_COOKIE_NAME, '', {
+  return serializeCookie(sessionCookieName(secure), '', {
     path: '/',
     maxAge: 0,
     sameSite: 'Lax',
