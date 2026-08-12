@@ -6,9 +6,10 @@ import { projects } from '~/lib/schema'
 import { auditLog, softDeleteProject } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { displayName } from '~/lib/validation'
 
 const updateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: displayName().optional(),
 })
 
 export const Route = createFileRoute('/api/projects/$projectId')({

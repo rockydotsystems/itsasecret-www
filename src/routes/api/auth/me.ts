@@ -5,9 +5,14 @@ import { db } from '~/lib/db'
 import { users } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
+import { hasWordCharacter, hasNoControlChars } from '~/lib/validation'
 
 const updateProfileSchema = z.object({
-  name: z.string().trim().max(100),
+  // '' clears the name (stored as null below) - the content rules only apply
+  // to names that will actually be displayed.
+  name: z.string().trim().max(100)
+    .refine((v) => v === '' || hasNoControlChars(v), { message: 'No line breaks or control characters' })
+    .refine((v) => v === '' || hasWordCharacter(v), { message: 'Use at least one letter or number' }),
 })
 
 export const Route = createFileRoute('/api/auth/me')({

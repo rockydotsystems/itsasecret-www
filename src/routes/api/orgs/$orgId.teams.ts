@@ -7,9 +7,10 @@ import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { listOrgTeams } from '~/lib/teams'
+import { displayName } from '~/lib/validation'
 
 const createSchema = z.object({
-  name: z.string().trim().min(1).max(80),
+  name: displayName(80),
 })
 
 export const Route = createFileRoute('/api/orgs/$orgId/teams')({

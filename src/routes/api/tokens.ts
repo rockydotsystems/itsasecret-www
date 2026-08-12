@@ -13,6 +13,7 @@ import {
   TOKEN_MAX_DAYS,
   TOKEN_NEVER_EXPIRES,
 } from '~/lib/sessions'
+import { displayName } from '~/lib/validation'
 
 // Displayed tokens look like `shht_<bearer>.<transport key>`: the bearer half
 // goes in the Authorization header verbatim; the key half decrypts the org
@@ -21,7 +22,7 @@ import {
 export const TOKEN_PREFIX = 'shht_'
 
 const createTokenSchema = z.object({
-  name: z.string().trim().min(1, 'Token name is required').max(64),
+  name: displayName(64),
   // Days until expiry; null means "does not expire".
   expiresInDays: z.number().int().min(TOKEN_MIN_DAYS).max(TOKEN_MAX_DAYS).nullable(),
 })

@@ -6,11 +6,12 @@ import { orgs, orgMembers, sessions } from '~/lib/schema'
 import { generateId, auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
+import { displayName } from '~/lib/validation'
 
 const onboardingSchema = z.object({
-  orgName: z.string().min(1).max(100),
-  projectName: z.string().min(1).max(100),
-  envName: z.string().min(1).max(100),
+  orgName: displayName(),
+  projectName: displayName(),
+  envName: displayName(),
   wrappedOrgKey: z.string().max(10000),
   encryptedOrgKey: z.string().max(10000),
 })

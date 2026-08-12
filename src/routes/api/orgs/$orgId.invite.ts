@@ -12,7 +12,7 @@ import { sendOrgInviteEmail } from '~/lib/email'
 import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 
 const inviteSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().email(),
   role: z.enum([ORG_ROLE_ADMIN, ORG_ROLE_MEMBER]),
 })
 

@@ -7,9 +7,10 @@ import { auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { assertProjectCapacity } from '~/lib/plans'
+import { displayName } from '~/lib/validation'
 
 const createProjectSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: displayName(),
 })
 
 export const Route = createFileRoute('/api/orgs/$orgId/projects')({

@@ -15,7 +15,7 @@ import { createEmailVerification, verificationUrl } from '~/lib/email-verificati
 import { sendVerificationEmail } from '~/lib/email'
 
 const registerSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().email(),
   password: z.string().min(12).max(1024),
   clientPubkey: z.string().max(256),
 })

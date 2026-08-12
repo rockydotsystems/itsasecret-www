@@ -6,9 +6,10 @@ import { environments, envPermissions, envVars, secrets } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
+import { displayName } from '~/lib/validation'
 
 const forkSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: displayName(),
 })
 
 export const Route = createFileRoute('/api/projects/$projectId/envs/$envId/fork')({

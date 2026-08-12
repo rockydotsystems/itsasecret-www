@@ -91,6 +91,14 @@ docker compose up -d           # start Postgres 17
 - **Profile page at `/dashboard/profile`** (`src/components/profilesettings.tsx`,
   client calls in `src/lib/profile-form.ts`): display name (`users.name`,
   nullable - empty stores null), master-password change, and feedback.
+- **Display-name inputs share one validator** (`displayName()` in
+  `src/lib/validation.ts`) - user/org/project/env/team/access-token names are
+  trimmed, length-bounded, single-line (no control characters; newlines in
+  email subjects would be header injection), and must contain at least one
+  letter or number (`"*"`, `"   "`, emoji-only are rejected). Emails are
+  trimmed before `z.string().email()`. Free-text fields (feedback message) and
+  secret/var values stay unrestricted apart from size caps - values must
+  support arbitrary content by design.
 - **Billing is Stripe via a hand-rolled REST client** (`src/lib/stripe.ts` - no
   SDK, same discipline as `s3-presign.ts`). Env: `STRIPE_SECRET_KEY`,
   `STRIPE_TEAM_PRICE_ID` (monthly per-seat Team price),

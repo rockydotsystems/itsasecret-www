@@ -17,7 +17,7 @@ import { getClientIP, isRateLimited, recordFailedAttempt, resetAttempts } from '
 import { runDummyPasswordHash } from '~/lib/crypto/kdf'
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().email(),
   password: z.string().max(1024),
   clientPubkey: z.string().max(256),
   // 'cli' sessions are short-lived and roll their token on every successful

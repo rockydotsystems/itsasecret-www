@@ -6,16 +6,17 @@ import { orgs, orgMembers, sessions } from '~/lib/schema'
 import { generateId, auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { ORG_ROLE_OWNER } from '~/lib/rbac'
+import { displayName } from '~/lib/validation'
 
 const createOrgSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: displayName(),
   wrappedOrgKey: z.string().max(10000),
   encryptedOrgKey: z.string().max(10000),
   // The "+ New org" wizard sets up the org's first project + environment in
   // the same request; both are optional so the endpoint can also create a
   // bare org.
-  projectName: z.string().min(1).max(100).optional(),
-  envName: z.string().min(1).max(100).optional(),
+  projectName: displayName().optional(),
+  envName: displayName().optional(),
 })
 
 export const Route = createFileRoute('/api/orgs/')({

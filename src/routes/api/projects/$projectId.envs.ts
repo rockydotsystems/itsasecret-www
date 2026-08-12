@@ -6,9 +6,10 @@ import { environments } from '~/lib/schema'
 import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { displayName } from '~/lib/validation'
 
 const createEnvSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: displayName(),
 })
 
 export const Route = createFileRoute('/api/projects/$projectId/envs')({
