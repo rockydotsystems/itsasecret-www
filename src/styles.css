@@ -1018,6 +1018,9 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 }
 
 /* ─── Org settings ──────────────────────────────── */
+/* Settings/admin pages (profile, tokens, org & project settings): one
+   centered column. */
+.settings-page { max-width: 720px; margin: 0 auto; }
 .settings-sections {
   display: flex;
   flex-direction: column;

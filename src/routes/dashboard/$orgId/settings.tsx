@@ -30,21 +30,23 @@ function OrgSettingsPage() {
     <div className="app-shell">
       <DashboardTopBar orgs={view.orgs} orgId={orgId} projects={view.projects} projectId={view.projectId} />
       <main className="app-main">
-        <div className="app-meta">
-          <h1 className="app-title">Organization settings</h1>
-          <span className="app-subtitle">
-            {view.org.name} · {view.members.length} {view.members.length === 1 ? 'member' : 'members'}
-          </span>
+        <div className="settings-page">
+          <div className="app-meta">
+            <h1 className="app-title">Organization settings</h1>
+            <span className="app-subtitle">
+              {view.org.name} · {view.members.length} {view.members.length === 1 ? 'member' : 'members'}
+            </span>
+          </div>
+          {billingResult === 'success' && (
+            <p className="billing-notice billing-notice--ok">
+              Payment complete - the Team plan activates as soon as Stripe confirms, usually within seconds.
+            </p>
+          )}
+          {billingResult === 'canceled' && (
+            <p className="billing-notice">Checkout was canceled - nothing was charged.</p>
+          )}
+          <OrgSettings view={view} key={view.org.id} />
         </div>
-        {billingResult === 'success' && (
-          <p className="billing-notice billing-notice--ok">
-            Payment complete - the Team plan activates as soon as Stripe confirms, usually within seconds.
-          </p>
-        )}
-        {billingResult === 'canceled' && (
-          <p className="billing-notice">Checkout was canceled - nothing was charged.</p>
-        )}
-        <OrgSettings view={view} key={view.org.id} />
       </main>
     </div>
   )

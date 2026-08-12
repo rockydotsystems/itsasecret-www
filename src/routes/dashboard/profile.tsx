@@ -24,12 +24,14 @@ function ProfilePage() {
     <div className="app-shell">
       <DashboardTopBar orgs={view.orgs} orgId={view.orgId} projects={view.projects} projectId={view.projectId} />
       <main className="app-main">
-        <div className="app-meta">
-          <h1 className="app-title">Your profile</h1>
-          <span className="app-subtitle">{user.email}</span>
-        </div>
-        <div className="settings-sections">
-          <ProfileSettings email={user.email} name={user.name} />
+        <div className="settings-page">
+          <div className="app-meta">
+            <h1 className="app-title">Your profile</h1>
+            <span className="app-subtitle">{user.email}</span>
+          </div>
+          <div className="settings-sections">
+            <ProfileSettings email={user.email} name={user.name} />
+          </div>
         </div>
       </main>
     </div>

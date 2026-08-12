@@ -23,12 +23,14 @@ function TokensPage() {
     <div className="app-shell">
       <DashboardTopBar orgs={view.orgs} orgId={view.orgId} projects={view.projects} projectId={view.projectId} />
       <main className="app-main">
-        <div className="app-meta">
-          <h1 className="app-title">Access tokens</h1>
-          <span className="app-subtitle">Long-lived credentials for headless machines</span>
-        </div>
-        <div className="settings-sections">
-          <AccessTokens />
+        <div className="settings-page">
+          <div className="app-meta">
+            <h1 className="app-title">Access tokens</h1>
+            <span className="app-subtitle">Long-lived credentials for headless machines</span>
+          </div>
+          <div className="settings-sections">
+            <AccessTokens />
+          </div>
         </div>
       </main>
     </div>
