@@ -65,11 +65,23 @@ export const Route = createFileRoute('/api/auth/change-password')({
 
           const memberRows = await db.select().from(orgMembers).where(eq(orgMembers.user_id, user.id))
           const rewrapped: { org_id: string; wrapped_org_key: string }[] = []
+          const unrewrappableOrgIds: string[] = []
           for (const member of memberRows) {
             // Pending invite keys are wrapped under the server secret, not the
             // master key - login finishes those; nothing to re-wrap here.
             if (isPendingOrgKey(member.wrapped_org_key)) continue
-            const orgKey = await unwrapKey(oldMasterKey, member.wrapped_org_key)
+            let orgKey: Uint8Array
+            try {
+              orgKey = await unwrapKey(oldMasterKey, member.wrapped_org_key)
+            } catch {
+              // The verified current password's master key cannot unwrap this
+              // row: it is corrupt (e.g. wrapped under a mistyped password by
+              // a pre-verification workspace wizard). The org key is already
+              // unrecoverable through that row - skip it instead of wedging
+              // the entire password change with a 500.
+              unrewrappableOrgIds.push(member.org_id)
+              continue
+            }
             rewrapped.push({
               org_id: member.org_id,
               wrapped_org_key: await wrapKey(newMasterKey, orgKey),
@@ -105,7 +117,16 @@ export const Route = createFileRoute('/api/auth/change-password')({
           })
 
           resetAttempts(rateKey)
-          await auditLog({ actorUserId: user.id, action: 'user.change_password', targetType: 'user', targetId: user.id })
+          await auditLog({
+            actorUserId: user.id,
+            action: 'user.change_password',
+            targetType: 'user',
+            targetId: user.id,
+            ...(unrewrappableOrgIds.length > 0 && { metadata: { skippedCorruptOrgKeys: unrewrappableOrgIds } }),
+          })
+          if (unrewrappableOrgIds.length > 0) {
+            console.error(`change-password: user ${user.id}: skipped corrupt wrapped_org_key for orgs: ${unrewrappableOrgIds.join(', ')}`)
+          }
 
           return Response.json({ ok: true }, { status: 200 })
         } catch (err) {

@@ -1,17 +1,32 @@
-import { base64Encode, base64Decode } from './crypto/base64'
-import { deriveKey, type KdfParams } from './crypto/kdf'
+import { base64Encode } from './crypto/base64'
 import { generateKey, wrapKey, encrypt } from './crypto/envelope'
-import { getCurrentUser } from './auth-form'
 import { getClientSessionKey } from './client-session'
-import { getCachedMasterKey } from './vault'
+import { getCachedMasterKey, seedVaultFromLogin } from './vault'
 
 export interface WorkspaceInput {
   orgName: string
   projectName: string
   envName: string
   // Fallback for when the vault is locked (e.g. the wizard runs in a fresh
-  // tab): derive the master key from the typed password.
+  // tab): the typed password is verified against the server before it is
+  // used to derive the master key.
   password?: string
+}
+
+// There is no client-side proof that a typed password is THE master password
+// for a user without existing org keys (nothing to test-unwrap yet), so the
+// wizard verifies server-side. Wrapping a fresh org key under a mistyped
+// password would silently corrupt org_members.wrapped_org_key.
+async function verifyMasterPassword(password: string): Promise<void> {
+  const resp = await fetch('/api/auth/verify-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ password }),
+  })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Failed to verify master password' }))
+    throw new Error(err.error || 'Failed to verify master password')
+  }
 }
 
 export interface WorkspaceResult {
@@ -27,10 +42,12 @@ async function buildOrgKeyMaterial(password?: string): Promise<{ wrappedOrgKey: 
   let masterKey = await getCachedMasterKey()
   if (!masterKey) {
     if (!password) throw new Error('Master password required')
-    const user = await getCurrentUser()
-    if (!user) throw new Error('Not authenticated')
-    const kdfParams: KdfParams = JSON.parse(user.kdf_params)
-    masterKey = await deriveKey(password, base64Decode(user.kdf_salt), kdfParams)
+    await verifyMasterPassword(password)
+    // Seed the vault with the now-proven password: the master key stays
+    // cached for the rest of the browser session, like after a login.
+    await seedVaultFromLogin(password)
+    masterKey = await getCachedMasterKey()
+    if (!masterKey) throw new Error('Master password required')
   }
 
   const orgKey = generateKey()

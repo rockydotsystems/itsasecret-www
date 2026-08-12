@@ -109,7 +109,16 @@ export const Route = createFileRoute('/api/auth/login')({
                 .set({ wrapped_org_key: masterWrapped })
                 .where(and(eq(orgMembers.org_id, member.org_id), eq(orgMembers.user_id, user.id)))
             } else {
-              orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
+              try {
+                orgKey = await unwrapKey(derivedKey, member.wrapped_org_key)
+              } catch {
+                // Corrupt row (wrapped under a mistyped password by a
+                // pre-verification workspace wizard): the org is unreachable
+                // through this key either way - skip it so one bad row can't
+                // take down the whole login with a 500.
+                console.error(`login: user ${user.id}: skipping org ${member.org_id} - wrapped_org_key does not unwrap with master key`)
+                continue
+              }
             }
             orgKeys[member.org_id] = await encrypt(sessionKey, base64Encode(orgKey))
             masterWrappedOrgKeys[member.org_id] = masterWrapped

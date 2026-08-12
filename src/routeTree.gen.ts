@@ -36,6 +36,7 @@ import { Route as ApiInvitesAcceptRouteImport } from './routes/api/invites.accep
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
 import { Route as ApiDlTargetRouteImport } from './routes/api/dl.$target'
 import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing/webhook'
+import { Route as ApiAuthVerifyPasswordRouteImport } from './routes/api/auth/verify-password'
 import { Route as ApiAuthVerifyEmailRouteImport } from './routes/api/auth/verify-email'
 import { Route as ApiAuthResendVerificationRouteImport } from './routes/api/auth/resend-verification'
 import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
@@ -212,6 +213,11 @@ const ApiDlTargetRoute = ApiDlTargetRouteImport.update({
 const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
   id: '/api/billing/webhook',
   path: '/api/billing/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthVerifyPasswordRoute = ApiAuthVerifyPasswordRouteImport.update({
+  id: '/api/auth/verify-password',
+  path: '/api/auth/verify-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthVerifyEmailRoute = ApiAuthVerifyEmailRouteImport.update({
@@ -473,6 +479,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -544,6 +551,7 @@ export interface FileRoutesByTo {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -616,6 +624,7 @@ export interface FileRoutesById {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -689,6 +698,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/auth/verify-password'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -760,6 +770,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/auth/verify-password'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -831,6 +842,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/auth/verify-password'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -903,6 +915,7 @@ export interface RootRouteChildren {
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
   ApiAuthResendVerificationRoute: typeof ApiAuthResendVerificationRoute
   ApiAuthVerifyEmailRoute: typeof ApiAuthVerifyEmailRoute
+  ApiAuthVerifyPasswordRoute: typeof ApiAuthVerifyPasswordRoute
   ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiDlTargetRoute: typeof ApiDlTargetRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
@@ -1105,6 +1118,13 @@ declare module '@tanstack/react-router' {
       path: '/api/billing/webhook'
       fullPath: '/api/billing/webhook'
       preLoaderRoute: typeof ApiBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/verify-password': {
+      id: '/api/auth/verify-password'
+      path: '/api/auth/verify-password'
+      fullPath: '/api/auth/verify-password'
+      preLoaderRoute: typeof ApiAuthVerifyPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/verify-email': {
@@ -1682,6 +1702,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
   ApiAuthResendVerificationRoute: ApiAuthResendVerificationRoute,
   ApiAuthVerifyEmailRoute: ApiAuthVerifyEmailRoute,
+  ApiAuthVerifyPasswordRoute: ApiAuthVerifyPasswordRoute,
   ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiDlTargetRoute: ApiDlTargetRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
