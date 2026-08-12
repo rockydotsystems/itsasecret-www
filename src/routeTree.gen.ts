@@ -35,6 +35,7 @@ import { Route as ApiOrgsOrgIdRouteImport } from './routes/api/orgs/$orgId'
 import { Route as ApiInvitesAcceptRouteImport } from './routes/api/invites.accept'
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
 import { Route as ApiDlTargetRouteImport } from './routes/api/dl.$target'
+import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing/webhook'
 import { Route as ApiAuthVerifyEmailRouteImport } from './routes/api/auth/verify-email'
 import { Route as ApiAuthResendVerificationRouteImport } from './routes/api/auth/resend-verification'
 import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
@@ -51,6 +52,7 @@ import { Route as ApiOrgsOrgIdProjectsRouteImport } from './routes/api/orgs/$org
 import { Route as ApiOrgsOrgIdMembersRouteImport } from './routes/api/orgs/$orgId.members'
 import { Route as ApiOrgsOrgIdKeyRouteImport } from './routes/api/orgs/$orgId.key'
 import { Route as ApiOrgsOrgIdInviteRouteImport } from './routes/api/orgs/$orgId.invite'
+import { Route as ApiOrgsOrgIdBillingRouteImport } from './routes/api/orgs/$orgId.billing'
 import { Route as ApiEnvsEnvIdVarsRouteImport } from './routes/api/envs/$envId.vars'
 import { Route as ApiEnvsEnvIdTeamPermissionsRouteImport } from './routes/api/envs/$envId.team-permissions'
 import { Route as ApiEnvsEnvIdSecretsRouteImport } from './routes/api/envs/$envId.secrets'
@@ -59,6 +61,8 @@ import { Route as ApiProjectsProjectIdTeamPermissionsTeamIdRouteImport } from '.
 import { Route as ApiOrgsOrgIdTeamsTeamIdRouteImport } from './routes/api/orgs/$orgId.teams.$teamId'
 import { Route as ApiOrgsOrgIdMembersUserIdRouteImport } from './routes/api/orgs/$orgId.members.$userId'
 import { Route as ApiOrgsOrgIdInvitesInviteIdRouteImport } from './routes/api/orgs/$orgId.invites.$inviteId'
+import { Route as ApiOrgsOrgIdBillingPortalRouteImport } from './routes/api/orgs/$orgId.billing.portal'
+import { Route as ApiOrgsOrgIdBillingCheckoutRouteImport } from './routes/api/orgs/$orgId.billing.checkout'
 import { Route as ApiEnvsEnvIdVarsKeyRouteImport } from './routes/api/envs/$envId.vars.$key'
 import { Route as ApiEnvsEnvIdTeamPermissionsTeamIdRouteImport } from './routes/api/envs/$envId.team-permissions.$teamId'
 import { Route as ApiEnvsEnvIdSecretsKeyRouteImport } from './routes/api/envs/$envId.secrets.$key'
@@ -205,6 +209,11 @@ const ApiDlTargetRoute = ApiDlTargetRouteImport.update({
   path: '/api/dl/$target',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
+  id: '/api/billing/webhook',
+  path: '/api/billing/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthVerifyEmailRoute = ApiAuthVerifyEmailRouteImport.update({
   id: '/api/auth/verify-email',
   path: '/api/auth/verify-email',
@@ -290,6 +299,11 @@ const ApiOrgsOrgIdInviteRoute = ApiOrgsOrgIdInviteRouteImport.update({
   path: '/invite',
   getParentRoute: () => ApiOrgsOrgIdRoute,
 } as any)
+const ApiOrgsOrgIdBillingRoute = ApiOrgsOrgIdBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => ApiOrgsOrgIdRoute,
+} as any)
 const ApiEnvsEnvIdVarsRoute = ApiEnvsEnvIdVarsRouteImport.update({
   id: '/vars',
   path: '/vars',
@@ -333,6 +347,18 @@ const ApiOrgsOrgIdInvitesInviteIdRoute =
     id: '/invites/$inviteId',
     path: '/invites/$inviteId',
     getParentRoute: () => ApiOrgsOrgIdRoute,
+  } as any)
+const ApiOrgsOrgIdBillingPortalRoute =
+  ApiOrgsOrgIdBillingPortalRouteImport.update({
+    id: '/portal',
+    path: '/portal',
+    getParentRoute: () => ApiOrgsOrgIdBillingRoute,
+  } as any)
+const ApiOrgsOrgIdBillingCheckoutRoute =
+  ApiOrgsOrgIdBillingCheckoutRouteImport.update({
+    id: '/checkout',
+    path: '/checkout',
+    getParentRoute: () => ApiOrgsOrgIdBillingRoute,
   } as any)
 const ApiEnvsEnvIdVarsKeyRoute = ApiEnvsEnvIdVarsKeyRouteImport.update({
   id: '/$key',
@@ -447,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/invites/accept': typeof ApiInvitesAcceptRoute
@@ -460,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
+  '/api/orgs/$orgId/billing': typeof ApiOrgsOrgIdBillingRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
@@ -473,6 +501,8 @@ export interface FileRoutesByFullPath {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/billing/checkout': typeof ApiOrgsOrgIdBillingCheckoutRoute
+  '/api/orgs/$orgId/billing/portal': typeof ApiOrgsOrgIdBillingPortalRoute
   '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
@@ -514,6 +544,7 @@ export interface FileRoutesByTo {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/invites/accept': typeof ApiInvitesAcceptRoute
@@ -527,6 +558,7 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
+  '/api/orgs/$orgId/billing': typeof ApiOrgsOrgIdBillingRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
@@ -540,6 +572,8 @@ export interface FileRoutesByTo {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/billing/checkout': typeof ApiOrgsOrgIdBillingCheckoutRoute
+  '/api/orgs/$orgId/billing/portal': typeof ApiOrgsOrgIdBillingPortalRoute
   '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
@@ -582,6 +616,7 @@ export interface FileRoutesById {
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
+  '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
   '/api/invites/accept': typeof ApiInvitesAcceptRoute
@@ -595,6 +630,7 @@ export interface FileRoutesById {
   '/api/envs/$envId/secrets': typeof ApiEnvsEnvIdSecretsRouteWithChildren
   '/api/envs/$envId/team-permissions': typeof ApiEnvsEnvIdTeamPermissionsRouteWithChildren
   '/api/envs/$envId/vars': typeof ApiEnvsEnvIdVarsRouteWithChildren
+  '/api/orgs/$orgId/billing': typeof ApiOrgsOrgIdBillingRouteWithChildren
   '/api/orgs/$orgId/invite': typeof ApiOrgsOrgIdInviteRoute
   '/api/orgs/$orgId/key': typeof ApiOrgsOrgIdKeyRoute
   '/api/orgs/$orgId/members': typeof ApiOrgsOrgIdMembersRouteWithChildren
@@ -608,6 +644,8 @@ export interface FileRoutesById {
   '/api/envs/$envId/secrets/$key': typeof ApiEnvsEnvIdSecretsKeyRouteWithChildren
   '/api/envs/$envId/team-permissions/$teamId': typeof ApiEnvsEnvIdTeamPermissionsTeamIdRoute
   '/api/envs/$envId/vars/$key': typeof ApiEnvsEnvIdVarsKeyRouteWithChildren
+  '/api/orgs/$orgId/billing/checkout': typeof ApiOrgsOrgIdBillingCheckoutRoute
+  '/api/orgs/$orgId/billing/portal': typeof ApiOrgsOrgIdBillingPortalRoute
   '/api/orgs/$orgId/invites/$inviteId': typeof ApiOrgsOrgIdInvitesInviteIdRoute
   '/api/orgs/$orgId/members/$userId': typeof ApiOrgsOrgIdMembersUserIdRoute
   '/api/orgs/$orgId/teams/$teamId': typeof ApiOrgsOrgIdTeamsTeamIdRouteWithChildren
@@ -651,6 +689,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
     | '/api/invites/accept'
@@ -664,6 +703,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
+    | '/api/orgs/$orgId/billing'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
@@ -677,6 +717,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/billing/checkout'
+    | '/api/orgs/$orgId/billing/portal'
     | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
@@ -718,6 +760,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
     | '/api/invites/accept'
@@ -731,6 +774,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
+    | '/api/orgs/$orgId/billing'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
@@ -744,6 +788,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/billing/checkout'
+    | '/api/orgs/$orgId/billing/portal'
     | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
@@ -785,6 +831,7 @@ export interface FileRouteTypes {
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
+    | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
     | '/api/invites/accept'
@@ -798,6 +845,7 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets'
     | '/api/envs/$envId/team-permissions'
     | '/api/envs/$envId/vars'
+    | '/api/orgs/$orgId/billing'
     | '/api/orgs/$orgId/invite'
     | '/api/orgs/$orgId/key'
     | '/api/orgs/$orgId/members'
@@ -811,6 +859,8 @@ export interface FileRouteTypes {
     | '/api/envs/$envId/secrets/$key'
     | '/api/envs/$envId/team-permissions/$teamId'
     | '/api/envs/$envId/vars/$key'
+    | '/api/orgs/$orgId/billing/checkout'
+    | '/api/orgs/$orgId/billing/portal'
     | '/api/orgs/$orgId/invites/$inviteId'
     | '/api/orgs/$orgId/members/$userId'
     | '/api/orgs/$orgId/teams/$teamId'
@@ -853,6 +903,7 @@ export interface RootRouteChildren {
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
   ApiAuthResendVerificationRoute: typeof ApiAuthResendVerificationRoute
   ApiAuthVerifyEmailRoute: typeof ApiAuthVerifyEmailRoute
+  ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiDlTargetRoute: typeof ApiDlTargetRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
   ApiInvitesAcceptRoute: typeof ApiInvitesAcceptRoute
@@ -1049,6 +1100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDlTargetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/billing/webhook': {
+      id: '/api/billing/webhook'
+      path: '/api/billing/webhook'
+      fullPath: '/api/billing/webhook'
+      preLoaderRoute: typeof ApiBillingWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/verify-email': {
       id: '/api/auth/verify-email'
       path: '/api/auth/verify-email'
@@ -1161,6 +1219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiOrgsOrgIdInviteRouteImport
       parentRoute: typeof ApiOrgsOrgIdRoute
     }
+    '/api/orgs/$orgId/billing': {
+      id: '/api/orgs/$orgId/billing'
+      path: '/billing'
+      fullPath: '/api/orgs/$orgId/billing'
+      preLoaderRoute: typeof ApiOrgsOrgIdBillingRouteImport
+      parentRoute: typeof ApiOrgsOrgIdRoute
+    }
     '/api/envs/$envId/vars': {
       id: '/api/envs/$envId/vars'
       path: '/vars'
@@ -1216,6 +1281,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/orgs/$orgId/invites/$inviteId'
       preLoaderRoute: typeof ApiOrgsOrgIdInvitesInviteIdRouteImport
       parentRoute: typeof ApiOrgsOrgIdRoute
+    }
+    '/api/orgs/$orgId/billing/portal': {
+      id: '/api/orgs/$orgId/billing/portal'
+      path: '/portal'
+      fullPath: '/api/orgs/$orgId/billing/portal'
+      preLoaderRoute: typeof ApiOrgsOrgIdBillingPortalRouteImport
+      parentRoute: typeof ApiOrgsOrgIdBillingRoute
+    }
+    '/api/orgs/$orgId/billing/checkout': {
+      id: '/api/orgs/$orgId/billing/checkout'
+      path: '/checkout'
+      fullPath: '/api/orgs/$orgId/billing/checkout'
+      preLoaderRoute: typeof ApiOrgsOrgIdBillingCheckoutRouteImport
+      parentRoute: typeof ApiOrgsOrgIdBillingRoute
     }
     '/api/envs/$envId/vars/$key': {
       id: '/api/envs/$envId/vars/$key'
@@ -1442,6 +1521,19 @@ const ApiEnvsEnvIdRouteWithChildren = ApiEnvsEnvIdRoute._addFileChildren(
   ApiEnvsEnvIdRouteChildren,
 )
 
+interface ApiOrgsOrgIdBillingRouteChildren {
+  ApiOrgsOrgIdBillingCheckoutRoute: typeof ApiOrgsOrgIdBillingCheckoutRoute
+  ApiOrgsOrgIdBillingPortalRoute: typeof ApiOrgsOrgIdBillingPortalRoute
+}
+
+const ApiOrgsOrgIdBillingRouteChildren: ApiOrgsOrgIdBillingRouteChildren = {
+  ApiOrgsOrgIdBillingCheckoutRoute: ApiOrgsOrgIdBillingCheckoutRoute,
+  ApiOrgsOrgIdBillingPortalRoute: ApiOrgsOrgIdBillingPortalRoute,
+}
+
+const ApiOrgsOrgIdBillingRouteWithChildren =
+  ApiOrgsOrgIdBillingRoute._addFileChildren(ApiOrgsOrgIdBillingRouteChildren)
+
 interface ApiOrgsOrgIdMembersRouteChildren {
   ApiOrgsOrgIdMembersUserIdRoute: typeof ApiOrgsOrgIdMembersUserIdRoute
 }
@@ -1495,6 +1587,7 @@ const ApiOrgsOrgIdTeamsRouteWithChildren =
   ApiOrgsOrgIdTeamsRoute._addFileChildren(ApiOrgsOrgIdTeamsRouteChildren)
 
 interface ApiOrgsOrgIdRouteChildren {
+  ApiOrgsOrgIdBillingRoute: typeof ApiOrgsOrgIdBillingRouteWithChildren
   ApiOrgsOrgIdInviteRoute: typeof ApiOrgsOrgIdInviteRoute
   ApiOrgsOrgIdKeyRoute: typeof ApiOrgsOrgIdKeyRoute
   ApiOrgsOrgIdMembersRoute: typeof ApiOrgsOrgIdMembersRouteWithChildren
@@ -1504,6 +1597,7 @@ interface ApiOrgsOrgIdRouteChildren {
 }
 
 const ApiOrgsOrgIdRouteChildren: ApiOrgsOrgIdRouteChildren = {
+  ApiOrgsOrgIdBillingRoute: ApiOrgsOrgIdBillingRouteWithChildren,
   ApiOrgsOrgIdInviteRoute: ApiOrgsOrgIdInviteRoute,
   ApiOrgsOrgIdKeyRoute: ApiOrgsOrgIdKeyRoute,
   ApiOrgsOrgIdMembersRoute: ApiOrgsOrgIdMembersRouteWithChildren,
@@ -1588,6 +1682,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
   ApiAuthResendVerificationRoute: ApiAuthResendVerificationRoute,
   ApiAuthVerifyEmailRoute: ApiAuthVerifyEmailRoute,
+  ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiDlTargetRoute: ApiDlTargetRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,
   ApiInvitesAcceptRoute: ApiInvitesAcceptRoute,

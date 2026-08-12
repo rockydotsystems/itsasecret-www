@@ -7,6 +7,7 @@ import { users, orgs, orgMembers, orgInvites, projects, environments, envPermiss
 import { requireAuth, getCurrentUserFromRequest } from '~/lib/auth'
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE } from '~/lib/session-cookie'
 import { requireOrgRole, memberEnvRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { getBillingView } from '~/lib/plans'
 import { listOrgTeams } from '~/lib/teams'
 import type { TeamView } from '~/lib/teams'
 import type { Org, Project, Environment } from '~/lib/schema'
@@ -115,6 +116,7 @@ async function listOrgsForUser(userId: string): Promise<Org[]> {
     id: orgs.id,
     name: orgs.name,
     kind: orgs.kind,
+    plan: orgs.plan,
     owner_user_id: orgs.owner_user_id,
     created_at: orgs.created_at,
     deleted_at: orgs.deleted_at,
@@ -244,6 +246,7 @@ export type OrgSettingsView = OrgView & {
   members: OrgMemberView[]
   invites: OrgInviteView[]
   teams: TeamView[]
+  billing: import('~/lib/plans').BillingView
   currentUserId: string
   currentUserRole: string
 }
@@ -260,7 +263,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
 
     await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
 
-    const [userOrgs, orgProjects, lastProjectId, members, invites, orgTeams] = await Promise.all([
+    const [userOrgs, orgProjects, lastProjectId, members, invites, orgTeams, billing] = await Promise.all([
       listOrgsForUser(user.id),
       listProjectsForOrg(orgId),
       lastProjectIdForOrg(user.id, orgId),
@@ -286,6 +289,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
           gt(orgInvites.expires_at, new Date())
         )),
       listOrgTeams(orgId),
+      getBillingView(orgId),
     ])
 
     const org = userOrgs.find((o) => o.id === orgId)
@@ -293,7 +297,7 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
     const projectId = orgProjects.find((p) => p.id === lastProjectId)?.id ?? orgProjects[0]?.id ?? ''
     const currentUserRole = members.find((m) => m.user_id === user.id)?.role ?? ''
 
-    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, invites, teams: orgTeams, currentUserId: user.id, currentUserRole }
+    return { orgs: userOrgs, projects: orgProjects, projectId, org, members, invites, teams: orgTeams, billing, currentUserId: user.id, currentUserRole }
   })
 
 export type EnvPermissionView = {

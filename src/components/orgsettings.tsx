@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { Avatar } from '~/components/avatar'
 import { Badge } from '~/components/badge'
+import { BillingSection } from '~/components/billingsettings'
 import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
@@ -50,7 +51,7 @@ function formatJoined(date: Date | string): string {
 }
 
 export function OrgSettings({ view }: OrgSettingsProps) {
-  const { org, members, invites, teams, currentUserId, currentUserRole } = view
+  const { org, members, invites, teams, billing, currentUserId, currentUserRole } = view
   const navigate = useNavigate()
   const router = useRouter()
 
@@ -65,6 +66,7 @@ export function OrgSettings({ view }: OrgSettingsProps) {
   return (
     <div className="settings-sections">
       <GeneralSection org={org} canManage={canManage} isPersonal={isPersonal} onSaved={refresh} />
+      <BillingSection orgId={org.id} orgKind={org.kind} billing={billing} canManage={canManage} />
       <MembersSection
         orgId={org.id}
         members={members}

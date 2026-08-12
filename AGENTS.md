@@ -90,6 +90,33 @@ docker compose up -d           # start Postgres 17
 - **Profile page at `/dashboard/profile`** (`src/components/profilesettings.tsx`,
   client calls in `src/lib/profile-form.ts`): display name (`users.name`,
   nullable - empty stores null), master-password change, and feedback.
+- **Billing is Stripe via a hand-rolled REST client** (`src/lib/stripe.ts` - no
+  SDK, same discipline as `s3-presign.ts`). Env: `STRIPE_SECRET_KEY`,
+  `STRIPE_TEAM_PRICE_ID` (monthly per-seat Team price),
+  `STRIPE_WEBHOOK_SECRET`. Without the secret key `isBillingEnabled()` is false:
+  checkout/portal 503 and every org stays on free limits (enforcement is
+  DB-side, not Stripe-side). Plans (`src/lib/plans.ts`, public constants in
+  `src/lib/plans-shared.ts`): `orgs.plan` ('free'|'team') is the source of
+  truth for limits - free 20 projects, team 50 - enforced by
+  `assertProjectCapacity` on project creation; over-limit orgs after a
+  downgrade keep everything, they just can't create more. Personal orgs are
+  always free. Billable seats = members minus one free super-user, floor 1;
+  `syncOrgSeats` re-pushes the quantity to Stripe (fire-and-forget after
+  member add/remove, `proration_behavior=always_invoice`).
+  `billing_subscriptions` (one row per org that ever checked out; customer id
+  survives cancellation for re-subscribe) is synced by
+  `POST /api/billing/webhook`, which is exempt from the API CSRF middleware in
+  `start.ts` and authenticated by the Stripe-Signature HMAC over the raw body;
+  `billing_events` is the idempotency ledger (insert-first, unique-conflict =
+  replay). Paid statuses are active/trialing/past_due (dunning grace);
+  `invoice.payment_failed` marks past_due and emails the org owner. The web UI
+  never collects card data - upgrade goes through Stripe-hosted Checkout
+  (`POST /api/orgs/:id/billing/checkout`, owner/admin, shared orgs only),
+  management through the hosted portal
+  (`POST /api/orgs/:id/billing/portal`); both return URLs redirected back to
+  `/dashboard/:orgId/settings?billing=success|canceled`. Teleportation between
+  plans never happens client-side - only `applySubscription` in the webhook
+  flips `orgs.plan`.
 - **Password change follows the login trust model** (`POST
   /api/auth/change-password`): the server sees the password transiently, never
   stores it - verify current password, unwrap every non-pending
@@ -140,6 +167,9 @@ www/
       route-guards.ts    # requireAuthBeforeLoad / requireGuestBeforeLoad route guards
       session-cookie.ts  # session_token cookie helpers (Set-Cookie / read)
       rbac.ts            # requireOrgRole, requireEnvRole, memberEnvRole (teams-aware effective-role resolver)
+      stripe.ts          # hand-rolled Stripe REST client + webhook HMAC verification
+      plans.ts           # plan limits, project-cap enforcement, seat sync (server-only)
+      plans-shared.ts    # plan constants safe for client imports
       teams.ts           # getLiveTeam, listOrgTeams helpers
       sessions.ts        # createSession, revokeSession
       crypto/            # envelope encryption (encrypt/decrypt/wrap/unwrap)

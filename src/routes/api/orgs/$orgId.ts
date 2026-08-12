@@ -6,6 +6,7 @@ import { orgs, orgMembers } from '~/lib/schema'
 import { auditLog, softDeleteOrg } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { cancelOrgSubscription } from '~/lib/plans'
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -103,6 +104,9 @@ export const Route = createFileRoute('/api/orgs/$orgId')({
           }
           await softDeleteOrg(orgId)
           await auditLog({ orgId, actorUserId: user.id, action: 'org.delete', targetType: 'org', targetId: orgId })
+          // Best-effort: a deleted org must not keep billing. The arriving
+          // customer.subscription.deleted webhook flips the plan to free.
+          if (org.plan !== 'free') void cancelOrgSubscription(orgId)
           return new Response(null, { status: 204 })
         } catch (err) {
           return errorResponse(err)

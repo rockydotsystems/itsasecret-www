@@ -57,7 +57,8 @@ export async function softDeleteSecret(id: string): Promise<void> {
 
 export async function auditLog(entry: {
   orgId?: string
-  actorUserId: string
+  // Nullable: webhooks (Stripe) act without a user.
+  actorUserId?: string | null
   action: string
   targetType?: string
   targetId?: string
@@ -66,7 +67,7 @@ export async function auditLog(entry: {
   await db.insert(schema.auditLog).values({
     id: generateId(),
     org_id: entry.orgId ?? null,
-    actor_user_id: entry.actorUserId,
+    actor_user_id: entry.actorUserId ?? null,
     action: entry.action,
     target_type: entry.targetType ?? null,
     target_id: entry.targetId ?? null,

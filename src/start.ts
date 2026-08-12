@@ -6,7 +6,9 @@ const csrfMiddleware = createCsrfMiddleware({
 
 const apiCsrfMiddleware = createMiddleware({ type: 'request' }).server(
   async ({ request, pathname, next }) => {
-    if (pathname.startsWith('/api/')) {
+    // The Stripe webhook is the one unauthenticated POST: Stripe signs the
+    // raw body (Stripe-Signature HMAC), which the route verifies itself.
+    if (pathname.startsWith('/api/') && pathname !== '/api/billing/webhook') {
       const method = request.method.toUpperCase()
       if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
         const hasBearer = request.headers.get('authorization')?.startsWith('Bearer ')

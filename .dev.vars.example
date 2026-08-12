@@ -9,3 +9,12 @@ APP_ENV=development
 # Public origin used to build verification links. Falls back to the request
 # origin when unset (needed when the app runs behind a reverse proxy).
 # APP_URL=http://localhost:3000
+
+# Billing (Stripe). All three are needed for checkout/portal; without
+# STRIPE_SECRET_KEY the billing API 503s and every org stays on free limits.
+# STRIPE_TEAM_PRICE_ID is the recurring monthly per-seat Team price.
+# STRIPE_WEBHOOK_SECRET comes from `stripe listen` (dev) or the dashboard
+# webhook endpoint (prod) pointed at POST /api/billing/webhook.
+# STRIPE_SECRET_KEY=sk_test_xxxxxxxx
+# STRIPE_TEAM_PRICE_ID=price_xxxxxxxx
+# STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxx

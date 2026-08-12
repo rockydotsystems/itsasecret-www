@@ -7,6 +7,11 @@ import type { OrgSettingsView } from '~/lib/orgs-server'
 
 export const Route = createFileRoute('/dashboard/$orgId/settings')({
   beforeLoad: requireAuthBeforeLoad,
+  // Stripe checkout redirects back here with ?billing=success|canceled.
+  validateSearch: (search: Record<string, unknown>): { billing?: string } => {
+    const billing = search.billing
+    return { billing: billing === 'success' || billing === 'canceled' ? billing : undefined }
+  },
   loader: async ({ params }): Promise<OrgSettingsView> => {
     try {
       return await getOrgSettingsFn({ data: { orgId: params.orgId } })
@@ -19,6 +24,7 @@ export const Route = createFileRoute('/dashboard/$orgId/settings')({
 
 function OrgSettingsPage() {
   const { orgId } = Route.useParams()
+  const { billing: billingResult } = Route.useSearch()
   const view = Route.useLoaderData()
   return (
     <div className="app-shell">
@@ -30,6 +36,14 @@ function OrgSettingsPage() {
             {view.org.name} · {view.members.length} {view.members.length === 1 ? 'member' : 'members'}
           </span>
         </div>
+        {billingResult === 'success' && (
+          <p className="billing-notice billing-notice--ok">
+            Payment complete - the Team plan activates as soon as Stripe confirms, usually within seconds.
+          </p>
+        )}
+        {billingResult === 'canceled' && (
+          <p className="billing-notice">Checkout was canceled - nothing was charged.</p>
+        )}
         <OrgSettings view={view} key={view.org.id} />
       </main>
     </div>

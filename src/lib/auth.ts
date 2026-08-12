@@ -6,6 +6,7 @@ import type { User, Session } from './schema'
 import { base64Encode, base64Decode } from './crypto/base64'
 import { decrypt } from './crypto/envelope'
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE } from './session-cookie'
+import { StripeApiError } from './stripe'
 
 export interface AuthContext {
   user: User
@@ -168,6 +169,12 @@ export function errorResponse(err: unknown): Response {
   if (err instanceof ZodError) {
     const issue = err.issues[0]
     return Response.json({ error: issue?.message ?? 'Invalid input' }, { status: 400 })
+  }
+  // Stripe errors surface to the owner/admin running checkout - the message
+  // ("No such price", "Invalid API Key") is the fastest path to fixing a
+  // misconfiguration; Stripe never includes secrets in error bodies.
+  if (err instanceof StripeApiError) {
+    return Response.json({ error: err.message }, { status: 502 })
   }
   console.error('Unhandled error:', err)
   return Response.json({ error: 'Internal server error' }, { status: 500 })

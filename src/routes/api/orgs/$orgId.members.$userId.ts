@@ -7,6 +7,7 @@ import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { revokeAllUserSessions } from '~/lib/sessions'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { syncOrgSeats } from '~/lib/plans'
 
 const updateSchema = z.object({
   role: z.enum([ORG_ROLE_ADMIN, ORG_ROLE_MEMBER]),
@@ -84,6 +85,9 @@ export const Route = createFileRoute('/api/orgs/$orgId/members/$userId')({
           // access ends now (their next login re-establishes other orgs).
           await revokeAllUserSessions(targetUserId)
           await auditLog({ orgId, actorUserId: user.id, action: 'member.remove', targetType: 'user', targetId: targetUserId })
+          // Fire-and-forget: smaller roster = fewer billable seats; a Stripe
+          // hiccup must not block the removal.
+          void syncOrgSeats(orgId)
           return new Response(null, { status: 204 })
         } catch (err) {
           return errorResponse(err)

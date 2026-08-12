@@ -234,6 +234,46 @@ export async function sendFeedbackEmail({ fromUserEmail, fromUserName, message }
   }
 }
 
+export interface SendPaymentFailedEmailArgs {
+  to: string
+  orgName: string
+}
+
+// Tells the org owner a Team payment failed. Stripe's own dunning emails go
+// to the billing email on the customer object; this one names the org so
+// multi-org owners know which subscription is at risk. Best-effort: sent
+// from a webhook, failures logged and swallowed.
+export async function sendPaymentFailedEmail({ to, orgName }: SendPaymentFailedEmailArgs): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+
+  if (!apiKey) {
+    if (isDev()) {
+      console.log(`\n[email:dev] Payment failed for org "${orgName}" (owner ${to}) - no RESEND_API_KEY set, skipping email\n`)
+    }
+    return
+  }
+
+  const res = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+      to,
+      subject: `Payment failed for ${orgName} on itsasecret`,
+      html: paymentFailedEmailHtml({ orgName }),
+      text: `The latest payment for the organization "${orgName}" on itsasecret failed.\n\nWe'll retry the card automatically, but if it keeps failing the organization will drop back to the free plan. Update the payment method from Organization settings → Billing.`,
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error(`[email] Resend payment-failed send failed (${res.status}): ${detail}`)
+  }
+}
+
 // Org names and inviter emails are user-controlled - escape them before
 // interpolating into email HTML.
 function escapeHtml(value: string): string {
@@ -275,6 +315,17 @@ function teamRemovedEmailHtml({ teamName, orgName, removedByEmail }: Omit<SendTe
     <p><strong>${escapeHtml(removedByEmail)}</strong> removed you from the team <strong>${escapeHtml(teamName)}</strong> in the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret.</p>
     <p>You keep any access granted to you individually or through other teams.</p>
     <p style="color:#666;font-size:12px;">No action is needed. If this seems wrong, contact an organization admin.</p>
+  </body>
+</html>`
+}
+
+function paymentFailedEmailHtml({ orgName }: Omit<SendPaymentFailedEmailArgs, 'to'>): string {
+  return `<!doctype html>
+<html>
+  <body style="font-family: system-ui, sans-serif; line-height: 1.5;">
+    <p>The latest payment for the organization <strong>${escapeHtml(orgName)}</strong> on itsasecret failed.</p>
+    <p>We'll retry the card automatically, but if it keeps failing the organization will drop back to the free plan. Update the payment method from <strong>Organization settings → Billing</strong>.</p>
+    <p style="color:#666;font-size:12px;">If you've already fixed this, no action is needed.</p>
   </body>
 </html>`
 }

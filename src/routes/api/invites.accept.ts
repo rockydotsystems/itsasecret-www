@@ -7,6 +7,7 @@ import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { findPendingInviteByToken } from '~/lib/org-invites'
 import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
+import { syncOrgSeats } from '~/lib/plans'
 
 const acceptSchema = z.object({
   token: z.string().max(256),
@@ -88,6 +89,10 @@ export const Route = createFileRoute('/api/invites/accept')({
           })
 
           await auditLog({ orgId: org.id, actorUserId: user.id, action: 'member.invite.accept', targetType: 'user', targetId: user.id, metadata: { role: result.role } })
+
+          // Fire-and-forget: a Stripe hiccup must not block the join; the
+          // next seat sync or webhook corrects the quantity.
+          void syncOrgSeats(org.id)
 
           return Response.json({ org_id: org.id, org_name: org.name, role: result.role }, { status: 200 })
         } catch (err) {

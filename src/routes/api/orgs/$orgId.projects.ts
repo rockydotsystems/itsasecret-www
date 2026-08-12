@@ -6,6 +6,7 @@ import { projects } from '~/lib/schema'
 import { auditLog, createProjectWithEnv } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { assertProjectCapacity } from '~/lib/plans'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(100),
@@ -37,6 +38,8 @@ export const Route = createFileRoute('/api/orgs/$orgId/projects')({
             .where(and(eq(projects.org_id, orgId), eq(projects.name, name), isNull(projects.deleted_at)))
             .limit(1)
           if (existingRows[0]) return Response.json({ error: 'Project name already exists' }, { status: 409 })
+
+          await assertProjectCapacity(orgId)
 
           const projectId = await createProjectWithEnv(orgId, name, user.id)
 

@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, timestamp, boolean, primaryKey, unique, uniqueIndex, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, integer, primaryKey, unique, uniqueIndex, index } from 'drizzle-orm/pg-core'
 
 export const users = pgTable('users', {
   id: text().primaryKey(),
@@ -30,6 +30,10 @@ export const orgs = pgTable('orgs', {
   id: text().primaryKey(),
   name: text().notNull(),
   kind: text().notNull().default('shared'),
+  // 'free' | 'team' - see lib/plans.ts. Personal orgs are always free. Kept
+  // on the org row (not derived from the subscription) so limit checks never
+  // depend on Stripe state; webhooks + checkout keep it in sync.
+  plan: text().notNull().default('free'),
   owner_user_id: text().notNull().references(() => users.id),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   deleted_at: timestamp('deleted_at', { withTimezone: true }),
@@ -70,6 +74,38 @@ export const orgInvites = pgTable('org_invites', {
   index('idx_org_invites_org').on(t.org_id),
   index('idx_org_invites_email').on(t.email),
 ])
+
+// One row per org that has ever opened checkout - the billing state Stripe
+// webhooks keep in sync. stripe_customer_id survives a canceled subscription
+// so a re-subscribe reuses the same customer/payment method. No CASCADE: a
+// soft-deleted org keeps its row (used to cancel via the Stripe API), and the
+// 90-day purge leaves billing rows for bookkeeping.
+export const billingSubscriptions = pgTable('billing_subscriptions', {
+  id: text().primaryKey(),
+  org_id: text().notNull().unique().references(() => orgs.id),
+  stripe_customer_id: text().notNull().unique(),
+  // Null until the first checkout session completes and Stripe assigns the
+  // subscription id via webhook.
+  stripe_subscription_id: text().unique(),
+  status: text().notNull().default('incomplete'),
+  // Stripe subscription item quantity = billable seats (members minus the one
+  // free super-user, min 1). Kept in sync on member add/remove.
+  seat_count: integer('seat_count').notNull().default(1),
+  current_period_end: timestamp('current_period_end', { withTimezone: true }),
+  cancel_at_period_end: boolean('cancel_at_period_end').notNull().default(false),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (t) => [
+  index('idx_billing_subscriptions_org').on(t.org_id),
+])
+
+// Stripe webhook delivery is at-least-once; this table is the idempotency
+// ledger. Event ids are inserted before handling, unique-violation = replay.
+export const billingEvents = pgTable('billing_events', {
+  id: text().primaryKey(),
+  type: text().notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+})
 
 export const projects = pgTable('projects', {
   id: text().primaryKey(),
@@ -306,6 +342,8 @@ export type EmailVerification = typeof emailVerifications.$inferSelect
 export type Org = typeof orgs.$inferSelect
 export type OrgMember = typeof orgMembers.$inferSelect
 export type OrgInvite = typeof orgInvites.$inferSelect
+export type BillingSubscription = typeof billingSubscriptions.$inferSelect
+export type BillingEvent = typeof billingEvents.$inferSelect
 export type Project = typeof projects.$inferSelect
 export type Environment = typeof environments.$inferSelect
 export type EnvVar = typeof envVars.$inferSelect
