@@ -12,7 +12,14 @@ const buckets = new Map<string, Bucket>()
 const WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 const MAX_ATTEMPTS = 10
 
+// TEMP local-dev escape hatch: `RATE_LIMIT_DISABLED=1 vite dev` turns every
+// limiter into a no-op. Never set this on a deployed instance.
+const rateLimitDisabled = process.env.RATE_LIMIT_DISABLED === '1'
+
 export function isRateLimited(key: string): { limited: boolean; retryAfterSeconds: number } {
+  if (rateLimitDisabled) {
+    return { limited: false, retryAfterSeconds: 0 }
+  }
   const now = Date.now()
   const bucket = buckets.get(key)
 
@@ -28,6 +35,9 @@ export function isRateLimited(key: string): { limited: boolean; retryAfterSecond
 }
 
 export function recordFailedAttempt(key: string): void {
+  if (rateLimitDisabled) {
+    return
+  }
   const now = Date.now()
   const bucket = buckets.get(key)
 
