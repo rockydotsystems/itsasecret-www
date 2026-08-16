@@ -6,6 +6,7 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { NotFound } from '~/components/not-found'
+import { VirtualScrollbars } from '~/components/virtualscrollbars'
 import '~/styles.css'
 
 export const Route = createRootRoute({
@@ -30,12 +31,13 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className="has-virtual-scroll">
       <head>
         <HeadContent />
       </head>
       <body>
         {children}
+        <VirtualScrollbars />
         <Scripts />
       </body>
     </html>
