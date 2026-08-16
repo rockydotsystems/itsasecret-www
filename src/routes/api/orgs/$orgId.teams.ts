@@ -7,6 +7,7 @@ import { generateId, auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
 import { listOrgTeams } from '~/lib/teams'
+import { assertCollaborationAllowed } from '~/lib/plans'
 import { displayName } from '~/lib/validation'
 
 const createSchema = z.object({
@@ -41,6 +42,7 @@ export const Route = createFileRoute('/api/orgs/$orgId/teams')({
           if (org.kind === 'personal') {
             return Response.json({ error: 'Personal organizations cannot have teams' }, { status: 403 })
           }
+          await assertCollaborationAllowed(orgId)
 
           const dupRows = await db.select({ id: teams.id }).from(teams)
             .where(and(eq(teams.org_id, orgId), eq(teams.name, name), isNull(teams.deleted_at)))

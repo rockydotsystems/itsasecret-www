@@ -58,6 +58,7 @@ export function OrgSettings({ view }: OrgSettingsProps) {
   const isPersonal = org.kind === 'personal'
   const isOwner = org.owner_user_id === currentUserId
   const canManage = currentUserRole === 'owner' || currentUserRole === 'admin'
+  const collaborationAllowed = billing.collaborationAllowed
 
   async function refresh() {
     await router.invalidate()
@@ -75,6 +76,7 @@ export function OrgSettings({ view }: OrgSettingsProps) {
         currentUserId={currentUserId}
         canManage={canManage}
         isPersonal={isPersonal}
+        collaborationAllowed={collaborationAllowed}
         onChanged={refresh}
       />
       <TeamsSection
@@ -83,6 +85,7 @@ export function OrgSettings({ view }: OrgSettingsProps) {
         members={members}
         canManage={canManage}
         isPersonal={isPersonal}
+        collaborationAllowed={collaborationAllowed}
         onChanged={refresh}
       />
       <DangerSection
@@ -185,6 +188,7 @@ function MembersSection({
   currentUserId,
   canManage,
   isPersonal,
+  collaborationAllowed,
   onChanged,
 }: {
   orgId: string
@@ -194,6 +198,7 @@ function MembersSection({
   currentUserId: string
   canManage: boolean
   isPersonal: boolean
+  collaborationAllowed: boolean
   onChanged: () => Promise<void>
 }) {
   const [inviting, setInviting] = useState(false)
@@ -237,10 +242,12 @@ function MembersSection({
           <p className="settings-section-desc">
             {isPersonal
               ? 'Personal organizations are single-member. Create a shared organization to collaborate with others.'
-              : 'People with access to every project in this organization. Owners and admins can manage all environments.'}
+              : collaborationAllowed
+                ? 'People with access to every project in this organization. Owners and admins can manage all environments.'
+                : 'Inviting members is a Team plan feature. Upgrade to Team in the Billing section above to collaborate with others.'}
           </p>
         </div>
-        {!isPersonal && canManage && (
+        {!isPersonal && canManage && collaborationAllowed && (
           <Button size="sm" variant="secondary" onClick={() => setInviting(true)}>
             <IconPlus size={16} aria-hidden="true" />
             Invite member
@@ -481,6 +488,7 @@ function TeamsSection({
   members,
   canManage,
   isPersonal,
+  collaborationAllowed,
   onChanged,
 }: {
   orgId: string
@@ -488,6 +496,7 @@ function TeamsSection({
   members: OrgMemberView[]
   canManage: boolean
   isPersonal: boolean
+  collaborationAllowed: boolean
   onChanged: () => Promise<void>
 }) {
   const [creating, setCreating] = useState(false)
@@ -505,10 +514,12 @@ function TeamsSection({
           <p className="settings-section-desc">
             {isPersonal
               ? 'Personal organizations are single-member, so there is nothing to group into teams.'
-              : 'Group members to grant access once per team instead of per person. Grant a team access from a project\'s settings or an environment\'s Access dialog. Team access is additive - the widest grant wins.'}
+              : collaborationAllowed
+                ? 'Group members to grant access once per team instead of per person. Grant a team access from a project\'s settings or an environment\'s Access dialog. Team access is additive - the widest grant wins.'
+                : 'Teams are a Team plan feature. Upgrade to Team in the Billing section above to group members and grant access once per team.'}
           </p>
         </div>
-        {!isPersonal && canManage && (
+        {!isPersonal && canManage && collaborationAllowed && (
           <Button size="sm" variant="secondary" onClick={() => setCreating(true)}>
             <IconPlus size={16} aria-hidden="true" />
             New team

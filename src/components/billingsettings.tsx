@@ -50,8 +50,8 @@ export function BillingSection({ orgId, orgKind, billing, canManage }: BillingSe
             {isTeam
               ? 'This organization is on the Team plan.'
               : isPersonal
-                ? 'Personal organizations are free for solo use. For team collaboration, create a shared organization.'
-                : 'This organization is on the free plan.'}
+                ? 'Personal organizations are free for solo use. To collaborate, create a shared organization and upgrade it to Team.'
+                : 'This organization is on the free plan. Upgrade to Team to invite members and create teams.'}
           </p>
         </div>
         <Badge variant={isTeam ? 'signal' : 'neutral'}>{isTeam ? 'team' : isPersonal ? 'personal' : 'free'}</Badge>

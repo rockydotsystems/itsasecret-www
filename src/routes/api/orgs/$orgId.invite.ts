@@ -6,6 +6,7 @@ import { users, orgs, orgMembers } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse, getSessionKey, getOrgKey } from '~/lib/auth'
 import { requireOrgRole, ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER } from '~/lib/rbac'
+import { assertCollaborationAllowed } from '~/lib/plans'
 import { wrapPendingOrgKey } from '~/lib/pending-org-key'
 import { createOrgInvite, inviteAcceptUrl, normalizeInviteEmail } from '~/lib/org-invites'
 import { sendOrgInviteEmail } from '~/lib/email'
@@ -64,6 +65,7 @@ export const Route = createFileRoute('/api/orgs/$orgId/invite')({
           if (org.kind === 'personal') {
             return Response.json({ error: 'Personal organizations cannot have additional members' }, { status: 403 })
           }
+          await assertCollaborationAllowed(orgId)
 
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const orgKey = await getOrgKey(session, sessionKey, orgId)

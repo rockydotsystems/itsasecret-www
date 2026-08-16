@@ -4,7 +4,7 @@ import { orgs, orgMembers, projects, billingSubscriptions } from './schema'
 import type { BillingSubscription } from './schema'
 import { HttpError } from './auth'
 import { isBillingEnabled, getSubscription, updateSubscriptionQuantity, cancelSubscription, subscriptionSeats } from './stripe'
-import { FREE_MAX_PROJECTS, TEAM_MAX_PROJECTS } from './plans-shared'
+import { FREE_MAX_PROJECTS, TEAM_MAX_PROJECTS, TEAM_SEAT_MONTHLY_USD } from './plans-shared'
 
 // Plans and their limits. The orgs.plan column is the source of truth for
 // enforcement; billing_subscriptions holds the Stripe state behind 'team'.
@@ -62,6 +62,21 @@ export async function assertProjectCapacity(orgId: string): Promise<void> {
   if (current >= limit) {
     throw new HttpError(402, {
       error: `Project limit reached: the ${plan} plan allows ${limit} projects and this organization has ${current}. Upgrade to Team at Organization settings → Billing.`,
+    })
+  }
+}
+
+// Hard gate on collaboration - inviting members and creating teams is the
+// Team-plan feature per /pricing. Enforced on the creation routes (invite,
+// team create). Same keep-everything philosophy as the project cap: an org
+// downgraded to free keeps its existing members, teams, and grants working -
+// it just can't add new ones until it upgrades again. Deleting members and
+// teams stays allowed so a downgrade is always fixable.
+export async function assertCollaborationAllowed(orgId: string): Promise<void> {
+  const plan = await getOrgPlan(orgId)
+  if (!planLimits(plan).collaboration) {
+    throw new HttpError(402, {
+      error: `Inviting members and teams requires the Team plan - $${TEAM_SEAT_MONTHLY_USD}/developer/month. Upgrade at Organization settings → Billing.`,
     })
   }
 }
@@ -131,6 +146,7 @@ export interface BillingView {
   billableSeats: number
   projectCount: number
   maxProjects: number
+  collaborationAllowed: boolean
   billingEnabled: boolean
   subscription: {
     status: string
@@ -155,6 +171,7 @@ export async function getBillingView(orgId: string): Promise<BillingView> {
     billableSeats: billableSeats(memberCount),
     projectCount,
     maxProjects: planLimits(plan).maxProjects,
+    collaborationAllowed: planLimits(plan).collaboration,
     billingEnabled: isBillingEnabled(),
     subscription: sub
       ? {

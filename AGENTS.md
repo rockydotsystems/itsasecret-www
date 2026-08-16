@@ -108,8 +108,14 @@ docker compose up -d           # start Postgres 17
   `src/lib/plans-shared.ts`): `orgs.plan` ('free'|'team') is the source of
   truth for limits - free 20 projects, team 50 - enforced by
   `assertProjectCapacity` on project creation; over-limit orgs after a
-  downgrade keep everything, they just can't create more. Personal orgs are
-  always free. Billable seats = members minus one free super-user, floor 1;
+  downgrade keep everything, they just can't create more. Collaboration
+  (inviting members, creating teams) is Team-only - `assertCollaborationAllowed`
+  gates `POST /api/orgs/:id/invite` and `POST /api/orgs/:id/teams` (402), the
+  org-settings UI keys off `BillingView.collaborationAllowed`, and an org
+  downgraded to free keeps its existing members/teams/grants working, it just
+  can't add new ones until it upgrades again. Personal orgs are structurally
+  single-member and can't have teams regardless of plan. Billable seats =
+  members minus one free super-user, floor 1;
   `syncOrgSeats` re-pushes the quantity to Stripe (fire-and-forget after
   member add/remove, `proration_behavior=always_invoice`).
   `billing_subscriptions` (one row per org that ever checked out; customer id

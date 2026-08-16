@@ -9,6 +9,7 @@ import {
   planLimits,
   isPaidStatus,
   assertProjectCapacity,
+  assertCollaborationAllowed,
   countOrgMembers,
   getOrgPlan,
 } from './plans'
@@ -32,6 +33,12 @@ describe('planLimits', () => {
 
   it('unknown plan strings fall back to free limits', () => {
     expect(planLimits('garbage').maxProjects).toBe(FREE_MAX_PROJECTS)
+  })
+
+  it('collaboration is a Team-only flag', () => {
+    expect(planLimits(PLAN_FREE).collaboration).toBe(false)
+    expect(planLimits(PLAN_TEAM).collaboration).toBe(true)
+    expect(planLimits('garbage').collaboration).toBe(false)
   })
 })
 
@@ -116,5 +123,11 @@ describe.runIf(dbUp)('assertProjectCapacity (db)', () => {
     await db.insert(projects).values(rows)
     expect(await getOrgPlan(ids.teamOrg)).toBe(PLAN_TEAM)
     await expect(assertProjectCapacity(ids.teamOrg)).resolves.toBeUndefined()
+  })
+
+  it('collaboration gate 402s free orgs, allows team orgs', async () => {
+    await expect(assertCollaborationAllowed(ids.freeOrg)).rejects.toMatchObject({ status: 402 })
+    await expect(assertCollaborationAllowed(ids.ghostOrg)).rejects.toMatchObject({ status: 402 })
+    await expect(assertCollaborationAllowed(ids.teamOrg)).resolves.toBeUndefined()
   })
 })
