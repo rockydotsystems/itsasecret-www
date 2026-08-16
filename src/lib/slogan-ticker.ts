@@ -2,9 +2,9 @@ const CIPHER_GLYPHS = '0123456789abcdefABCDEF+/=#*'
 
 export const SLOGANS = ['run your own $#!@', "shhh don't tell anyone"] as const
 export const SLOGAN_SEP = ' // '
-export const REVEAL_CHARS = 15
-export const TICK_MS = 150
-export const MUDDLE_MS = 50
+export const REVEAL_CHARS = 38
+export const TICK_MS = 100
+export const MUDDLE_MS = 100
 
 export function buildTape(slogans: readonly string[] = SLOGANS, sep = SLOGAN_SEP): string {
   if (slogans.length === 0) return ''
