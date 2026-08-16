@@ -63,7 +63,7 @@ docker compose up -d           # start Postgres 17
 - **Invites use a server-side pending re-key** (interim, see docs/open-questions.md #3) - an inviter cannot wrap the org key for the invitee's master key, so the invite route recovers the org key via the caller's `X-Session-Key` and stores it on the `org_invites` row with a `pending:` prefix wrapped under `SERVER_WRAP_SECRET` (env var, required in production). Acceptance copies it into `org_members.wrapped_org_key`, and the invitee's next login re-wraps it under their master key (`src/lib/pending-org-key.ts`).
 - **Removing an org member revokes all their sessions** - their sessions carry the org key; other-org access is re-established on next login.
 - **API routes are TanStack Start server routes** - the Go CLI calls these as raw HTTP endpoints (not server functions).
-- **Email verification is tracked from signup and gates the whole app** - `users.email_verified_at` (null = unverified). Register issues a single-use token (`email_verifications`, hashed like sessions) and sends the link via Resend (`RESEND_API_KEY`/`EMAIL_FROM`). With no `RESEND_API_KEY`, the link is printed to the server terminal so accounts can be verified in dev without Resend. `GET /api/auth/verify-email?token=` consumes it and redirects to `/login?verified=1` (login shows a success banner; `verified=0` shows an invalid/expired banner).
+- **Email verification is tracked from signup and gates the whole app** - `users.email_verified_at` (null = unverified). Register issues a single-use token (`email_verifications`, hashed like sessions) and sends the link via Resend (`RESEND_API_KEY`/`EMAIL_FROM`). With no `RESEND_API_KEY`, the link is printed to the server terminal so accounts can be verified in dev without Resend; self-hosted instances (production) opt into the same terminal fallback explicitly via `EMAIL_DELIVERY=log` — never set that on hosted prod (tokens/feedback would land in aggregated logs). `GET /api/auth/verify-email?token=` consumes it and redirects to `/login?verified=1` (login shows a success banner; `verified=0` shows an invalid/expired banner).
 - **Nothing is provisioned at signup - onboarding creates the first workspace** - register creates only the `users` row (session starts with empty org keys). A verified user with zero live org memberships is redirected by `requireAuthBeforeLoad` to `/onboarding`, a 4-step wizard (welcome → org name → project name → env name) that wraps the personal org key client-side (vault master key seeded at login; master-password fallback in a fresh tab) and posts to `POST /api/onboarding`, which creates the personal org + first project + first environment in one shot and 409s once the user has any live org. `POST /api/orgs/:id/projects` still auto-creates a `production` env (product spec).
 - **A typed master password is verified server-side before it wraps anything** - when the vault is locked, the workspace wizard's password fallback has no client-side proof the password is correct for a first workspace (no org key to test-unwrap), so `src/lib/org-form.ts` first posts it to `POST /api/auth/verify-password` (authenticated, shares the `passwd:` per-user rate-limit budget with change-password), then seeds the vault via `seedVaultFromLogin` and only then derives + wraps. Never wrap an org key under an unverified typed password: a mistyped one corrupts `org_members.wrapped_org_key` (unwrappable by the real master key). For rows already corrupted that way, login and change-password skip them (audit metadata `skippedCorruptOrgKeys` + console.error) instead of failing the whole operation.
 - **One wizard for both workspace-creation flows** - `src/components/workspacewizard.tsx` drives onboarding (mode `'onboarding'`: intro step, personal org, page-sized headings) and the dashboard's "+ New org" modal (mode `'org'`: no intro, shared org, compact `.wizard-title` headings). Both go through `src/lib/org-form.ts` (`completeOnboarding` / `createOrgWorkspace`), which share the client-side org-key wrapping. `POST /api/orgs` takes optional `projectName`/`envName` to create the org's first project + env in the same request (omitted → bare empty org) and returns `{ org, projectId }` (`projectId` null for a bare org).
@@ -73,7 +73,7 @@ docker compose up -d           # start Postgres 17
 - **Migrations run automatically at boot in production** - `start.ts` runs
   `src/lib/migrate-on-boot.ts` (drizzle-orm postgres-js migrator, `drizzle/`
   folder copied into the Docker image) when `MIGRATE_ON_BOOT` is set (it is,
-  on the Railway `web` service). A failed migration exits the process, so the
+  on the Railway `web` service and in the self-hosting `deploy/docker-compose.yml`). A failed migration exits the process, so the
   deploy fails healthcheck and the previous deployment stays live. Local dev
   keeps explicit `db:push`/`db:migrate`. Safe only while replicas stay pinned
   to 1 (same constraint as the purge cron).
@@ -160,7 +160,10 @@ docker compose up -d           # start Postgres 17
 ```
 www/
   flake.nix              # nix dev shell + apps
-  docker-compose.yml     # Postgres 17 container
+  docker-compose.yml     # Postgres 17 container (local dev only)
+  Dockerfile             # Prod image - published to Docker Hub as itsasecret/web
+  deploy/                # Self-hosting bundle: compose (app+Postgres), .env.example, README
+  .github/workflows/     # deploy.yml (Railway) + docker.yml (Docker Hub push)
   vite.config.ts         # Vite + TanStack Start + Nitro config
   tsconfig.json          # TypeScript config (React, Node, path aliases)
   drizzle.config.ts      # Drizzle Kit config

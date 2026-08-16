@@ -16,6 +16,9 @@ RUN pnpm build
 
 # --- runner: Nitro .output is self-contained (bundles its own node_modules) ---
 FROM base AS runner
+LABEL org.opencontainers.image.title="itsasecret" \
+      org.opencontainers.image.description="itsasecret web + API - encrypted secrets/env var sync" \
+      org.opencontainers.image.source="https://github.com/rockydotsystems/itsasecret-www"
 RUN useradd --system --create-home --uid 1001 appuser
 WORKDIR /app
 ENV NODE_ENV=production
@@ -25,4 +28,8 @@ COPY --from=build --chown=appuser:appuser /app/.output ./.output
 COPY --from=build --chown=appuser:appuser /app/drizzle ./drizzle
 USER appuser
 EXPOSE 3000
+# Landing page is public, so `/` doubles as the liveness probe (same path as
+# the Railway healthcheck). node:slim ships no curl/wget - use global fetch.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", ".output/server/index.mjs"]

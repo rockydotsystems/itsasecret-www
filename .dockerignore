@@ -2,10 +2,13 @@ node_modules
 .output
 .git
 .jj
+.github
 .direnv
 .tanstack
+.env
 .dev.vars
 .dev.vars.example
+deploy
 docker-compose.yml
 flake.nix
 flake.lock

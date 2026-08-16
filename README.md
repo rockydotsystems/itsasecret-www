@@ -47,6 +47,20 @@ nix run .#test        # tests
 
 The app runs out of the box against the local database with no extra config. A few features reach external services and degrade gracefully in development without their keys - for example, verification and invite emails print their links to the server terminal instead of sending, and CLI binary downloads are disabled. You only need those keys to exercise those specific flows.
 
+## Self-hosting
+
+The app ships as the [`itsasecret/web`](https://hub.docker.com/r/itsasecret/web) image on Docker Hub - multi-arch (amd64/arm64), built and pushed from `main` by CI. `deploy/` contains a turnkey compose bundle (app + Postgres 17, DB migrations run at every boot):
+
+```sh
+mkdir itsasecret && cd itsasecret
+curl -O https://raw.githubusercontent.com/rockydotsystems/itsasecret-www/main/deploy/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/rockydotsystems/itsasecret-www/main/deploy/.env.example
+# edit .env - POSTGRES_PASSWORD and SERVER_WRAP_SECRET are required
+docker compose up -d
+```
+
+Then point the CLI at your instance: `shh config set url https://your.domain` (or a `url =` line in `.shh.project`). Email setup, reverse proxy, updates, and backups are covered in [`deploy/README.md`](deploy/README.md).
+
 ## Scripts
 
 | Script | What it does |

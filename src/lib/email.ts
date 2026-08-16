@@ -2,19 +2,31 @@
 //
 // When RESEND_API_KEY is unset (local dev / tests) we skip the network call and
 // print the verification link to the server terminal so accounts can be
-// verified without a Resend account.
+// verified without a Resend account. Self-hosted instances without Resend can
+// get the same fallback explicitly via EMAIL_DELIVERY=log. Self-hosted instances get the same
+// terminal fallback in production by setting EMAIL_DELIVERY=log.
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 const DEFAULT_FROM = 'itsasecret <onboarding@resend.dev>'
 
 // Matches the environment check in server-secret.ts: a deploy is "dev" when
 // APP_ENV=development, or when there's no APP_ENV and NODE_ENV isn't production.
-// Token/feedback logging fallbacks must never fire in production - a missing
-// RESEND_API_KEY there should drop silently, not leak single-use tokens or
-// user feedback text into aggregated logs.
+// Token/feedback logging fallbacks must never fire accidentally in production -
+// a missing RESEND_API_KEY there should drop silently, not leak single-use
+// tokens or user feedback text into aggregated logs. The one exception is the
+// operator's explicit EMAIL_DELIVERY=log opt-in for self-hosting (checked in
+// shouldLogToTerminal).
 function isDev(): boolean {
   return process.env.APP_ENV === 'development' ||
     (process.env.NODE_ENV !== 'production' && !process.env.APP_ENV)
+}
+
+// EMAIL_DELIVERY=log is an explicit opt-in for self-hosted instances without
+// a Resend account: verification/invite links print to the container log so
+// the operator can hand them to users. Never set it on hosted production -
+// single-use tokens and feedback text would land in aggregated logs.
+function shouldLogToTerminal(): boolean {
+  return isDev() || process.env.EMAIL_DELIVERY === 'log'
 }
 
 export interface SendVerificationEmailArgs {
@@ -28,9 +40,9 @@ export async function sendVerificationEmail({ to, verifyUrl }: SendVerificationE
   if (!apiKey) {
     // No Resend key: surface the link on the terminal for manual verification,
     // but only in dev - never log single-use tokens in production.
-    if (isDev()) {
+    if (shouldLogToTerminal()) {
       console.log(
-        `\n[email:dev] Verify ${to} - no RESEND_API_KEY set, open this link to verify:\n  ${verifyUrl}\n`
+        `\n[email:console] Verify ${to} - no RESEND_API_KEY set, open this link to verify:\n  ${verifyUrl}\n`
       )
     }
     return
@@ -74,9 +86,9 @@ export async function sendOrgInviteEmail({ to, orgName, inviterEmail, role, acce
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
-    if (isDev()) {
+    if (shouldLogToTerminal()) {
       console.log(
-        `\n[email:dev] Invite ${to} to "${orgName}" (${role}) - no RESEND_API_KEY set, open this link to accept:\n  ${acceptUrl}\n`
+        `\n[email:console] Invite ${to} to "${orgName}" (${role}) - no RESEND_API_KEY set, open this link to accept:\n  ${acceptUrl}\n`
       )
     }
     return
@@ -118,9 +130,9 @@ export async function sendTeamAddedEmail({ to, teamName, orgName, addedByEmail, 
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
-    if (isDev()) {
+    if (shouldLogToTerminal()) {
       console.log(
-        `\n[email:dev] ${to} added to team "${teamName}" in "${orgName}" by ${addedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
+        `\n[email:console] ${to} added to team "${teamName}" in "${orgName}" by ${addedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
       )
     }
     return
@@ -161,9 +173,9 @@ export async function sendTeamRemovedEmail({ to, teamName, orgName, removedByEma
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
-    if (isDev()) {
+    if (shouldLogToTerminal()) {
       console.log(
-        `\n[email:dev] ${to} removed from team "${teamName}" in "${orgName}" by ${removedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
+        `\n[email:console] ${to} removed from team "${teamName}" in "${orgName}" by ${removedByEmail} - no RESEND_API_KEY set, skipping notification email\n`
       )
     }
     return
@@ -207,8 +219,8 @@ export async function sendFeedbackEmail({ fromUserEmail, fromUserName, message }
   const who = fromUserName ? `${fromUserName} <${fromUserEmail}>` : fromUserEmail
   if (!apiKey || !to) {
     // Feedback can contain sensitive text - only log it in dev.
-    if (isDev()) {
-      console.log(`\n[email:dev] Feedback from ${who}:\n${message}\n`)
+    if (shouldLogToTerminal()) {
+      console.log(`\n[email:console] Feedback from ${who}:\n${message}\n`)
     }
     return
   }
@@ -247,8 +259,8 @@ export async function sendPaymentFailedEmail({ to, orgName }: SendPaymentFailedE
   const apiKey = process.env.RESEND_API_KEY
 
   if (!apiKey) {
-    if (isDev()) {
-      console.log(`\n[email:dev] Payment failed for org "${orgName}" (owner ${to}) - no RESEND_API_KEY set, skipping email\n`)
+    if (shouldLogToTerminal()) {
+      console.log(`\n[email:console] Payment failed for org "${orgName}" (owner ${to}) - no RESEND_API_KEY set, skipping email\n`)
     }
     return
   }

@@ -1,0 +1,59 @@
+# itsasecret self-hosted: the web + API server and its Postgres database.
+#
+#   cp .env.example .env   # required - fill in the two secrets
+#   docker compose up -d
+#
+# Then open http://localhost:3000 (or your APP_URL) and register the first
+# account. The web container migrates the database automatically on boot
+# (MIGRATE_ON_BOOT=1), so the first start takes a few extra seconds.
+name: itsasecret
+
+services:
+  web:
+    image: itsasecret/web:latest
+    # Building from source instead of pulling:
+    #   docker compose up -d --build
+    build: ..
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      APP_ENV: production
+      MIGRATE_ON_BOOT: "1"
+      DATABASE_URL: postgres://itsasecret:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env - see .env.example}@postgres:5432/itsasecret
+      # Also injected via env_file; repeated here for a clear fail-fast error
+      # at `compose up` when it is missing or empty instead of a runtime
+      # crash on first invite/history write.
+      SERVER_WRAP_SECRET: ${SERVER_WRAP_SECRET:?Set SERVER_WRAP_SECRET in .env - see .env.example}
+    ports:
+      - "${HTTP_PORT:-3000}:3000"
+    # Same probe as the image HEALTHCHECK, restated so engines that ignore
+    # OCI healthchecks (podman) still report container health.
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: itsasecret
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env - see .env.example}
+      POSTGRES_DB: itsasecret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itsasecret -d itsasecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No host port published: only the web service can reach the database.
+    # To inspect the DB from the host, temporarily add ports: ["5432:5432"].
+
+volumes:
+  pgdata:
