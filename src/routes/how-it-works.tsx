@@ -37,7 +37,7 @@ function HowItWorksPage() {
         </header>
 
         <section className="docs-section">
-          <span className="section-kicker">01 · the master password</span>
+          <div className="docs-label">01  the master password</div>
           <h2 className="docs-h2">One password unlocks everything</h2>
           <p>
             Your master password feeds an argon2id key derivation. The derived key wraps your
@@ -48,7 +48,7 @@ function HowItWorksPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">02 · org keys</span>
+          <div className="docs-label">02  org keys</div>
           <h2 className="docs-h2">One envelope per org, one wrap per member</h2>
           <p>
             Every org has a shared key that encrypts its secrets. Each member holds that org key
@@ -59,7 +59,7 @@ function HowItWorksPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">03 · sessions</span>
+          <div className="docs-label">03  sessions</div>
           <h2 className="docs-h2">Rolling sessions: type your password when idle, not constantly</h2>
           <p>
             Logging in from the CLI starts a <em>rolling session</em>, valid for 30 minutes. Every
@@ -90,7 +90,7 @@ function HowItWorksPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">04 · on your disk</span>
+          <div className="docs-label">04  on your disk</div>
           <h2 className="docs-h2">Nothing long-lived is stored in plaintext</h2>
           <p>
             The CLI keeps one config file (<code>~/.config/itsasecret/config.json</code>, mode
@@ -107,7 +107,7 @@ function HowItWorksPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">05 · in flight & at rest</span>
+          <div className="docs-label">05  in flight & at rest</div>
           <h2 className="docs-h2">Ciphertext on the wire, ciphertext in the database</h2>
           <p>
             Each session negotiates an ephemeral ECDH transport key. Secrets travel encrypted

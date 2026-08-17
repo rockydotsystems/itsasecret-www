@@ -309,7 +309,6 @@ function LandingPage() {
 
       <section className="section section-alt">
         <div className="section-inner">
-          <span className="section-kicker">the crypto</span>
           <h2 className="section-title">Your master password never leaves your machine.</h2>
           <div className="assurances">
             {ASSURANCES.map((a, i) => {

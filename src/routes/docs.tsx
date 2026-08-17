@@ -43,7 +43,7 @@ function DocsPage() {
         </header>
 
         <section className="docs-section">
-          <span className="section-kicker">00 · install</span>
+          <div className="docs-label">00  install</div>
           <h2 className="docs-h2">One line, any machine</h2>
           <p>
             Installs the <code>itsasecret</code> binary (and its <code>shh</code> alias) to{' '}
@@ -98,7 +98,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">01 · log in</span>
+          <div className="docs-label">01  log in</div>
           <h2 className="docs-h2">Authenticate once per machine</h2>
           <p>
             Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
@@ -113,7 +113,7 @@ function DocsPage() {
           </CodeBlock>
           <p>
             By default the CLI talks to itsasecret.dev - self-hosting or developing locally, point
-            it at your server first with <code>shh config</code> (section 07).
+            it at your server first with <code>shh config</code>.
           </p>
           <p>
             Headless machine (CI runner, server, container)? Skip the password entirely: create a
@@ -128,7 +128,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">02 · link</span>
+          <div className="docs-label">02  link</div>
           <h2 className="docs-h2">Pin a directory to a project</h2>
           <p>
             Run <code>shh link</code> bare while logged in and pick your org, project, and
@@ -165,7 +165,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">03 · set values</span>
+          <div className="docs-label">03  set values</div>
           <h2 className="docs-h2">Secrets encrypt, vars don&rsquo;t</h2>
           <p>
             Values are set one at a time - there is deliberately no bulk push. Secrets encrypt on
@@ -180,7 +180,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">04 · pull</span>
+          <div className="docs-label">04  pull</div>
           <h2 className="docs-h2">Decrypt into a file or your shell</h2>
           <p>
             <code>shh pull</code> writes sourceable <code>export</code> lines to{' '}
@@ -223,7 +223,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">05 · reload</span>
+          <div className="docs-label">05  reload</div>
           <h2 className="docs-h2">Pull again, the same way</h2>
           <p>
             After the environment changes - a teammate rotated a key, a new var landed - you
@@ -250,7 +250,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">06 · fork</span>
+          <div className="docs-label">06  fork</div>
           <h2 className="docs-h2">Branch an environment</h2>
           <p>
             Fork <code>production</code> into <code>staging</code>, or staging into a per-developer
@@ -263,7 +263,7 @@ function DocsPage() {
         </section>
 
         <section className="docs-section">
-          <span className="section-kicker">07 · config</span>
+          <div className="docs-label">07  config</div>
           <h2 className="docs-h2">Point the CLI at your server</h2>
           <p>
             Nothing to do if you use itsasecret.dev. Self-hosting, or running the server locally?
@@ -295,7 +295,7 @@ function DocsPage() {
           <span className="docs-notice-tag">Coming soon</span>
           <p>
             Running your own itsasecret server is on the way. The CLI already points at a custom
-            URL today with <code>shh config set url</code> (section 07) - a full self-hosting guide
+            URL today with <code>shh config set url</code> - a full self-hosting guide
             will land here soon.
           </p>
         </div>
