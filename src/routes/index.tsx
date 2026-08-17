@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, type ComponentType } from 'react'
 import { Button } from '~/components/button'
-import { Badge } from '~/components/badge'
 import { Navbar } from '~/components/navbar'
 import { InstallSnippet } from '~/components/installsnippet'
 import { RedactionTexture } from '~/components/redactiontexture'
@@ -30,31 +29,26 @@ type PixelIcon = ComponentType<IconProps>
 const FEATURES: {
   title: string
   body: string
-  tag: string
   icon: PixelIcon
 }[] = [
   {
     title: 'Encrypted end to end',
-    body: 'Every value is encrypted on your machine before it ever leaves it - by the CLI or right in your browser. itsasecret.dev never sees a plaintext secret.',
-    tag: 'security',
+    body: 'Encrypted on your machine, in the CLI or the browser. We never see plaintext.',
     icon: IconLock,
   },
   {
     title: 'Environment-aware',
-    body: 'production, staging, preview-pr-42 - each environment is its own keychain, enabled per-secret.',
-    tag: 'environments',
+    body: 'production, staging, preview-pr-42. Each environment is its own keychain.',
     icon: IconLayers,
   },
   {
     title: 'One command sync',
-    body: 'shh secret set encrypts and syncs in one shot. shh pull decrypts straight into your .env - or into your shell directly.',
-    tag: 'cli',
+    body: 'shh secret set to sync. shh pull into .env or your shell.',
     icon: IconBolt,
   },
   {
     title: 'Built for teams',
-    body: 'Invite teammates, scope roles, require approval before a secret reaches production.',
-    tag: 'access',
+    body: 'Invite people, scope roles, approve what reaches production.',
     icon: IconUsers2,
   },
 ]
@@ -85,19 +79,19 @@ const ASSURANCES: { term: string; body: string; icon: PixelIcon }[] = [
 const SHELL_FEATURES = [
   {
     cmd: 'shh load',
-    body: 'Enable the shell integration once, then load the secrets in a directory into your current shell with a single command - it evaluates for you and says so loudly, so you always know live values are in your shell.',
+    body: "Load a directory's secrets into your current shell.",
   },
   {
     cmd: 'shh pull --shell',
-    body: 'Works with every shell - bash, zsh, fish, nushell, PowerShell. Each gets its native syntax, picked from $SHELL automatically.',
+    body: 'bash, zsh, fish, nushell, PowerShell. Native syntax from $SHELL.',
   },
   {
     cmd: 'direnv allow',
-    body: 'First-class direnv support: put eval "$(shh pull --shell)" in .envrc and secrets load the moment you enter the directory - straight into the shell.',
+    body: 'eval "$(shh pull --shell)" in .envrc. Secrets load when you cd in.',
   },
   {
     cmd: 'shh completion',
-    body: 'Autocompletion for every command and flag - one command generates the completion script for bash, zsh, fish, or PowerShell.',
+    body: 'Tab-complete every command and flag.',
   },
 ]
 
@@ -118,7 +112,6 @@ function Terminal() {
         <span className="hero-terminal-dot" />
         <span className="hero-terminal-dot" />
         <span className="hero-terminal-dot" />
-        <span className="hero-terminal-title">zsh · acme/api</span>
       </div>
       <div className="hero-terminal-body">
         <div className="term-line">
@@ -146,8 +139,6 @@ function Terminal() {
         <div className="term-line">
           <span className="term-prompt">$ </span>
           <span className="term-cmd">shh pull</span>
-          <span className="term-dim">   # decrypts </span>
-          <span className="term-flare">on this machine only</span>
         </div>
         <div className="term-line term-dim">  Wrote .env</div>
         <div className="term-line">&nbsp;</div>
@@ -262,7 +253,6 @@ function LandingPage() {
         <RedactionTexture />
         <div className="hero-inner hero-split">
           <div className="hero-copy">
-            <span className="hero-kicker">cli + web · end-to-end encrypted</span>
             <h1 className="hero-title">
               Secrets made simple securely<span className="hero-title-flare">.</span>
             </h1>
@@ -283,11 +273,14 @@ function LandingPage() {
 
       <section className="section section-alt">
         <div className="section-inner">
-          <span className="section-kicker">zero knowledge</span>
-          <h2 className="section-title">We store your secrets. We can&rsquo;t read them.</h2>
+          <h2 className="section-title">
+            We store your secrets.
+            <br />
+            <span className="hero-title-flare">We can&rsquo;t read them.</span>
+          </h2>
           <p className="section-lede">
             Every value is encrypted on your machine before it syncs, with a key derived from your master password.
-            What lands in our database is ciphertext we cannot open - the keys exist in exactly one place: with you
+            Our database only has ciphertext we cannot open - the keys exist in exactly one place: with you
             and the teammates you invite.
           </p>
           <ZeroKnowledgeDiagram />
@@ -296,20 +289,16 @@ function LandingPage() {
 
       <section className="section">
         <div className="section-inner">
-          <span className="section-kicker">what you get</span>
           <h2 className="section-title">Everything env vars need. Nothing else.</h2>
           <div className="feature-grid-inner">
             {FEATURES.map((f) => {
               const Icon = f.icon
               return (
-                <div className="feature-card" key={f.tag}>
-                  <div className="feature-card-top">
-                    <span className="feature-icon">
-                      <Icon size={16} aria-hidden="true" />
-                    </span>
-                    <Badge variant="signal">{f.tag}</Badge>
-                  </div>
-                  <h3>{f.title}</h3>
+                <div className="feature-card" key={f.title}>
+                  <h3>
+                    <Icon size={16} aria-hidden="true" />
+                    {f.title}
+                  </h3>
                   <p>{f.body}</p>
                 </div>
               )
@@ -344,7 +333,6 @@ function LandingPage() {
 
       <section className="section">
         <div className="section-inner">
-          <span className="section-kicker">your shell</span>
           <h2 className="section-title">At home in every shell.</h2>
           <div className="steps">
             {SHELL_FEATURES.map((s) => (
@@ -364,9 +352,7 @@ function LandingPage() {
       <section className="cta-final hero-texture">
         <RedactionTexture rows={10} />
         <div className="hero-inner">
-          <span className="section-kicker">ready when you are</span>
           <h2 className="cta-final-title">Stop pasting .env files into Slack.</h2>
-          <p className="cta-final-lede">Encrypt once. Sync everywhere. Keep the keys on your machines.</p>
           <div className="hero-ctas">
             {user ? (
               <Button variant="primary" size="lg" href="/dashboard">
