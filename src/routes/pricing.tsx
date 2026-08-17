@@ -110,8 +110,8 @@ function PricingPage() {
             Pricing<span className="hero-title-flare">.</span>
           </h1>
           <p className="hero-subtitle">
-            Free for personal use, forever. Paid when you bring a team - per developer, with
-            end-to-end encryption on every plan.
+            Free for personal use, forever. We promise!{' '}
+            <span className="hero-subtitle-aside">(unless things get like really bad then idk)</span>
           </p>
         </div>
       </section>

@@ -1039,6 +1039,10 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 
 .hero-pricing { padding-bottom: 16px; }
 .hero-pricing .hero-subtitle { margin-bottom: 0; }
+.hero-subtitle-aside {
+  display: block; margin-top: 6px;
+  font-size: var(--text-sm); color: var(--text-tertiary);
+}
 .section-pricing { padding-top: 32px; }
 .pricing-tiers {
   max-width: 1040px; margin: 0 auto;
