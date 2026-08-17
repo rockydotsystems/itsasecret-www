@@ -24,6 +24,7 @@ type Tier = {
   ctaIn?: string
   ctaOut?: string
   disabled?: boolean
+  pricePixel?: boolean
 }
 
 const TIERS: Tier[] = [
@@ -75,7 +76,8 @@ const TIERS: Tier[] = [
   },
   {
     name: 'Self-host',
-    price: 'You run it',
+    price: 'run your own $#!@',
+    pricePixel: true,
     blurb: 'The same app, on your machines.',
     features: [
       'Docker Compose: app + Postgres 17',
@@ -122,7 +124,7 @@ function PricingPage() {
               className={`pricing-tier${tier.featured ? ' pricing-tier--featured' : ''}`}
             >
               <span className="pricing-tier-name">{tier.name}</span>
-              <span className="pricing-tier-price">
+              <span className={`pricing-tier-price${tier.pricePixel ? ' pricing-tier-price-pixel' : ''}`}>
                 {tier.price}
                 {tier.period ? <span className="pricing-tier-period">{tier.period}</span> : null}
               </span>
