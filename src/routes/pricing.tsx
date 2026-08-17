@@ -158,7 +158,7 @@ function PricingPage() {
         </p>
       </section>
 
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   )
 }

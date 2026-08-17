@@ -1,4 +1,4 @@
-export function SiteFooter() {
+export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
@@ -9,8 +9,12 @@ export function SiteFooter() {
           <a href="/docs">docs</a>
           <a href="/how-it-works">how it works</a>
           <a href="https://github.com/rockydotsystems">github</a>
-          <a href="/login">log in</a>
-          <a href="/register">register</a>
+          {!loggedIn && (
+            <>
+              <a href="/login">log in</a>
+              <a href="/register">register</a>
+            </>
+          )}
         </span>
       </div>
     </footer>

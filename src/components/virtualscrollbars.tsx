@@ -11,7 +11,6 @@ import {
   thumbLayout,
   viewportRect,
   visibleRect,
-  type Rect,
 } from '~/lib/virtual-scroll'
 
 type Axis = 'x' | 'y'
@@ -29,6 +28,8 @@ type Drag = {
 }
 
 type Tracks = { x?: HTMLElement; y?: HTMLElement }
+
+const FOLLOW_MS = 450
 
 function isHtml(el: Element): el is HTMLElement {
   return el instanceof HTMLElement
@@ -64,7 +65,7 @@ function setScroll(target: Target, axis: Axis, value: number) {
   else target.scrollLeft = value
 }
 
-function hostRect(target: Target): Rect | null {
+function hostRect(target: Target) {
   if (target === 'viewport') return viewportRect()
   return visibleRect(target)
 }
@@ -93,7 +94,8 @@ export function VirtualScrollbars() {
     const thumbs = new WeakMap<HTMLElement, { target: Target; axis: Axis }>()
     let drag: Drag | null = null
     let scanFrame = 0
-    let layoutFrame = 0
+    let followFrame = 0
+    let followUntil = 0
     let resizeObserver: ResizeObserver | null = null
     const pointer = { x: -1e9, y: -1e9, inWindow: false }
 
@@ -120,7 +122,7 @@ export function VirtualScrollbars() {
       let track = pair[axis]
       if (!track) {
         track = document.createElement('div')
-        track.className = `vscroll-track vscroll-track-${axis}`
+        track.className = `vscroll-track vscroll-track-${axis}${target === 'viewport' ? '' : ' is-local'}`
         const thumb = document.createElement('div')
         thumb.className = 'vscroll-thumb'
         track.appendChild(thumb)
@@ -143,6 +145,49 @@ export function VirtualScrollbars() {
       }
     }
 
+    function paintThumb(
+      target: Target,
+      axis: Axis,
+      trackTop: number,
+      trackLeft: number,
+      trackWidth: number,
+      trackHeight: number,
+    ) {
+      const m = metrics(target, axis)
+      const trackSize = axis === 'y' ? trackHeight : trackWidth
+      const layout = thumbLayout(m.scrollSize, m.clientSize, m.scrollPos, trackSize)
+      if (!layout) {
+        dropAxis(target, axis)
+        return
+      }
+      const track = trackEl(target, axis)
+      const thumb = track.firstElementChild as HTMLElement
+      track.style.top = `${trackTop}px`
+      track.style.left = `${trackLeft}px`
+      track.style.width = `${trackWidth}px`
+      track.style.height = `${trackHeight}px`
+      if (axis === 'y') {
+        thumb.style.top = `${layout.offset}px`
+        thumb.style.height = `${layout.size}px`
+        thumb.style.left = `${THUMB_INSET}px`
+        thumb.style.right = `${THUMB_INSET}px`
+        thumb.style.width = 'auto'
+        thumb.style.bottom = 'auto'
+      } else {
+        thumb.style.left = `${layout.offset}px`
+        thumb.style.width = `${layout.size}px`
+        thumb.style.top = `${THUMB_INSET}px`
+        thumb.style.bottom = `${THUMB_INSET}px`
+        thumb.style.height = 'auto'
+        thumb.style.right = 'auto'
+      }
+      if (drag?.target === target && drag.axis === axis) {
+        drag.thumbSize = layout.size
+        drag.trackSize = trackSize
+        drag.maxScroll = m.scrollSize - m.clientSize
+      }
+    }
+
     function layoutOne(target: Target) {
       const rect = hostRect(target)
       const axes =
@@ -159,68 +204,44 @@ export function VirtualScrollbars() {
         return
       }
 
+      const origin =
+        target === 'viewport' ? { top: 0, left: 0 } : overlay.getBoundingClientRect()
+      const top = rect.top - origin.top
+      const left = rect.left - origin.left
+      const right = rect.right - origin.left
+      const bottom = rect.bottom - origin.top
+
       const both = axes.x && axes.y
       const gutter = both ? TRACK_THICKNESS : 0
 
       if (axes.y) {
-        const m = metrics(target, 'y')
-        const top = rect.top + TRACK_INSET
-        const height = Math.max(0, rect.height - TRACK_INSET * 2 - gutter)
-        const layout = thumbLayout(m.scrollSize, m.clientSize, m.scrollPos, height)
-        if (!layout) {
-          dropAxis(target, 'y')
-        } else {
-          const track = trackEl(target, 'y')
-          const thumb = track.firstElementChild as HTMLElement
-          track.style.top = `${top}px`
-          track.style.left = `${rect.right - TRACK_THICKNESS - TRACK_INSET}px`
-          track.style.height = `${height}px`
-          track.style.width = `${TRACK_THICKNESS}px`
-          thumb.style.top = `${layout.offset}px`
-          thumb.style.height = `${layout.size}px`
-          thumb.style.left = `${THUMB_INSET}px`
-          thumb.style.right = `${THUMB_INSET}px`
-          if (drag?.target === target && drag.axis === 'y') {
-            drag.thumbSize = layout.size
-            drag.trackSize = height
-            drag.maxScroll = m.scrollSize - m.clientSize
-          }
-        }
+        paintThumb(
+          target,
+          'y',
+          top + TRACK_INSET,
+          right - TRACK_THICKNESS - TRACK_INSET,
+          TRACK_THICKNESS,
+          Math.max(0, rect.height - TRACK_INSET * 2 - gutter),
+        )
       } else {
         dropAxis(target, 'y')
       }
 
       if (axes.x) {
-        const m = metrics(target, 'x')
-        const left = rect.left + TRACK_INSET
-        const width = Math.max(0, rect.width - TRACK_INSET * 2 - gutter)
-        const layout = thumbLayout(m.scrollSize, m.clientSize, m.scrollPos, width)
-        if (!layout) {
-          dropAxis(target, 'x')
-        } else {
-          const track = trackEl(target, 'x')
-          const thumb = track.firstElementChild as HTMLElement
-          track.style.left = `${left}px`
-          track.style.top = `${rect.bottom - TRACK_THICKNESS - TRACK_INSET}px`
-          track.style.width = `${width}px`
-          track.style.height = `${TRACK_THICKNESS}px`
-          thumb.style.left = `${layout.offset}px`
-          thumb.style.width = `${layout.size}px`
-          thumb.style.top = `${THUMB_INSET}px`
-          thumb.style.bottom = `${THUMB_INSET}px`
-          if (drag?.target === target && drag.axis === 'x') {
-            drag.thumbSize = layout.size
-            drag.trackSize = width
-            drag.maxScroll = m.scrollSize - m.clientSize
-          }
-        }
+        paintThumb(
+          target,
+          'x',
+          bottom - TRACK_THICKNESS - TRACK_INSET,
+          left + TRACK_INSET,
+          Math.max(0, rect.width - TRACK_INSET * 2 - gutter),
+          TRACK_THICKNESS,
+        )
       } else {
         dropAxis(target, 'x')
       }
     }
 
     function layoutAll() {
-      layoutFrame = 0
       layoutOne('viewport')
       for (const target of [...tracks.keys()]) {
         if (target !== 'viewport') layoutOne(target)
@@ -228,9 +249,18 @@ export function VirtualScrollbars() {
       updateNear()
     }
 
-    function scheduleLayout() {
-      if (layoutFrame) return
-      layoutFrame = requestAnimationFrame(layoutAll)
+    function followTick() {
+      layoutAll()
+      if (drag || performance.now() < followUntil) {
+        followFrame = requestAnimationFrame(followTick)
+        return
+      }
+      followFrame = 0
+    }
+
+    function pokeFollow() {
+      followUntil = performance.now() + FOLLOW_MS
+      if (!followFrame) followFrame = requestAnimationFrame(followTick)
     }
 
     function scan() {
@@ -256,10 +286,6 @@ export function VirtualScrollbars() {
       scanFrame = requestAnimationFrame(scan)
     }
 
-    function onScroll() {
-      scheduleLayout()
-    }
-
     function beginDrag(thumb: HTMLElement, axis: Axis, target: Target, ev: PointerEvent) {
       const track = thumb.parentElement
       if (!track) return
@@ -279,6 +305,7 @@ export function VirtualScrollbars() {
       }
       thumb.classList.add('is-dragging')
       document.documentElement.classList.add('vscroll-dragging')
+      pokeFollow()
       try {
         thumb.setPointerCapture(ev.pointerId)
       } catch {
@@ -342,6 +369,7 @@ export function VirtualScrollbars() {
       track?.querySelector('.vscroll-thumb')?.classList.remove('is-dragging')
       document.documentElement.classList.remove('vscroll-dragging')
       drag = null
+      pokeFollow()
       updateNear()
     }
 
@@ -368,13 +396,14 @@ export function VirtualScrollbars() {
     resizeObserver = new ResizeObserver(scheduleScan)
     resizeObserver.observe(document.documentElement)
 
-    overlay.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('pointermove', onPointerMove)
     document.addEventListener('pointerup', endDrag)
     document.addEventListener('pointercancel', endDrag)
     document.documentElement.addEventListener('pointerleave', onPointerLeave)
     document.addEventListener('load', scheduleScan, true)
-    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('scroll', pokeFollow, true)
+    window.addEventListener('wheel', pokeFollow, { capture: true, passive: true })
     window.addEventListener('resize', scheduleScan)
 
     scan()
@@ -382,16 +411,17 @@ export function VirtualScrollbars() {
     return () => {
       mutate.disconnect()
       resizeObserver?.disconnect()
-      overlay.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('pointermove', onPointerMove)
       document.removeEventListener('pointerup', endDrag)
       document.removeEventListener('pointercancel', endDrag)
       document.documentElement.removeEventListener('pointerleave', onPointerLeave)
       document.removeEventListener('load', scheduleScan, true)
-      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('scroll', pokeFollow, true)
+      window.removeEventListener('wheel', pokeFollow, true)
       window.removeEventListener('resize', scheduleScan)
       if (scanFrame) cancelAnimationFrame(scanFrame)
-      if (layoutFrame) cancelAnimationFrame(layoutFrame)
+      if (followFrame) cancelAnimationFrame(followFrame)
       document.documentElement.classList.remove('vscroll-dragging')
       overlay.replaceChildren()
       tracks.clear()

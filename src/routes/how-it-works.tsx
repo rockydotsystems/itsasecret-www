@@ -119,7 +119,7 @@ function HowItWorksPage() {
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   )
 }

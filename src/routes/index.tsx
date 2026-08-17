@@ -379,7 +379,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   )
 }

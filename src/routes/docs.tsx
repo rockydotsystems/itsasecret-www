@@ -301,7 +301,7 @@ function DocsPage() {
         </div>
       </main>
 
-      <SiteFooter />
+      <SiteFooter loggedIn={!!user} />
     </>
   )
 }
