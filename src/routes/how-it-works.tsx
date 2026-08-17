@@ -116,6 +116,11 @@ function HowItWorksPage() {
             key the server does not persist: the client supplies it per request, so a stolen
             database dump cannot decrypt anything on its own.
           </p>
+          <p>
+            Want that database on your own machines? The{' '}
+            <a href="/self-hosting">self-hosting guide</a> is the compose bundle, the env vars,
+            and pointing the CLI at your origin.
+          </p>
         </section>
       </main>
 

@@ -75,11 +75,16 @@ const TIERS: Tier[] = [
   },
   {
     name: 'Self-host',
-    price: 'Coming soon',
-    blurb: 'Run itsasecret on your own infrastructure.',
-    features: ['Your servers, your data', 'Full control of the stack'],
-    cta: 'Docs coming soon',
-    disabled: true,
+    price: 'You run it',
+    blurb: 'The same app, on your machines.',
+    features: [
+      'Docker Compose: app + Postgres 17',
+      'End-to-end encryption, unchanged',
+      'Your database, your wrap secret',
+    ],
+    cta: 'Read the docs',
+    ctaIn: '/self-hosting',
+    ctaOut: '/self-hosting',
   },
 ]
 

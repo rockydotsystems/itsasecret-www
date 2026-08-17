@@ -287,18 +287,10 @@ function DocsPage() {
           </p>
           <p>
             Sessions are stored per server - logging in to your self-hosted instance doesn&rsquo;t
-            log you out of itsasecret.dev, and switching between repos just works.
+            log you out of itsasecret.dev, and switching between repos just works. Running the
+            server yourself is covered in the <a href="/self-hosting">self-hosting guide</a>.
           </p>
         </section>
-
-        <div className="docs-notice">
-          <span className="docs-notice-tag">Coming soon</span>
-          <p>
-            Running your own itsasecret server is on the way. The CLI already points at a custom
-            URL today with <code>shh config set url</code> - a full self-hosting guide
-            will land here soon.
-          </p>
-        </div>
       </main>
 
       <SiteFooter loggedIn={!!user} />

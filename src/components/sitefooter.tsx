@@ -8,6 +8,7 @@ export function SiteFooter({ loggedIn = false }: { loggedIn?: boolean }) {
         <span className="site-footer-links">
           <a href="/docs">docs</a>
           <a href="/how-it-works">how it works</a>
+          <a href="/self-hosting">self-hosting</a>
           <a href="https://github.com/rockydotsystems">github</a>
           {!loggedIn && (
             <>
