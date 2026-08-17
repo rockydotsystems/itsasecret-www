@@ -96,7 +96,7 @@ function PricingPage() {
     <>
       <Navbar loggedIn={!!user} userEmail={user?.email} />
 
-      <section className="hero hero-texture">
+      <section className="hero hero-texture hero-pricing">
         <RedactionTexture rows={18} />
         <div className="hero-inner">
           <h1 className="hero-title">
@@ -109,7 +109,7 @@ function PricingPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section section-pricing">
         <div className="pricing-tiers">
           {TIERS.map((tier) => (
             <div
@@ -152,9 +152,6 @@ function PricingPage() {
         <p className="pricing-footnote">
           Team upgrades happen from Organization settings → Billing in the dashboard. Seats are
           billed per developer - the first seat (your team head) is on us.
-        </p>
-        <p className="pricing-footnote">
-          <a href="/how-it-works">How the encryption works</a> · {user ? <a href="/dashboard">Open the dashboard</a> : <a href="/register">Create an account</a>}
         </p>
       </section>
 

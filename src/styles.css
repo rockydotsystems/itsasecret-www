@@ -1037,8 +1037,9 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
   max-width: 16ch;
 }
 
-/* ─── Footer ────────────────────────────────────── */
-/* ─── Pricing ───────────────────────────────────── */
+.hero-pricing { padding-bottom: 16px; }
+.hero-pricing .hero-subtitle { margin-bottom: 0; }
+.section-pricing { padding-top: 32px; }
 .pricing-tiers {
   max-width: 1040px; margin: 0 auto;
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: left;
