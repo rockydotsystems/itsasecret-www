@@ -1046,13 +1046,31 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 .section-pricing { padding-top: 32px; }
 .pricing-tiers {
   max-width: 1040px; margin: 0 auto;
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: left;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: left;
 }
 .pricing-tier {
   display: flex; flex-direction: column; padding: 24px;
   background: var(--bg-raised); border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
 }
+.pricing-tier--wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) 1.5fr auto;
+  grid-template-areas:
+    "name features cta"
+    "price features cta"
+    "blurb features cta";
+  align-items: center;
+  column-gap: 32px;
+  row-gap: 4px;
+}
+.pricing-tier--wide .pricing-tier-name { grid-area: name; }
+.pricing-tier--wide .pricing-tier-price { grid-area: price; margin-top: 0; }
+.pricing-tier--wide .pricing-tier-blurb { grid-area: blurb; margin: 0; }
+.pricing-tier--wide .pricing-tier-features { grid-area: features; margin: 0; }
+.pricing-tier--wide .pricing-tier-cta { grid-area: cta; margin-top: 0; }
+.pricing-tier--wide .pricing-tier-cta .btn { flex: 0 0 auto; }
 .pricing-tier--featured { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
 .pricing-tier-name {
   font-family: var(--font-family-mono); font-size: 12px;
@@ -1089,6 +1107,19 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 }
 @media (max-width: 900px) {
   .pricing-tiers { grid-template-columns: repeat(2, 1fr); }
+  .pricing-tier--wide {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "name"
+      "price"
+      "blurb"
+      "features"
+      "cta";
+  }
+  .pricing-tier--wide .pricing-tier-blurb { margin: 10px 0 18px; }
+  .pricing-tier--wide .pricing-tier-features { margin: 0 0 16px; }
+  .pricing-tier--wide .pricing-tier-cta { margin-top: auto; }
+  .pricing-tier--wide .pricing-tier-cta .btn { flex: 1; }
 }
 @media (max-width: 560px) {
   .pricing-tiers { grid-template-columns: 1fr; }

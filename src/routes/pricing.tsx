@@ -25,6 +25,7 @@ type Tier = {
   ctaOut?: string
   disabled?: boolean
   pricePixel?: boolean
+  fullWidth?: boolean
 }
 
 const TIERS: Tier[] = [
@@ -87,6 +88,7 @@ const TIERS: Tier[] = [
     cta: 'Read the docs',
     ctaIn: '/self-hosting',
     ctaOut: '/self-hosting',
+    fullWidth: true,
   },
 ]
 
@@ -121,7 +123,7 @@ function PricingPage() {
           {TIERS.map((tier) => (
             <div
               key={tier.name}
-              className={`pricing-tier${tier.featured ? ' pricing-tier--featured' : ''}`}
+              className={`pricing-tier${tier.featured ? ' pricing-tier--featured' : ''}${tier.fullWidth ? ' pricing-tier--wide' : ''}`}
             >
               <span className="pricing-tier-name">{tier.name}</span>
               <span className={`pricing-tier-price${tier.pricePixel ? ' pricing-tier-price-pixel' : ''}`}>
