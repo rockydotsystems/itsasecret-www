@@ -55,13 +55,16 @@ docker compose up -d           # start Postgres 17
   /api/orgs/:id/invites/:inviteId`). The public `/invite?token=` page routes
   logged-out users through login/register (redirect + email prefill) and
   `POST /api/invites/accept` creates the `org_members` row - acceptance is
-  bound to the invited address (case-insensitive) and, since the token proves
-  inbox control, also stamps `email_verified_at` for unverified accounts.
+  bound to the invited address (case-insensitive). Acceptance grants
+  membership only: the inviter controls the token, so it proves nothing about
+  inbox control and `email_verified_at` is never stamped by it. Accepting or
+  revoking an invite also blanks the stored `wrapped_org_key` so a dead link
+  doesn't carry a usable key until the 90-day purge.
   Audit actions: `member.invite` (target = email), `member.invite.accept`,
   `member.invite.revoke`. Expired invites purge with the daily cron after 90
   days.
 - **Invites use a server-side pending re-key** (interim, see docs/open-questions.md #3) - an inviter cannot wrap the org key for the invitee's master key, so the invite route recovers the org key via the caller's `X-Session-Key` and stores it on the `org_invites` row with a `pending:` prefix wrapped under `SERVER_WRAP_SECRET` (env var, required in production). Acceptance copies it into `org_members.wrapped_org_key`, and the invitee's next login re-wraps it under their master key (`src/lib/pending-org-key.ts`).
-- **Removing an org member revokes all their sessions** - their sessions carry the org key; other-org access is re-established on next login.
+- **Removing an org member strips that org from their sessions** - interactive (web/cli) sessions are revoked outright; long-lived token sessions survive but get the removed org's key deleted from `encrypted_org_keys` (personal-org CI stays alive). A token session with unparsable key data falls back to revocation.
 - **API routes are TanStack Start server routes** - the Go CLI calls these as raw HTTP endpoints (not server functions).
 - **Email verification is tracked from signup and gates the whole app** - `users.email_verified_at` (null = unverified). Register issues a single-use token (`email_verifications`, hashed like sessions) and sends the link via Resend (`RESEND_API_KEY`/`EMAIL_FROM`). With no `RESEND_API_KEY`, the link is printed to the server terminal so accounts can be verified in dev without Resend; self-hosted instances (production) opt into the same terminal fallback explicitly via `EMAIL_DELIVERY=log` — never set that on hosted prod (tokens/feedback would land in aggregated logs). `GET /api/auth/verify-email?token=` consumes it and redirects to `/login?verified=1` (login shows a success banner; `verified=0` shows an invalid/expired banner).
 - **Nothing is provisioned at signup - onboarding creates the first workspace** - register creates only the `users` row (session starts with empty org keys). A verified user with zero live org memberships is redirected by `requireAuthBeforeLoad` to `/onboarding`, a 4-step wizard (welcome → org name → project name → env name) that wraps the personal org key client-side (vault master key seeded at login; master-password fallback in a fresh tab) and posts to `POST /api/onboarding`, which creates the personal org + first project + first environment in one shot and 409s once the user has any live org. `POST /api/orgs/:id/projects` still auto-creates a `production` env (product spec).

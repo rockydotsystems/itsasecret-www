@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { eq, and, isNotNull } from 'drizzle-orm'
+import { eq, and, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { secrets } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
@@ -20,8 +20,9 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key/restore')({
           const key = params.key!
           validateKey(key)
 
+          // hidden_at rows are perma-deleted: they must 404, never resurrect.
           const rows = await db.select({ id: secrets.id }).from(secrets)
-            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNotNull(secrets.deleted_at)))
+            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNotNull(secrets.deleted_at), isNull(secrets.hidden_at)))
             .limit(1)
           const deleted = rows[0] ?? null
           if (!deleted) return Response.json({ error: 'No deleted secret with this key' }, { status: 404 })

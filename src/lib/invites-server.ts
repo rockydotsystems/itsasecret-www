@@ -23,7 +23,7 @@ export type InvitePageView =
     }
 
 export const getInvitePageFn = createServerFn({ method: 'POST' })
-  .validator(z.object({ token: z.string() }))
+  .validator(z.object({ token: z.string().max(256) }))
   .handler(async ({ data }): Promise<InvitePageView> => {
     const invite = await findPendingInviteByToken(data.token)
     if (!invite) return { status: 'invalid' }

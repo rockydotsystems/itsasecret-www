@@ -1,5 +1,5 @@
 import { wrapKey, unwrapKey } from './crypto/envelope'
-import { getServerSecretKey } from './server-secret'
+import { getServerSecretKey, getLegacyServerSecretKey } from './server-secret'
 
 // Interim invite re-key scheme (see docs/open-questions.md #3): an inviter
 // cannot wrap the org key with the invitee's master key, so the server wraps
@@ -20,6 +20,14 @@ export async function wrapPendingOrgKey(orgKey: Uint8Array): Promise<string> {
 
 export async function unwrapPendingOrgKey(wrapped: string): Promise<Uint8Array> {
   if (!isPendingOrgKey(wrapped)) throw new Error('Not a pending org key')
+  const ciphertext = wrapped.slice(PENDING_PREFIX.length)
   const key = await getServerSecretKey()
-  return unwrapKey(key, wrapped.slice(PENDING_PREFIX.length))
+  try {
+    return await unwrapKey(key, ciphertext)
+  } catch {
+    // Rows wrapped before the v2 key derivation shipped: fall back to the v1
+    // key (fixed salt, 100k iterations) so existing invites stay redeemable.
+    const legacyKey = await getLegacyServerSecretKey()
+    return unwrapKey(legacyKey, ciphertext)
+  }
 }

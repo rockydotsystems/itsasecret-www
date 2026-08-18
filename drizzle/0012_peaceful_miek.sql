@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "idx_org_invites_pending_email" ON "org_invites" USING btree ("org_id",lower("email")) WHERE accepted_at IS NULL AND revoked_at IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_users_email_lower" ON "users" USING btree (lower("email"));

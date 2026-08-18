@@ -29,7 +29,9 @@ export const Route = createFileRoute('/api/orgs/$orgId/invites/$inviteId')({
           const invite = rows[0] ?? null
           if (!invite) return Response.json({ error: 'Invite not found' }, { status: 404 })
 
-          await db.update(orgInvites).set({ revoked_at: new Date() })
+          // Revocation burns the stored server-wrapped org key too: a dead
+          // link must not keep carrying a usable key until the 90-day purge.
+          await db.update(orgInvites).set({ revoked_at: new Date(), wrapped_org_key: '' })
             .where(eq(orgInvites.id, invite.id))
 
           await auditLog({ orgId, actorUserId: user.id, action: 'member.invite.revoke', targetType: 'email', targetId: invite.email, metadata: { role: invite.role } })

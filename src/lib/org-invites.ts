@@ -3,6 +3,7 @@ import { db } from './db'
 import { orgInvites } from './schema'
 import { base64Decode, base64Encode } from './crypto/base64'
 import { generateId } from './db-utils'
+import { publicBaseUrl } from './app-url'
 import type { OrgInvite } from './schema'
 
 // Invite links are single-use and expire after this window.
@@ -15,9 +16,9 @@ export function normalizeInviteEmail(email: string): string {
 }
 
 // Build the public accept link. APP_URL wins when set (needed behind a
-// reverse proxy); otherwise fall back to the request's own origin.
+// reverse proxy); outside production it may fall back to the request origin.
 export function inviteAcceptUrl(request: Request, token: string): string {
-  const baseUrl = process.env.APP_URL ?? new URL(request.url).origin
+  const baseUrl = publicBaseUrl(request)
   return `${baseUrl}/invite?token=${encodeURIComponent(token)}`
 }
 
@@ -58,7 +59,9 @@ export async function createOrgInvite(args: {
 }
 
 export async function revokePendingInvitesForEmail(orgId: string, email: string): Promise<void> {
-  await db.update(orgInvites).set({ revoked_at: new Date() })
+  // Revocation burns the stored server-wrapped org key too: a dead link must
+  // not keep carrying a usable key until the 90-day purge.
+  await db.update(orgInvites).set({ revoked_at: new Date(), wrapped_org_key: '' })
     .where(and(
       eq(orgInvites.org_id, orgId),
       eq(orgInvites.email, normalizeInviteEmail(email)),

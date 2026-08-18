@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq, and, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { users, orgs, orgMembers, orgInvites } from '~/lib/schema'
+import { orgs, orgMembers, orgInvites } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
 import { requireAuth, errorResponse } from '~/lib/auth'
 import { findPendingInviteByToken } from '~/lib/org-invites'
@@ -17,10 +17,9 @@ const acceptSchema = z.object({
 // "pending:" wrapped org key; the invitee's next login re-wraps it under
 // their master key (same flow as before invites had an accept step).
 //
-// Unverified accounts may accept: the token was emailed to the invite
-// address, so presenting it while logged in as that address proves inbox
-// control - which is exactly what email verification proves. We stamp the
-// account verified on that basis.
+// Unverified accounts may accept - but acceptance grants membership only:
+// the inviter controls the token, so presenting it proves nothing about
+// control of the invited inbox, and email_verified_at is never stamped.
 export const Route = createFileRoute('/api/invites/accept')({
   server: {
     handlers: {
@@ -53,9 +52,9 @@ export const Route = createFileRoute('/api/invites/accept')({
 
           const now = new Date()
 
-          // All membership/invite/verification writes happen in one
-          // transaction so a mid-sequence failure can't leave the invite
-          // half-accepted or the user unverified after their token is burned.
+          // All membership/invite writes happen in one transaction so a
+          // mid-sequence failure can't leave the invite half-accepted with
+          // its token burned.
           const result = await db.transaction(async (tx) => {
             const memberRows = await tx.select().from(orgMembers)
               .where(and(eq(orgMembers.org_id, org.id), eq(orgMembers.user_id, user.id)))
@@ -63,13 +62,9 @@ export const Route = createFileRoute('/api/invites/accept')({
             if (memberRows[0]) {
               // Already in (e.g. double-click, or added through another invite):
               // consume the token and report success rather than erroring.
-              await tx.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
-              // The token proves inbox control of the invited address, so
-              // stamp the account verified if it wasn't already (matches the
-              // new-member branch below).
-              if (user.email_verified_at === null) {
-                await tx.update(users).set({ email_verified_at: now }).where(eq(users.id, user.id))
-              }
+              // Burn the stored wrapped key on acceptance: the link is dead
+              // and must not carry a usable org key until the 90-day purge.
+              await tx.update(orgInvites).set({ accepted_at: now, wrapped_org_key: '' }).where(eq(orgInvites.id, invite.id))
               return { role: memberRows[0].role }
             }
 
@@ -80,11 +75,7 @@ export const Route = createFileRoute('/api/invites/accept')({
               wrapped_org_key: invite.wrapped_org_key,
               invited_by: invite.invited_by,
             })
-            await tx.update(orgInvites).set({ accepted_at: now }).where(eq(orgInvites.id, invite.id))
-
-            if (user.email_verified_at === null) {
-              await tx.update(users).set({ email_verified_at: now }).where(eq(users.id, user.id))
-            }
+            await tx.update(orgInvites).set({ accepted_at: now, wrapped_org_key: '' }).where(eq(orgInvites.id, invite.id))
             return { role: invite.role }
           })
 

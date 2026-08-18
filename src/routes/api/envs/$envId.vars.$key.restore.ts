@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { eq, and, isNotNull } from 'drizzle-orm'
+import { eq, and, isNotNull, isNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
 import { envVars } from '~/lib/schema'
 import { auditLog } from '~/lib/db-utils'
@@ -18,8 +18,9 @@ export const Route = createFileRoute('/api/envs/$envId/vars/$key/restore')({
           const key = params.key!
           validateKey(key)
 
+          // hidden_at rows are perma-deleted: they must 404, never resurrect.
           const rows = await db.select({ id: envVars.id }).from(envVars)
-            .where(and(eq(envVars.env_id, envId), eq(envVars.key, key), isNotNull(envVars.deleted_at)))
+            .where(and(eq(envVars.env_id, envId), eq(envVars.key, key), isNotNull(envVars.deleted_at), isNull(envVars.hidden_at)))
             .limit(1)
           const deleted = rows[0] ?? null
           if (!deleted) return Response.json({ error: 'No deleted variable with this key' }, { status: 404 })

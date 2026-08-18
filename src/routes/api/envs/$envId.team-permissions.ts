@@ -19,7 +19,8 @@ export const Route = createFileRoute('/api/envs/$envId/team-permissions')({
       GET: async ({ request, params }) => {
         try {
           const { user } = await requireAuth(request)
-          await requireEnvRole(params, user.id, [ROLE_READ, ROLE_WRITE, ROLE_ADMIN])
+          // Grant lists expose membership; read-only users must not enumerate them.
+          await requireEnvRole(params, user.id, [ROLE_ADMIN])
           const envId = params.envId!
           const rows = await db.select({
             env_id: teamEnvPermissions.env_id,

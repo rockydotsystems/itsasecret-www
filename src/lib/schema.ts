@@ -3,6 +3,9 @@ import { pgTable, text, timestamp, boolean, integer, primaryKey, unique, uniqueI
 
 export const users = pgTable('users', {
   id: text().primaryKey(),
+  // Case-insensitive uniqueness is enforced by the lower(email) index below;
+  // the plain unique stays (subsumed by it) because register.ts maps its
+  // constraint name to a friendly 409.
   email: text().notNull().unique(),
   // Display name, shown in the UI and on avatars. Optional - accounts are
   // email-first and the profile page fills this in later.
@@ -13,7 +16,9 @@ export const users = pgTable('users', {
   email_verified_at: timestamp('email_verified_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
-})
+}, (t) => [
+  uniqueIndex('idx_users_email_lower').on(sql`lower(${t.email})`),
+])
 
 export const emailVerifications = pgTable('email_verifications', {
   id: text().primaryKey(),
@@ -73,6 +78,9 @@ export const orgInvites = pgTable('org_invites', {
 }, (t) => [
   index('idx_org_invites_org').on(t.org_id),
   index('idx_org_invites_email').on(t.email),
+  // One pending invite per (org, email), case-insensitive, enforced at the
+  // DB level so racing invite creates cannot double up.
+  uniqueIndex('idx_org_invites_pending_email').on(t.org_id, sql`lower(${t.email})`).where(sql`accepted_at IS NULL AND revoked_at IS NULL`),
 ])
 
 // One row per org that has ever opened checkout - the billing state Stripe
@@ -269,7 +277,7 @@ export const sessions = pgTable('sessions', {
   id: text().primaryKey(),
   user_id: text().notNull().references(() => users.id),
   token_hash: text().notNull().unique(),
-  // 'web' sessions live 30 days on a stable token; 'cli' sessions live 30
+  // 'web' sessions live 7 days on a stable token; 'cli' sessions live 30
   // minutes and roll - each successful request issues a new token, with the
   // previous one honored briefly (crash/parallel safety).
   kind: text().notNull().default('web'),
@@ -282,6 +290,9 @@ export const sessions = pgTable('sessions', {
   encrypted_org_keys: text().notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  // Throttled touch by requireAuth: backs the web idle timeout and the
+  // "last used" column on the tokens page.
+  last_used_at: timestamp('last_used_at', { withTimezone: true }),
   revoked_at: timestamp('revoked_at', { withTimezone: true }),
 }, (t) => [
   index('idx_sessions_user').on(t.user_id),

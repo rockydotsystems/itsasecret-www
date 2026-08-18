@@ -55,6 +55,12 @@ export async function softDeleteSecret(id: string): Promise<void> {
   await db.update(schema.secrets).set({ deleted_at: new Date() }).where(eq(schema.secrets.id, id))
 }
 
+// Postgres unique_violation (23505) - e.g. a first-create race that beat
+// SELECT ... FOR UPDATE, which cannot lock a row that does not exist yet.
+export function isUniqueViolation(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505'
+}
+
 export async function auditLog(entry: {
   orgId?: string
   // Nullable: webhooks (Stripe) act without a user.

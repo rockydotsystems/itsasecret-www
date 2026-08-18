@@ -2,13 +2,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { eq, and, isNull, isNotNull } from 'drizzle-orm'
 import { db } from '~/lib/db'
-import { secrets } from '~/lib/schema'
-import { generateId, auditLog, softDeleteSecret } from '~/lib/db-utils'
+import { secrets, secretHistory } from '~/lib/schema'
+import { generateId, auditLog, softDeleteSecret, isUniqueViolation } from '~/lib/db-utils'
 import { requireAuth, getSessionKey, getOrgKey, errorResponse, validateKey } from '~/lib/auth'
 import { requireEnvRole, ROLE_READ, ROLE_WRITE, ROLE_ADMIN } from '~/lib/rbac'
 import { encrypt, decrypt } from '~/lib/crypto/envelope'
+import { base64Decode } from '~/lib/crypto/base64'
 import { recordSecretHistory } from '~/lib/history'
-import { isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
+import { isRateLimited, recordFailedAttempt, REVEAL_MAX_ATTEMPTS } from '~/lib/rate-limit'
 
 // cipher 'session': value is encrypted under the ECDH transport key and the
 // server re-encrypts it under the org key (CLI flow). cipher 'org': value is
@@ -31,7 +32,7 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
           validateKey(key)
 
           const revealKey = `reveal:${user.id}`
-          const revealLimit = isRateLimited(revealKey)
+          const revealLimit = isRateLimited(revealKey, REVEAL_MAX_ATTEMPTS)
           if (revealLimit.limited) {
             return Response.json(
               { error: 'Too many reveal requests. Please try again later.' },
@@ -71,6 +72,17 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
 
           let storedEncrypted: string
           if (cipher === 'org') {
+            // Minimum viable envelope: 12-byte nonce + 16-byte GCM tag.
+            // Shorter blobs can never decrypt and poison server-side pulls.
+            let decoded: Uint8Array
+            try {
+              decoded = base64Decode(encryptedValue)
+            } catch {
+              return Response.json({ error: 'encryptedValue must be valid base64' }, { status: 400 })
+            }
+            if (decoded.length < 28) {
+              return Response.json({ error: 'encryptedValue must decode to at least 28 bytes' }, { status: 400 })
+            }
             storedEncrypted = encryptedValue
           } else {
             const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
@@ -79,43 +91,58 @@ export const Route = createFileRoute('/api/envs/$envId/secrets/$key')({
             storedEncrypted = await encrypt(orgKey, plaintext)
           }
 
-          const existingRows = await db.select().from(secrets)
-            .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
-            .limit(1)
-          const existing = existingRows[0] ?? null
+          try {
+            await db.transaction(async (tx) => {
+              const existingRows = await tx.select().from(secrets)
+                .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNull(secrets.deleted_at)))
+                .limit(1)
+                .for('update')
+              const existing = existingRows[0] ?? null
 
-          if (existing) {
-            await recordSecretHistory({
-              secretId: existing.id,
-              envId,
-              key,
-              encryptedValue: existing.encrypted_value,
-              changeType: 'update',
-              changedBy: user.id,
+              if (existing) {
+                // History snapshot + update share the tx (and the row lock)
+                // so last-write-wins can never silently drop a value.
+                await tx.insert(secretHistory).values({
+                  id: generateId(),
+                  secret_id: existing.id,
+                  env_id: envId,
+                  key,
+                  encrypted_value: existing.encrypted_value,
+                  change_type: 'update',
+                  changed_by: user.id,
+                })
+                await tx.update(secrets)
+                  .set({ encrypted_value: storedEncrypted, updated_at: new Date() })
+                  .where(eq(secrets.id, existing.id))
+              } else {
+                // hidden_at rows are perma-deleted: never resurrect them.
+                const deletedRows = await tx.select({ id: secrets.id }).from(secrets)
+                  .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNotNull(secrets.deleted_at), isNull(secrets.hidden_at)))
+                  .limit(1)
+                  .for('update')
+                const deleted = deletedRows[0] ?? null
+
+                if (deleted) {
+                  await tx.update(secrets)
+                    .set({ encrypted_value: storedEncrypted, deleted_at: null, hidden_at: null, updated_at: new Date() })
+                    .where(eq(secrets.id, deleted.id))
+                } else {
+                  const secretId = generateId()
+                  await tx.insert(secrets).values({
+                    id: secretId,
+                    env_id: envId,
+                    key,
+                    encrypted_value: storedEncrypted,
+                    created_by: user.id,
+                  })
+                }
+              }
             })
-            await db.update(secrets)
-              .set({ encrypted_value: storedEncrypted, updated_at: new Date() })
-              .where(eq(secrets.id, existing.id))
-          } else {
-            const deletedRows = await db.select({ id: secrets.id }).from(secrets)
-              .where(and(eq(secrets.env_id, envId), eq(secrets.key, key), isNotNull(secrets.deleted_at)))
-              .limit(1)
-            const deleted = deletedRows[0] ?? null
-
-            if (deleted) {
-              await db.update(secrets)
-                .set({ encrypted_value: storedEncrypted, deleted_at: null, hidden_at: null, updated_at: new Date() })
-                .where(eq(secrets.id, deleted.id))
-            } else {
-              const secretId = generateId()
-              await db.insert(secrets).values({
-                id: secretId,
-                env_id: envId,
-                key,
-                encrypted_value: storedEncrypted,
-                created_by: user.id,
-              })
+          } catch (err) {
+            if (isUniqueViolation(err)) {
+              return Response.json({ error: 'Secret already exists' }, { status: 409 })
             }
+            throw err
           }
 
           await auditLog({ orgId, actorUserId: user.id, action: 'secret.upsert', targetType: 'secret', targetId: key, metadata: { envId } })

@@ -261,7 +261,9 @@ export const getOrgSettingsFn = createServerFn({ method: 'POST' })
     const { user } = await requireAuth(request)
     const { orgId } = data
 
-    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+    // Settings data (member emails, invites, billing) is owner/admin only -
+    // the same data is not enumerable by plain members anywhere else.
+    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
 
     const [userOrgs, orgProjects, lastProjectId, members, invites, orgTeams, billing] = await Promise.all([
       listOrgsForUser(user.id),
@@ -330,7 +332,9 @@ export const getProjectSettingsFn = createServerFn({ method: 'POST' })
     const { user } = await requireAuth(request)
     const { orgId, projectId } = data
 
-    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN, ORG_ROLE_MEMBER])
+    // Settings data (env permission grants with emails, member roster, team
+    // grants) is owner/admin only - plain members cannot enumerate it.
+    await requireOrgRole({ orgId }, user.id, [ORG_ROLE_OWNER, ORG_ROLE_ADMIN])
 
     const [userOrgs, orgProjects, members] = await Promise.all([
       listOrgsForUser(user.id),
@@ -452,10 +456,10 @@ export const getProjectViewFn = createServerFn({ method: 'POST' })
       envRole = currentUserRole === ORG_ROLE_OWNER || currentUserRole === ORG_ROLE_ADMIN
         ? 'admin'
         : grantedRole
-      // Env vars are plaintext by design but still gated by env-level RBAC.
-      // Only return values to callers with an actual env role; a plain org
-      // member with no env grant gets an empty list. (Secrets already return
-      // keys only, so they are safe regardless.)
+      // Env data is gated by env-level RBAC - key names included, they leak
+      // what the env holds. A plain org member with no env grant gets empty
+      // lists.
+      envSecrets = envRole !== '' ? secretRows : []
       envVarList = envRole !== '' ? varRows : []
 
       // Env admins can manage access from the dashboard; nobody else needs

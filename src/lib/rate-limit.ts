@@ -11,12 +11,16 @@ const buckets = new Map<string, Bucket>()
 
 const WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 const MAX_ATTEMPTS = 10
+// Reveal endpoints (org-key fetch, history reads) fire on every login/unlock
+// and during normal dashboard use, so they get a much roomier per-user budget
+// than credential endpoints - enough to throttle bulk scraping, not people.
+export const REVEAL_MAX_ATTEMPTS = 100
 
 // TEMP local-dev escape hatch: `RATE_LIMIT_DISABLED=1 vite dev` turns every
 // limiter into a no-op. Never set this on a deployed instance.
 const rateLimitDisabled = process.env.RATE_LIMIT_DISABLED === '1'
 
-export function isRateLimited(key: string): { limited: boolean; retryAfterSeconds: number } {
+export function isRateLimited(key: string, maxAttempts: number = MAX_ATTEMPTS): { limited: boolean; retryAfterSeconds: number } {
   if (rateLimitDisabled) {
     return { limited: false, retryAfterSeconds: 0 }
   }
@@ -27,7 +31,7 @@ export function isRateLimited(key: string): { limited: boolean; retryAfterSecond
     return { limited: false, retryAfterSeconds: 0 }
   }
 
-  if (bucket.attempts >= MAX_ATTEMPTS) {
+  if (bucket.attempts >= maxAttempts) {
     return { limited: true, retryAfterSeconds: Math.ceil((bucket.resetAt - now) / 1000) }
   }
 
