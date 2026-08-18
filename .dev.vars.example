@@ -6,9 +6,16 @@ APP_ENV=development
 # RESEND_API_KEY=re_xxxxxxxx
 # EMAIL_FROM=itsasecret <onboarding@resend.dev>
 
-# Public origin used to build verification links. Falls back to the request
-# origin when unset (needed when the app runs behind a reverse proxy).
+# Public origin used to build verification/invite links. Falls back to the
+# request origin when unset OUTSIDE production (behind a reverse proxy set it
+# explicitly); in production the server refuses to start email flows without
+# it so links cannot be poisoned via the Host header.
 # APP_URL=http://localhost:3000
+
+# Server-side wrap key for pending org keys and env-var history. Required
+# outside development unless ALLOW_INSECURE_DEV_SECRET=1 is set (dev only):
+# generate with `openssl rand -base64 32`.
+# SERVER_WRAP_SECRET=
 
 # Billing (Stripe). All three are needed for checkout/portal; without
 # STRIPE_SECRET_KEY the billing API 503s and every org stays on free limits.

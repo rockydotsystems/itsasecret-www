@@ -2,12 +2,26 @@ services:
   postgres:
     image: postgres:17
     container_name: itsasecret-postgres
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+      - FOWNER
+    mem_limit: 1g
+    cpus: "1.0"
     environment:
       POSTGRES_USER: itsasecret
-      POSTGRES_PASSWORD: itsasecret
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       POSTGRES_DB: itsasecret
+    # Bound to loopback only: local dev (vite on the host) reaches postgres at
+    # localhost:5432 without exposing it to the LAN.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - itsasecret_pgdata:/var/lib/postgresql/data
     healthcheck:
