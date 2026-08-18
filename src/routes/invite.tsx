@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '~/components/button'
 import { LogoMark } from '~/components/logo'
 import { LoadingDots } from '~/components/loadingdots'
@@ -30,6 +30,12 @@ export const Route = createFileRoute('/invite')({
 function InvitePage() {
   const view = Route.useLoaderData()
   const { token } = Route.useSearch()
+  const [inviteToken] = useState(token)
+
+  // Strip the invite token from the address bar so it doesn't linger in browser history.
+  useEffect(() => {
+    if (inviteToken) window.history.replaceState(window.history.state, '', '/invite')
+  }, [inviteToken])
 
   return (
     <div className="auth-page">
@@ -40,10 +46,10 @@ function InvitePage() {
             itsasecret
           </span>
         </div>
-        {view.status === 'invalid' || !token ? (
+        {view.status === 'invalid' || !inviteToken ? (
           <InvalidInvite />
         ) : (
-          <ValidInvite view={view} token={token} />
+          <ValidInvite view={view} token={inviteToken} />
         )}
       </div>
     </div>

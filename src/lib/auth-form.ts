@@ -3,7 +3,6 @@ import { lockVault, seedVaultFromLogin } from './vault'
 import { storeClientPrivateKey, clearClientPrivateKey } from './client-session'
 
 export interface AuthFormResult {
-  token: string
   serverPubkey: string
   orgKeys: Record<string, string>
 }
@@ -54,12 +53,12 @@ export async function submitAuthForm(
   return data
 }
 
-export function getRedirectPath(redirect: string | undefined, origin?: string): string {
+export function getRedirectPath(redirect: string | undefined, origin: string): string {
   if (!redirect) return '/dashboard'
   try {
     const url = new URL(redirect)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return '/dashboard'
-    if (origin && url.origin !== origin) return '/dashboard'
+    if (url.origin !== origin) return '/dashboard'
     return url.pathname + url.search + url.hash
   } catch {
     // Relative path only. Reject protocol-relative ("//evil.com") and the
@@ -98,7 +97,7 @@ export function storeAuthFormNativeListener(
 
     const params = new URLSearchParams(window.location.search)
     const redirect = params.get('redirect') || fallbackUrl
-    const redirectTo = getRedirectPath(redirect)
+    const redirectTo = getRedirectPath(redirect, window.location.origin)
 
     submitAuthForm(endpoint, email, password)
       .then(() => {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
-import { CopyIcon, EyeIcon, EyeOffIcon, MaskedDots, RestoreIcon } from '~/components/secretrow'
+import { CopyIcon, EyeIcon, EyeOffIcon, MaskedDots, RestoreIcon, useClipboardHygiene } from '~/components/secretrow'
 
 export type HistoryModalEntry = {
   id: string
@@ -35,6 +35,7 @@ function HistoryRow({ entry }: { entry: HistoryModalEntry }) {
   const [value, setValue] = useState<string | null>(entry.value ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const { copy } = useClipboardHygiene()
   const isSecret = entry.reveal !== undefined
 
   async function fetchValue(): Promise<string | null> {
@@ -57,6 +58,8 @@ function HistoryRow({ entry }: { entry: HistoryModalEntry }) {
   async function handleToggleReveal() {
     if (revealed) {
       setRevealed(false)
+      // Drop the decrypted value so the next reveal re-fetches it.
+      setValue(entry.value ?? null)
       return
     }
     const plaintext = await fetchValue()
@@ -65,7 +68,7 @@ function HistoryRow({ entry }: { entry: HistoryModalEntry }) {
 
   async function handleCopy() {
     const plaintext = await fetchValue()
-    if (plaintext !== null) await navigator.clipboard.writeText(plaintext)
+    if (plaintext !== null) await copy(plaintext)
   }
 
   async function handleRestore() {

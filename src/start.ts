@@ -11,6 +11,13 @@ const apiCsrfMiddleware = createMiddleware({ type: 'request' }).server(
     if (pathname.startsWith('/api/') && pathname !== '/api/billing/webhook') {
       const method = request.method.toUpperCase()
       if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+        // Browsers stamp Sec-Fetch-Site onto cross-origin fetches; CLI/curl sends no such header.
+        if (request.headers.get('sec-fetch-site') === 'cross-site') {
+          return new Response(JSON.stringify({ error: 'Cross-site request rejected' }), {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
         const hasBearer = request.headers.get('authorization')?.startsWith('Bearer ')
         if (!hasBearer && !request.headers.get('x-requested-with')) {
           return new Response(JSON.stringify({ error: 'Missing CSRF header' }), {
@@ -55,8 +62,9 @@ const securityHeadersMiddleware = createMiddleware({ type: 'request' }).server(
     const h = result.response.headers
     h.set('X-Content-Type-Options', 'nosniff')
     h.set('X-Frame-Options', 'DENY')
-    h.set('Content-Security-Policy', "frame-ancestors 'none'")
+    h.set('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'")
     h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    h.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
     if (pathname.startsWith('/api/')) {
       h.set('Cache-Control', 'no-store')
     }

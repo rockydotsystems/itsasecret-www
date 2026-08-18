@@ -1,4 +1,4 @@
-import { ClockIcon, CopyIcon, PencilIcon, TrashIcon } from '~/components/secretrow'
+import { ClockIcon, CopyIcon, PencilIcon, TrashIcon, useClipboardHygiene } from '~/components/secretrow'
 
 export type VarRowProps = {
   name: string
@@ -11,6 +11,8 @@ export type VarRowProps = {
 
 // Plain (non-secret) env var: value is shown in the clear.
 export function VarRow({ name, value, meta, onEdit, onDelete, onHistory }: VarRowProps) {
+  const { copy } = useClipboardHygiene()
+
   return (
     <div className="secret-row">
       <div className="secret-row-info">
@@ -22,7 +24,7 @@ export function VarRow({ name, value, meta, onEdit, onDelete, onHistory }: VarRo
         <button
           type="button"
           className="secret-action"
-          onClick={() => navigator.clipboard.writeText(value)}
+          onClick={() => void copy(value)}
           title="Copy value"
         >
           {CopyIcon}

@@ -27,7 +27,6 @@ function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
-  const redirectTo = getRedirectPath(redirect, typeof window !== 'undefined' ? window.location.origin : undefined)
 
   useEffect(() => {
     if (formRef.current) formRef.current.dataset.reactManaged = 'true'
@@ -44,7 +43,7 @@ function RegisterPage() {
 
     try {
       await submitAuthForm('/api/auth/register', email, password)
-      window.location.href = redirectTo
+      window.location.href = getRedirectPath(redirect, window.location.origin)
     } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
     } finally {

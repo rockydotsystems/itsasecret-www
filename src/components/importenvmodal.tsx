@@ -83,6 +83,10 @@ export function ImportEnvModal({
   }
 
   function startReview() {
+    if (new TextEncoder().encode(text).length > MAX_FILE_BYTES) {
+      setError('That input is over 1 MB - too large for an env file.')
+      return
+    }
     const parsed = parseDotenv(text)
     if (parsed.entries.length === 0) {
       setError('No KEY=value pairs found in that input.')
@@ -126,7 +130,7 @@ export function ImportEnvModal({
             await setVar(envId, row.key, row.value)
             importedVars++
           }
-          patchRow(i, { status: 'done' })
+          patchRow(i, { status: 'done', value: '', revealed: false })
         } catch (err) {
           failures++
           patchRow(i, { status: 'error', error: (err as Error).message || 'Failed to save' })

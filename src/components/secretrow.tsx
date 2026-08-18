@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   IconArrowDottedRotateAnticlockwise,
   IconCircleHalfDottedClock,
@@ -35,6 +35,31 @@ export const RestoreIcon = <IconArrowDottedRotateAnticlockwise size={16} aria-hi
 
 export const ClockIcon = <IconCircleHalfDottedClock size={16} aria-hidden="true" />
 
+const CLIPBOARD_CLEAR_MS = 30000
+
+// Copy with clipboard hygiene: overwrites the clipboard shortly after so a copied secret doesn't linger.
+export function useClipboardHygiene(): { copy: (text: string) => Promise<void>; clearNow: () => void } {
+  const timerRef = useRef<number | null>(null)
+
+  function clearNow(): void {
+    if (timerRef.current === null) return
+    window.clearTimeout(timerRef.current)
+    timerRef.current = null
+    void navigator.clipboard.writeText('')
+  }
+
+  async function copy(text: string): Promise<void> {
+    await navigator.clipboard.writeText(text)
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null
+      void navigator.clipboard.writeText('')
+    }, CLIPBOARD_CLEAR_MS)
+  }
+
+  return { copy, clearNow }
+}
+
 export function MaskedDots() {
   return (
     <span className="secret-masked">
@@ -54,6 +79,7 @@ export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, on
   const [value, setValue] = useState<string | null>(staticValue ?? null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const { copy } = useClipboardHygiene()
 
   async function fetchValue(): Promise<string | null> {
     if (value !== null) return value
@@ -75,6 +101,8 @@ export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, on
   async function handleToggleReveal() {
     if (revealed) {
       setRevealed(false)
+      // Drop the decrypted value so the next reveal re-fetches it.
+      setValue(staticValue ?? null)
       return
     }
     const plaintext = await fetchValue()
@@ -83,7 +111,7 @@ export function SecretRow({ name, meta, value: staticValue, onReveal, onEdit, on
 
   async function handleCopy() {
     const plaintext = await fetchValue()
-    if (plaintext !== null) await navigator.clipboard.writeText(plaintext)
+    if (plaintext !== null) await copy(plaintext)
   }
 
   return (

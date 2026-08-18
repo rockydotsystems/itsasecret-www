@@ -5,11 +5,23 @@
 #
 # Installs the `itsasecret` CLI (and its `shh` alias) for linux/macOS on
 # amd64/arm64. Override the target directory with SHH_INSTALL_DIR, or the
-# server with SHH_BASE_URL (self-hosted).
+# server with SHH_BASE_URL (self-hosted; non-https requires SHH_INSECURE=1).
 set -eu
 
 BASE_URL="${SHH_BASE_URL:-https://itsasecret.dev}"
 INSTALL_DIR="${SHH_INSTALL_DIR:-$HOME/.local/bin}"
+
+# Refuse a non-https base URL: the installer fetches binaries that must not
+# traverse plaintext links. SHH_INSECURE=1 explicitly opts into http (local dev).
+case "$BASE_URL" in
+  https://*) ;;
+  *)
+    if [ "${SHH_INSECURE:-0}" != "1" ]; then
+      echo "error: SHH_BASE_URL must start with https:// - set SHH_INSECURE=1 to allow http" >&2
+      exit 1
+    fi
+    ;;
+esac
 
 os=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$os" in
@@ -34,9 +46,14 @@ bin="itsasecret_${os}_${arch}"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
+curl_opts="--tlsv1.2 --retry 2 -fsSL"
+case "$BASE_URL" in
+  https://*) curl_opts="--proto '=https' $curl_opts" ;;
+esac
+
 echo "Downloading $bin ..."
-curl -fsSL "$BASE_URL/api/dl/$bin" -o "$tmp/itsasecret"
-curl -fsSL "$BASE_URL/api/dl/checksums.txt" -o "$tmp/checksums.txt"
+curl $curl_opts "$BASE_URL/api/dl/$bin" -o "$tmp/itsasecret"
+curl $curl_opts "$BASE_URL/api/dl/checksums.txt" -o "$tmp/checksums.txt"
 
 if command -v sha256sum >/dev/null 2>&1; then
   actual=$(sha256sum "$tmp/itsasecret" | cut -d' ' -f1)
