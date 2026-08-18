@@ -5,7 +5,8 @@ import { users, sessions } from './schema'
 import type { User, Session } from './schema'
 import { base64Encode, base64Decode } from './crypto/base64'
 import { decrypt } from './crypto/envelope'
-import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE } from './session-cookie'
+import { SESSION_COOKIE_NAME, SESSION_COOKIE_NAME_INSECURE, isProduction } from './session-cookie'
+import { revokeSession, WEB_IDLE_TIMEOUT_MS } from './sessions'
 import { StripeApiError } from './stripe'
 
 export interface AuthContext {
@@ -26,6 +27,9 @@ export function extractSessionToken(request: Request): string | null {
   const cookieHeader = request.headers.get('cookie')
   if (cookieHeader) {
     let insecure: string | null = null
+    // In production only the __Host- cookie is honored; the unprefixed
+    // name is a plain-HTTP dev transport an attacker must not fall back to.
+    const allowInsecureCookie = !isProduction()
     for (const part of cookieHeader.split(';')) {
       const eq = part.indexOf('=')
       if (eq === -1) continue
@@ -36,7 +40,7 @@ export function extractSessionToken(request: Request): string | null {
         value = decodeURIComponent(value)
       } catch { /* keep raw */ }
       if (name === SESSION_COOKIE_NAME) return value
-      insecure = value
+      if (allowInsecureCookie) insecure = value
     }
     return insecure
   }
@@ -83,6 +87,21 @@ export async function requireAuth(
 
   if (!session) {
     throw jsonError('Invalid or expired session', 401)
+  }
+
+  // Web sessions idle out after a day unused (cli is bounded by its 30-min
+  // roll; tokens are long-lived by design).
+  if (
+    session.kind === 'web' &&
+    now.getTime() - (session.last_used_at ?? session.created_at).getTime() > WEB_IDLE_TIMEOUT_MS
+  ) {
+    await revokeSession(session.id)
+    throw jsonError('Invalid or expired session', 401)
+  }
+
+  // Throttled touch off the critical path: one write per minute per session.
+  if (!session.last_used_at || now.getTime() - session.last_used_at.getTime() > 60 * 1000) {
+    void db.update(sessions).set({ last_used_at: now }).where(eq(sessions.id, session.id)).catch(() => {})
   }
 
   const userRows = await db.select().from(users).where(eq(users.id, session.user_id)).limit(1)
@@ -145,8 +164,11 @@ export function jsonError(message: string, status: number): HttpError {
 }
 
 const KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/
+const KEY_MAX_LENGTH = 256
+// Keys become JSON object members; these names would hijack the prototype chain.
+const RESERVED_KEY_NAMES = new Set(['__proto__', 'prototype', 'constructor'])
 export function validateKey(key: string): void {
-  if (!KEY_PATTERN.test(key)) {
+  if (key.length > KEY_MAX_LENGTH || RESERVED_KEY_NAMES.has(key) || !KEY_PATTERN.test(key)) {
     throw jsonError('Invalid key: must be a valid identifier (letters, digits, underscore; not starting with a digit)', 400)
   }
 }

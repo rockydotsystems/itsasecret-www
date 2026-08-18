@@ -5,7 +5,7 @@ import { db } from '~/lib/db'
 import { orgs, users, billingSubscriptions, billingEvents } from '~/lib/schema'
 import { auditLog, generateId } from '~/lib/db-utils'
 import { errorResponse } from '~/lib/auth'
-import { verifyWebhookSignature, getSubscription } from '~/lib/stripe'
+import { verifyWebhookSignature, getSubscription, isBillingEnabled, teamPriceId } from '~/lib/stripe'
 import { isPaidStatus } from '~/lib/plans'
 import { sendPaymentFailedEmail } from '~/lib/email'
 
@@ -52,7 +52,15 @@ export const Route = createFileRoute('/api/billing/webhook')({
             .returning({ id: billingEvents.id })
           if (inserted.length === 0) return Response.json({ received: true, duplicate: true }, { status: 200 })
 
-          await handleBillingEvent(event.id, event.type, event.data.object)
+          try {
+            await handleBillingEvent(event.id, event.type, event.data.object)
+          } catch (err) {
+            // Free the ledger row so a Stripe retry isn't mistaken for a
+            // replay, then rethrow so the failure surfaces and delivery is
+            // attempted again.
+            await db.delete(billingEvents).where(eq(billingEvents.id, event.id))
+            throw err
+          }
           return Response.json({ received: true }, { status: 200 })
         } catch (err) {
           return errorResponse(err)
@@ -66,20 +74,28 @@ async function handleBillingEvent(eventId: string, type: string, object: Record<
   switch (type) {
     case 'checkout.session.completed': {
       if (object.mode !== 'subscription') return
-      const session = z.object({
+      const parsed = z.object({
         customer: z.string(),
         subscription: z.string(),
         metadata: z.record(z.string(), z.string()).optional(),
-      }).parse(object)
+      }).safeParse(object)
+      if (!parsed.success) return
+      const session = parsed.data
       const orgId = session.metadata?.org_id ?? null
       if (!orgId) {
         console.error(`[billing] checkout.session.completed ${eventId} without org metadata`)
         return
       }
+      const resolvedOrgId = await orgIdForCustomer(session.customer, orgId)
+      if (!resolvedOrgId) return
       // Pull the full subscription so seats/period match Stripe exactly,
       // whatever fields this API version inlines into the session payload.
       const sub = await getSubscription(session.subscription)
-      await applySubscription(orgId, session.customer, snapshotOf(sub), eventId)
+      if (!isTeamPrice(sub.items?.data)) {
+        console.error(`[billing] subscription ${sub.id} is not on the Team price (event ${eventId}) - ignoring`)
+        return
+      }
+      await applySubscription(resolvedOrgId, session.customer, snapshotOf(sub), eventId)
       return
     }
 
@@ -95,6 +111,7 @@ async function handleBillingEvent(eventId: string, type: string, object: Record<
         items: z.object({ data: z.array(z.object({
           quantity: z.number().nullish(),
           current_period_end: z.number().nullish(),
+          price: z.object({ id: z.string() }).optional(),
         })) }).nullish(),
         metadata: z.record(z.string(), z.string()).nullish(),
       })
@@ -115,6 +132,11 @@ async function handleBillingEvent(eventId: string, type: string, object: Record<
           updated_at: new Date(),
         }).where(eq(billingSubscriptions.org_id, orgId))
         await setOrgPlan(orgId, 'free', eventId)
+        return
+      }
+
+      if (!isTeamPrice(sub.items?.data)) {
+        console.error(`[billing] subscription ${sub.id} is not on the Team price (event ${eventId}) - ignoring`)
         return
       }
 
@@ -154,6 +176,13 @@ function epochToDate(epoch: number | null | undefined): Date | null {
   return typeof epoch === 'number' ? new Date(epoch * 1000) : null
 }
 
+// Only the configured Team price confers the Team plan: a subscription on any
+// other price is logged and ignored instead of flipping the org's plan.
+function isTeamPrice(items: { price?: { id?: string } }[] | undefined): boolean {
+  const expected = isBillingEnabled() ? teamPriceId() : null
+  return Boolean(expected) && (items ?? []).some((item) => item.price?.id === expected)
+}
+
 function snapshotOf(sub: {
   id: string
   status: string
@@ -187,8 +216,8 @@ async function applySubscription(orgId: string, customerId: string, sub: Subscri
 
   if (updated.length === 0) {
     // No checkout-initiated row for this org (e.g. subscription created from
-    // the Stripe dashboard) - create one; org_id is unique so concurrent
-    // webhook deliveries still collapse to a single row.
+    // the Stripe dashboard) - create one. On conflict the latest snapshot
+    // wins, so concurrent deliveries never leave a stale row behind.
     await db.insert(billingSubscriptions).values({
       id: generateId(),
       org_id: orgId,
@@ -198,7 +227,18 @@ async function applySubscription(orgId: string, customerId: string, sub: Subscri
       seat_count: sub.seats,
       current_period_end: sub.periodEnd,
       cancel_at_period_end: sub.cancelAtPeriodEnd,
-    }).onConflictDoNothing()
+    }).onConflictDoUpdate({
+      target: billingSubscriptions.org_id,
+      set: {
+        stripe_customer_id: customerId,
+        stripe_subscription_id: sub.id,
+        status: sub.status,
+        seat_count: sub.seats,
+        current_period_end: sub.periodEnd,
+        cancel_at_period_end: sub.cancelAtPeriodEnd,
+        updated_at: new Date(),
+      },
+    })
   }
 
   const plan = isPaidStatus(sub.status) ? 'team' : 'free'
@@ -213,15 +253,23 @@ async function setOrgPlan(orgId: string, plan: string, eventId: string): Promise
 
 // Find the org a Stripe object belongs to: metadata first (set at checkout
 // time on both the session and the subscription), then the locally stored
-// customer mapping.
+// customer mapping. When both exist they must agree - the stored customer->org
+// binding is the authoritative one, so a mismatching metadata org skips the
+// event rather than billing the wrong org.
 async function orgIdForCustomer(customerId: string, metadataOrgId: string | null | undefined): Promise<string | null> {
-  if (metadataOrgId) return metadataOrgId
   const rows = await db.select({ org_id: billingSubscriptions.org_id }).from(billingSubscriptions)
     .where(eq(billingSubscriptions.stripe_customer_id, customerId))
     .limit(1)
-  const orgId = rows[0]?.org_id ?? null
-  if (!orgId) console.error(`[billing] no org mapped for Stripe customer ${customerId}`)
-  return orgId
+  const boundOrgId = rows[0]?.org_id ?? null
+  if (metadataOrgId) {
+    if (boundOrgId && boundOrgId !== metadataOrgId) {
+      console.error(`[billing] customer ${customerId} is bound to org ${boundOrgId} but metadata says ${metadataOrgId} - skipping`)
+      return null
+    }
+    return metadataOrgId
+  }
+  if (!boundOrgId) console.error(`[billing] no org mapped for Stripe customer ${customerId}`)
+  return boundOrgId
 }
 
 async function orgOwner(orgId: string): Promise<{ email: string; orgName: string } | null> {

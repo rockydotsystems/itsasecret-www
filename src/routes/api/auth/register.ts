@@ -17,7 +17,7 @@ import { sendVerificationEmail } from '~/lib/email'
 const registerSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(12).max(1024),
-  clientPubkey: z.string().max(256),
+  clientPubkey: z.string().max(256).regex(/^[A-Za-z0-9+/]+={0,2}$/, 'clientPubkey must be base64'),
 })
 
 function isDuplicateEmailError(err: unknown): boolean {
@@ -94,7 +94,8 @@ export const Route = createFileRoute('/api/auth/register')({
           const headers = new Headers()
           headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
 
-          return Response.json({ token, serverPubkey, orgKeys }, { status: 201, headers })
+          // No token in the body: the web client rides the HttpOnly cookie.
+          return Response.json({ serverPubkey, orgKeys }, { status: 201, headers })
         } catch (err) {
           // Concurrent registrations can both pass the pre-insert email check;
           // the loser hits the unique constraint instead.

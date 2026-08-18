@@ -19,11 +19,19 @@ import { runDummyPasswordHash } from '~/lib/crypto/kdf'
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().max(1024),
-  clientPubkey: z.string().max(256),
+  clientPubkey: z.string().max(256).regex(/^[A-Za-z0-9+/]+={0,2}$/, 'clientPubkey must be base64'),
   // 'cli' sessions are short-lived and roll their token on every successful
   // request (see lib/sessions.ts); the default 'web' keeps long sessions.
   client: z.enum(['web', 'cli']).optional(),
 })
+
+// Unknown emails throttle against a stable hash of the address: without a
+// pseudo-account bucket, only existing users can ever trip the per-account
+// 429, which enumerates registered emails.
+async function pseudoAccountKey(email: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(email.toLowerCase()))
+  return base64Encode(new Uint8Array(digest))
+}
 
 export const Route = createFileRoute('/api/auth/login')({
   server: {
@@ -47,9 +55,20 @@ export const Route = createFileRoute('/api/auth/login')({
           const user = userRows[0] ?? null
           if (!user) {
             // Run a dummy password hash to keep timing similar to a valid user,
-            // mitigating email-enumeration via response timing.
+            // mitigating email-enumeration via response timing. It runs before
+            // the pseudo-bucket 429 so throttled unknowns time like throttled
+            // known accounts.
             await runDummyPasswordHash()
+            const pseudoKey = `login:acct:${await pseudoAccountKey(email)}`
+            const pseudoLimit = isRateLimited(pseudoKey)
+            if (pseudoLimit.limited) {
+              return Response.json(
+                { error: 'Too many login attempts. Please try again later.' },
+                { status: 429, headers: { 'Retry-After': String(pseudoLimit.retryAfterSeconds) } }
+              )
+            }
             recordFailedAttempt(clientIP)
+            recordFailedAttempt(pseudoKey)
             return Response.json({ error: 'Invalid credentials' }, { status: 401 })
           }
 
@@ -138,15 +157,21 @@ export const Route = createFileRoute('/api/auth/login')({
           await auditLog({ actorUserId: user.id, action: 'user.login' })
 
           const headers = new Headers()
-          headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
+          if (kind !== 'cli') {
+            headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
+          }
 
-          return Response.json({
-            token,
+          // The bearer travels in the body only for CLI sessions (no cookie
+          // jar); web sessions authenticate via the HttpOnly cookie alone.
+          const responseBody: Record<string, unknown> = {
             serverPubkey,
             orgKeys,
             masterWrappedOrgKeys,
             sessionExpiresAt: expiresAt.toISOString(),
-          }, { status: 200, headers })
+          }
+          if (kind === 'cli') responseBody.token = token
+
+          return Response.json(responseBody, { status: 200, headers })
         } catch (err) {
           return errorResponse(err)
         }

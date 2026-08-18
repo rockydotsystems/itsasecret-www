@@ -3,14 +3,15 @@ import { db } from './db'
 import { emailVerifications, users } from './schema'
 import { base64Decode, base64Encode } from './crypto/base64'
 import { generateId } from './db-utils'
+import { publicBaseUrl } from './app-url'
 
 // Verification links are single-use and expire after this window.
 const VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000
 
 // Build the public verification link. APP_URL wins when set (needed behind a
-// reverse proxy); otherwise fall back to the request's own origin.
+// reverse proxy); outside production it may fall back to the request origin.
 export function verificationUrl(request: Request, token: string): string {
-  const baseUrl = process.env.APP_URL ?? new URL(request.url).origin
+  const baseUrl = publicBaseUrl(request)
   return `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(token)}`
 }
 
@@ -21,6 +22,17 @@ export async function createEmailVerification(userId: string): Promise<{ token: 
   const token = base64Encode(tokenBytes)
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenBytes as BufferSource)
   const tokenHash = base64Encode(new Uint8Array(hashBuffer))
+
+  // Exactly one live token per user: mark prior unverified, unexpired tokens
+  // consumed so a link from an older email dies the moment a new one is issued.
+  const now = new Date()
+  await db.update(emailVerifications)
+    .set({ verified_at: now })
+    .where(and(
+      eq(emailVerifications.user_id, userId),
+      isNull(emailVerifications.verified_at),
+      gt(emailVerifications.expires_at, now)
+    ))
 
   await db.insert(emailVerifications).values({
     id: generateId(),

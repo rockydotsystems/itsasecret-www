@@ -17,8 +17,14 @@ const MAX_ATTEMPTS = 10
 export const REVEAL_MAX_ATTEMPTS = 100
 
 // TEMP local-dev escape hatch: `RATE_LIMIT_DISABLED=1 vite dev` turns every
-// limiter into a no-op. Never set this on a deployed instance.
-const rateLimitDisabled = process.env.RATE_LIMIT_DISABLED === '1'
+// limiter into a no-op. Refused in production: limits stay active and the
+// misconfiguration is logged once.
+const rateLimitDisabledRequested = process.env.RATE_LIMIT_DISABLED === '1'
+const runningInProduction = process.env.APP_ENV === 'production' || process.env.NODE_ENV === 'production'
+if (rateLimitDisabledRequested && runningInProduction) {
+  console.warn('[rate-limit] RATE_LIMIT_DISABLED=1 set in production - ignoring, rate limits remain active')
+}
+const rateLimitDisabled = rateLimitDisabledRequested && !runningInProduction
 
 export function isRateLimited(key: string, maxAttempts: number = MAX_ATTEMPTS): { limited: boolean; retryAfterSeconds: number } {
   if (rateLimitDisabled) {
@@ -77,10 +83,18 @@ setInterval(() => {
 // every IP-keyed rate limit (notably registration, which has only per-IP limits)
 // by rotating a fake value on each request. Fall back to 'unknown' instead: all
 // unproxied requests share one bucket, which is overly restrictive but safe.
+// Each hop must also parse as a bare IP literal - invalid hops are dropped
+// before the trusted-hop selection so garbage can't shift which entry wins.
+function isValidIPHop(hop: string): boolean {
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hop)
+  if (ipv4) return ipv4.slice(1).every((octet) => Number(octet) <= 255)
+  return hop.includes(':') && /^[0-9a-fA-F:.]+$/.test(hop)
+}
+
 export function getClientIP(request: Request): string {
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    const hops = forwarded.split(',').map((p) => p.trim()).filter(Boolean)
+    const hops = forwarded.split(',').map((p) => p.trim()).filter(isValidIPHop)
     if (hops.length > 0) {
       const trusted = Math.max(1, Number(process.env.TRUSTED_PROXY_COUNT ?? '1') || 1)
       const idx = Math.max(0, hops.length - trusted)

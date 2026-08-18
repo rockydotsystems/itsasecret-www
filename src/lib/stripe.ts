@@ -76,6 +76,7 @@ export interface StripeSubscriptionItem {
   id: string
   quantity?: number
   current_period_end?: number
+  price?: { id?: string }
 }
 
 export interface StripeSubscription {

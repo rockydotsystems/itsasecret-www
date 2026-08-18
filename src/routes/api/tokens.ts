@@ -33,6 +33,8 @@ export type AccessTokenSummary = {
   created_at: string
   // null = does not expire
   expires_at: string | null
+  // null = never used since tracking began
+  lastUsedAt: string | null
 }
 
 export const Route = createFileRoute('/api/tokens')({
@@ -48,6 +50,7 @@ export const Route = createFileRoute('/api/tokens')({
             name: sessions.name,
             created_at: sessions.created_at,
             expires_at: sessions.expires_at,
+            last_used_at: sessions.last_used_at,
           }).from(sessions)
             .where(and(
               eq(sessions.user_id, user.id),
@@ -59,6 +62,7 @@ export const Route = createFileRoute('/api/tokens')({
             name: r.name ?? '',
             created_at: r.created_at.toISOString(),
             expires_at: tokenNeverExpires(r.expires_at) ? null : r.expires_at.toISOString(),
+            lastUsedAt: r.last_used_at ? r.last_used_at.toISOString() : null,
           }))
           return Response.json({ tokens }, { status: 200 })
         } catch (err) {
@@ -73,6 +77,10 @@ export const Route = createFileRoute('/api/tokens')({
       POST: async ({ request }) => {
         try {
           const { user, session } = await requireAuth(request)
+          // A stolen token must not be able to mint replacements for itself.
+          if (session.kind === 'token') {
+            return Response.json({ error: 'Access tokens cannot mint tokens' }, { status: 403 })
+          }
           const sessionKey = getSessionKey(request.headers.get('X-Session-Key'))
           const parsed = createTokenSchema.safeParse(await request.json())
           if (!parsed.success) {

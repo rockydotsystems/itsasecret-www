@@ -7,9 +7,9 @@ export function sessionCookieName(secure: boolean): string {
   return secure ? SESSION_COOKIE_NAME : SESSION_COOKIE_NAME_INSECURE
 }
 
-const COOKIE_MAX_AGE = 30 * 24 * 60 * 60 // 30 days
+const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 days, matches WEB_SESSION_TTL_MS
 
-function isProduction(): boolean {
+export function isProduction(): boolean {
   return process.env.APP_ENV === 'production' || process.env.NODE_ENV === 'production'
 }
 

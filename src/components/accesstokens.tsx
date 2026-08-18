@@ -4,9 +4,13 @@ import { Button } from '~/components/button'
 import { LoadingDots } from '~/components/loadingdots'
 import { Modal } from '~/components/modal'
 import { Select } from '~/components/select'
+import { useClipboardHygiene } from '~/components/secretrow'
 import { listAccessTokens, createAccessToken, revokeAccessToken } from '~/lib/tokens-form'
 import { IconCircleKey, IconClipboard } from 'nucleo-pixel-essential'
 import type { AccessTokenSummary, CreatedAccessToken } from '~/lib/tokens-form'
+
+// The API also returns lastUsedAt; the shared summary type omits it.
+type TokenRow = AccessTokenSummary & { lastUsedAt?: string | null }
 
 // Lifetime choices: 30-day minimum, stepped up to the 2-year maximum, plus
 // "does not expire" for machines that outlive any calendar.
@@ -32,10 +36,10 @@ function expiryLabel(token: AccessTokenSummary): { text: string; expired: boolea
 }
 
 export function AccessTokens() {
-  const [tokens, setTokens] = useState<AccessTokenSummary[]>([])
+  const [tokens, setTokens] = useState<TokenRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [revoking, setRevoking] = useState<AccessTokenSummary | null>(null)
+  const [revoking, setRevoking] = useState<TokenRow | null>(null)
   const [error, setError] = useState('')
 
   async function refresh() {
@@ -60,8 +64,8 @@ export function AccessTokens() {
           <h2 className="settings-section-title">Access tokens</h2>
           <p className="settings-section-desc">
             Long-lived tokens for headless machines: CI runners, servers, containers. Authenticate with{' '}
-            <code>shh auth &lt;token&gt;</code> - no master password on the machine. A token can read exactly
-            what your account can read today; revoke it here at any time.
+            <code>shh auth &lt;token&gt;</code> - no master password on the machine. A token has the same read and
+            write access as your account - treat it like a password; revoke it here at any time.
           </p>
         </div>
         <Button size="sm" onClick={() => setCreating(true)}>
@@ -84,7 +88,8 @@ export function AccessTokens() {
                   {token.expires_at === null && <Badge variant="neutral">no expiry</Badge>}
                 </span>
                 <span className="member-row-meta">
-                  Created {formatDate(token.created_at)} · {expiry.text}
+                  Created {formatDate(token.created_at)} · {expiry.text} · Last used{' '}
+                  {token.lastUsedAt ? formatDate(token.lastUsedAt) : 'Never'}
                 </span>
               </div>
               <div className="member-row-actions">
@@ -134,6 +139,13 @@ function CreateTokenModal({
   const [error, setError] = useState('')
   const [created, setCreated] = useState<CreatedAccessToken | null>(null)
   const [copied, setCopied] = useState(false)
+  const { copy, clearNow } = useClipboardHygiene()
+
+  // Wipe a copied token from the clipboard when the modal closes early.
+  function close() {
+    clearNow()
+    onClose()
+  }
 
   async function handleCreate() {
     setBusy(true)
@@ -152,7 +164,7 @@ function CreateTokenModal({
 
   async function handleCopy() {
     if (!created) return
-    await navigator.clipboard.writeText(created.token)
+    await copy(created.token)
     setCopied(true)
   }
 
@@ -161,7 +173,7 @@ function CreateTokenModal({
       <Modal
         title={`Token "${created.name}" created`}
         subtitle="Copy it now - for your security it is shown exactly once and cannot be recovered later."
-        onClose={onClose}
+        onClose={close}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <pre className="docs-code" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', userSelect: 'all' }}>
@@ -171,7 +183,7 @@ function CreateTokenModal({
             On the headless machine, run: <code>shh auth {'<token>'}</code>
           </p>
           <div className="settings-modal-actions">
-            <Button variant="secondary" size="md" onClick={onClose}>
+            <Button variant="secondary" size="md" onClick={close}>
               Done
             </Button>
             <Button variant="primary" size="md" onClick={() => void handleCopy()}>
@@ -187,7 +199,7 @@ function CreateTokenModal({
   return (
     <Modal
       title="New access token"
-      subtitle="For headless machines. It inherits read access to everything your account can read; treat it like a password."
+      subtitle="For headless machines. It inherits full read and write access to your account - treat it like a password."
       onClose={onClose}
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

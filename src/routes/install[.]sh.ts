@@ -11,7 +11,7 @@ export const Route = createFileRoute('/install.sh')({
         new Response(installScript, {
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=300',
+            'Cache-Control': 'no-store',
           },
         }),
     },

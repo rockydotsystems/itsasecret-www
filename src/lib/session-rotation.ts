@@ -75,8 +75,14 @@ async function refreshSessionOrgKeys(session: Session, request: Request): Promis
     added = true
   }
   if (added) {
+    // Compare-and-swap on the previous JSON: if another request re-wrapped
+    // the keys concurrently, this merge is stale - drop it silently and let
+    // the next request re-merge.
     await db.update(sessions)
       .set({ encrypted_org_keys: JSON.stringify(known) })
-      .where(eq(sessions.id, session.id))
+      .where(and(
+        eq(sessions.id, session.id),
+        eq(sessions.encrypted_org_keys, session.encrypted_org_keys)
+      ))
   }
 }
