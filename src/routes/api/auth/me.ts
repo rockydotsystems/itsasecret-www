@@ -21,7 +21,9 @@ export const Route = createFileRoute('/api/auth/me')({
       GET: async ({ request }) => {
         try {
           // Reachable while unverified so the client can detect the state.
-          const { user, session } = await requireAuth(request, { allowUnverified: true })
+          // Also reachable before the recovery phrase exists - /me is how a
+          // client finds out setup is required at all.
+          const { user, session } = await requireAuth(request, { allowUnverified: true, allowNoRecovery: true })
           return Response.json({
             user: {
               id: user.id,
@@ -31,6 +33,9 @@ export const Route = createFileRoute('/api/auth/me')({
               kdf_params: user.kdf_params,
               email_verified: user.email_verified_at !== null,
               email_verified_at: user.email_verified_at,
+              // False for legacy accounts that haven't generated a phrase yet.
+              // Clients must route these users into phrase setup.
+              has_recovery_phrase: user.recovery_phrase_hash !== null,
             },
             // Lets clients (notably `shh auth`) learn what they hold.
             session: {

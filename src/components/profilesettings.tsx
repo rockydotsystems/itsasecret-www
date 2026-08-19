@@ -6,6 +6,7 @@ import { Button } from '~/components/button'
 import { Input } from '~/components/input'
 import { LoadingDots } from '~/components/loadingdots'
 import { updateProfileName, changePassword, submitFeedback } from '~/lib/profile-form'
+import { RecoveryPhraseDisplay } from '~/components/recoveryphrase'
 import { IconCheck, IconLockCircleOpen, IconPaperPlane2 } from 'nucleo-pixel-essential'
 
 export type ProfileSettingsProps = {
@@ -18,8 +19,96 @@ export function ProfileSettings({ email, name }: ProfileSettingsProps) {
     <>
       <ProfileSection email={email} name={name} />
       <PasswordSection />
+      <RecoveryPhraseSection />
       <FeedbackSection />
     </>
+  )
+}
+
+// The recovery phrase is the device-trust second factor: it is shown exactly
+// once (here, at rotation time) and is never recoverable from the server.
+function RecoveryPhraseSection() {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [phrase, setPhrase] = useState<string | null>(null)
+  const [revokeDevices, setRevokeDevices] = useState(false)
+  const [revokeSessions, setRevokeSessions] = useState(false)
+  const [confirmedSaved, setConfirmedSaved] = useState(false)
+
+  async function rotate() {
+    setBusy(true)
+    setError('')
+    setPhrase(null)
+    try {
+      const resp = await fetch('/api/auth/regenerate-recovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ revokeDevices, revokeOtherSessions: revokeSessions }),
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: 'Request failed' }))
+        throw new Error(err.error || 'Failed to rotate recovery phrase')
+      }
+      const data = (await resp.json()) as { recoveryPhrase: string }
+      setPhrase(data.recoveryPhrase)
+      setConfirmedSaved(false)
+    } catch (err) {
+      setError((err as Error).message || 'Failed to rotate recovery phrase')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function dismiss() {
+    setPhrase(null)
+    setConfirmedSaved(false)
+    setRevokeDevices(false)
+    setRevokeSessions(false)
+  }
+
+  return (
+    <section className="card settings-section">
+      <div className="settings-section-header">
+        <div>
+          <h2 className="settings-section-title">Recovery phrase</h2>
+          <p className="settings-section-desc">
+            The 30-word phrase proves it is you the first time a new machine signs in. Rotating
+            replaces the old phrase immediately. Your other devices keep working unless you revoke
+            them below.
+          </p>
+        </div>
+      </div>
+
+      {phrase ? (
+        <div>
+          <RecoveryPhraseDisplay phrase={phrase} />
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '20px 0', font: '400 var(--text-sm)/1.5 var(--font-family-sans)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={confirmedSaved} onChange={(e) => setConfirmedSaved(e.target.checked)} style={{ marginTop: '3px' }} />
+            I have written these words down somewhere safe - they will not be shown again
+          </label>
+          <Button type="button" size="md" disabled={!confirmedSaved} onClick={dismiss}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <div className="profile-form">
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', font: '400 var(--text-sm)/1.5 var(--font-family-sans)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={revokeDevices} onChange={(e) => setRevokeDevices(e.target.checked)} style={{ marginTop: '3px' }} />
+            Also revoke all trusted devices (everyone must reenter the phrase on next login)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', font: '400 var(--text-sm)/1.5 var(--font-family-sans)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={revokeSessions} onChange={(e) => setRevokeSessions(e.target.checked)} style={{ marginTop: '3px' }} />
+            Also sign out of every other session - yes, revoke all other instances
+          </label>
+          {error && <span className="input-error">{error}</span>}
+          <div className="settings-modal-actions">
+            <Button type="button" size="md" variant="secondary" disabled={busy} onClick={rotate}>
+              {busy ? <LoadingDots /> : 'Rotate recovery phrase'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
   )
 }
 

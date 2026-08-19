@@ -13,6 +13,7 @@ import { db } from './db'
 import { users, orgs, orgMembers, sessions, auditLog } from './schema'
 import { generateId } from './db-utils'
 import { hashPassword, verifyPassword, deriveKey, DEFAULT_KDF_PARAMS } from './crypto/kdf'
+import { generateRecoveryPhrase, hashRecoveryPhrase } from './recovery-phrase'
 import { wrapKey, unwrapKey, generateKey } from './crypto/envelope'
 import { generateKeyPair } from './crypto/ecdh'
 import { base64Encode, base64Decode } from './crypto/base64'
@@ -45,7 +46,7 @@ function post(route: unknown, body: unknown, token?: string): Promise<Response> 
   return handlers.POST({ request } as any)
 }
 
-async function insertUser(password: string): Promise<TestUser> {
+async function insertUser(password: string, opts: { legacy?: boolean } = {}): Promise<TestUser> {
   const userId = generateId()
   const salt = crypto.getRandomValues(new Uint8Array(16))
   const masterKey = await deriveKey(password, salt, DEFAULT_KDF_PARAMS)
@@ -55,6 +56,10 @@ async function insertUser(password: string): Promise<TestUser> {
     password_hash: await hashPassword(password),
     kdf_salt: base64Encode(salt),
     kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
+    // Test users pre-date forced setup; grant them a phrase hash so the
+    // recovery gate in requireAuth doesn't short-circuit these flows. The
+    // `legacy` option leaves it null to exercise the no-gate path.
+    recovery_phrase_hash: opts.legacy ? null : await hashRecoveryPhrase(generateRecoveryPhrase()),
     email_verified_at: new Date(),
   })
   return { userId, email: `pwflow-${userId}@test.invalid`, salt, masterKey }
@@ -161,7 +166,10 @@ describe.runIf(dbUp)('master password flows (db)', () => {
   }, 30_000)
 
   it('login skips a corrupt wrapped_org_key instead of 500ing', async () => {
-    const u = await insertUser(OLD_PASSWORD)
+    // Legacy shape: the login device-trust gate only applies to accounts with
+    // a recovery phrase, and this test is about org-key unwrap tolerance, not
+    // device trust.
+    const u = await insertUser(OLD_PASSWORD, { legacy: true })
     userIds.push(u.userId)
 
     const goodOrgKey = generateKey()

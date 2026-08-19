@@ -5,6 +5,66 @@ import { storeClientPrivateKey, clearClientPrivateKey } from './client-session'
 export interface AuthFormResult {
   serverPubkey: string
   orgKeys: Record<string, string>
+  // Only the register response carries this: the one-and-only plaintext
+  // appearance of the account recovery phrase. The caller must display it to
+  // the user for safekeeping and then discard it.
+  recoveryPhrase?: string
+}
+
+export class RecoveryRequiredError extends Error {
+  constructor() {
+    super('Device not trusted - recovery phrase required')
+    this.name = 'RecoveryRequiredError'
+  }
+}
+
+// Stable per-browser identity for device enrollment/trust. Persisted in
+// localStorage because the trust decision must survive tab/browser restarts;
+// it is a random identifier, not a credential.
+const DEVICE_PUBKEY_KEY = 'devicePubkey'
+const DEVICE_TOKEN_KEY = 'deviceToken'
+
+// getDevicePubkey returns the stored device identity, generating one on first
+// use. It is an ECDH P-256 public key reused as a plain 65-byte identifier -
+// the matching private key is intentionally never persisted, so the pubkey is
+// nothing but a recognizable random label.
+export function getDevicePubkey(): string {
+  let existing = localStorage.getItem(DEVICE_PUBKEY_KEY)
+  if (existing) return existing
+  const bytes = crypto.getRandomValues(new Uint8Array(65))
+  bytes[0] = 0x04 // look like an uncompressed P-256 point; semantics don't matter
+  existing = base64Encode(bytes)
+  localStorage.setItem(DEVICE_PUBKEY_KEY, existing)
+  return existing
+}
+
+export function getDeviceToken(): string | null {
+  return localStorage.getItem(DEVICE_TOKEN_KEY)
+}
+
+function setDeviceToken(token: string): void {
+  localStorage.setItem(DEVICE_TOKEN_KEY, token)
+}
+
+export function clearDeviceToken(): void {
+  localStorage.removeItem(DEVICE_TOKEN_KEY)
+}
+
+// enrollDevice runs the phrase check on-behalf of the current browser and
+// stores the issued device token. Called from the login page when the server
+// answers RECOVERY_REQUIRED.
+export async function enrollDevice(email: string, recoveryPhrase: string): Promise<void> {
+  const resp = await fetch('/api/auth/verify-recovery', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    body: JSON.stringify({ email, recoveryPhrase, devicePubkey: getDevicePubkey() }),
+  })
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(err.error || 'Recovery phrase verification failed')
+  }
+  const data = (await resp.json()) as { deviceToken: string }
+  setDeviceToken(data.deviceToken)
 }
 
 export async function submitAuthForm(
@@ -22,11 +82,25 @@ export async function submitAuthForm(
   const rawPub = await crypto.subtle.exportKey('raw', kp.publicKey)
   const clientPubkey = base64Encode(new Uint8Array(rawPub))
 
+  const body: Record<string, string | undefined> = { email, password, clientPubkey }
+  if (endpoint === '/api/auth/login') {
+    const token = getDeviceToken()
+    if (token) body.deviceToken = token
+    body.devicePubkey = getDevicePubkey()
+  }
+
   const resp = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    body: JSON.stringify({ email, password, clientPubkey }),
+    body: JSON.stringify(body),
   })
+
+  if (resp.status === 403) {
+    const err = await resp.json().catch(() => null) as { code?: string } | null
+    if (err?.code === 'RECOVERY_REQUIRED') {
+      throw new RecoveryRequiredError()
+    }
+  }
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ error: 'Request failed' }))
@@ -135,6 +209,8 @@ export interface CurrentUser {
   kdf_salt: string
   kdf_params: string
   email_verified: boolean
+  email_verified_at?: string | null
+  has_recovery_phrase?: boolean
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {

@@ -719,6 +719,20 @@ a.avatar-link:hover { box-shadow: var(--shadow-flare); }
 .auth-banner-success { color: var(--status-success-fg); background: var(--status-success-bg); border-color: var(--status-success-border); }
 .auth-banner-danger { color: var(--status-danger-fg); background: var(--status-danger-bg); border-color: var(--status-danger-border); }
 
+/* ─── Recovery phrase display (register custody screen, profile rotation) ── */
+.recovery-phrase-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  list-style: none; margin: 0; padding: 0;
+  font-family: var(--font-family-mono, ui-monospace, monospace); font-size: var(--text-sm);
+}
+.recovery-phrase-word {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 6px 10px; border: 1px solid var(--border-strong);
+  border-radius: 6px; background: var(--bg-muted);
+}
+.recovery-phrase-num { color: var(--text-secondary); font-size: 10px; user-select: none; }
+.recovery-phrase-text { color: var(--text-primary); }
+
 /* ─── Workspace wizard (onboarding page + new-org modal) ── */
 /* Compact step headings for the modal variant; the onboarding page uses
    auth-title/auth-subtitle instead. */

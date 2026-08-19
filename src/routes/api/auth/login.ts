@@ -15,6 +15,7 @@ import { errorResponse } from '~/lib/auth'
 import { createSessionCookieHeader, shouldSetSecureCookie } from '~/lib/session-cookie'
 import { getClientIP, isRateLimited, recordFailedAttempt, resetAttempts } from '~/lib/rate-limit'
 import { runDummyPasswordHash } from '~/lib/crypto/kdf'
+import { findLiveDeviceToken } from '~/lib/device-tokens'
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -23,6 +24,12 @@ const loginSchema = z.object({
   // 'cli' sessions are short-lived and roll their token on every successful
   // request (see lib/sessions.ts); the default 'web' keeps long sessions.
   client: z.enum(['web', 'cli']).optional(),
+  // Device-trust second factor: a previously-issued bearer proving this
+  // machine already passed the recovery-phrase check.
+  deviceToken: z.string().max(256).optional(),
+  // Client-stable device identity, used to label the device_tokens row when a
+  // fresh phrase verification enrolls this machine.
+  devicePubkey: z.string().max(256).regex(/^[A-Za-z0-9+/]+={0,2}$/, 'devicePubkey must be base64').optional(),
 })
 
 // Unknown emails throttle against a stable hash of the address: without a
@@ -101,6 +108,35 @@ export const Route = createFileRoute('/api/auth/login')({
             recordFailedAttempt(clientIP)
             recordFailedAttempt(acctKey)
             return Response.json({ error: 'Invalid credentials' }, { status: 401 })
+          }
+
+          // Device-trust gate: accounts with a recovery phrase must prove this
+          // device has passed the phrase check before. A valid device token
+          // (not expired, touched within the trust window) satisfies it; on
+          // a new/untrusted machine the client must first run
+          // POST /api/auth/verify-recovery to enroll the device, then retry
+          // the login with the issued deviceToken.
+          //
+          // Legacy accounts (no phrase set) pass through here but are gated
+          // into forced phrase setup by requireAuth { allowUnverified } /
+          // /api/auth/me's hasRecoveryPhrase signal.
+          if (user.recovery_phrase_hash) {
+            let deviceTrusted = false
+            if (body.deviceToken) {
+              const deviceRow = await findLiveDeviceToken(body.deviceToken)
+              // A token minted for someone else's account must not satisfy
+              // this user's gate.
+              deviceTrusted = deviceRow !== null && deviceRow.user_id === user.id
+            }
+            if (!deviceTrusted) {
+              // Not a failed credential: the password was right, the device is
+              // just unenrolled. Burning rate-limit budget here would lock the
+              // legitimate user out right when they're proving themselves.
+              return Response.json(
+                { error: 'This device is not trusted. Complete the recovery-phrase check on this machine first.', code: 'RECOVERY_REQUIRED' },
+                { status: 403 }
+              )
+            }
           }
 
           // Derive the master key once and reuse it for unwrapping org keys.

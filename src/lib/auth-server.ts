@@ -37,6 +37,8 @@ export const getCurrentUserFn = createServerFn({ method: 'GET' })
       kdf_salt: user.kdf_salt,
       kdf_params: user.kdf_params,
       email_verified: user.email_verified_at !== null,
+      email_verified_at: user.email_verified_at?.toISOString() ?? null,
+      has_recovery_phrase: user.recovery_phrase_hash !== null,
       has_orgs: memberRows.length > 0,
     }
   })

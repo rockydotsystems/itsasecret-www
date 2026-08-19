@@ -13,6 +13,7 @@ import { createSessionCookieHeader, shouldSetSecureCookie } from '~/lib/session-
 import { getClientIP, isRateLimited, recordFailedAttempt } from '~/lib/rate-limit'
 import { createEmailVerification, verificationUrl } from '~/lib/email-verification'
 import { sendVerificationEmail } from '~/lib/email'
+import { generateRecoveryPhrase, hashRecoveryPhrase } from '~/lib/recovery-phrase'
 
 const registerSchema = z.object({
   email: z.string().trim().email(),
@@ -60,6 +61,13 @@ export const Route = createFileRoute('/api/auth/register')({
 
           const passwordHash = await hashPassword(password)
 
+          // The recovery phrase is the account's device-trust second factor.
+          // It is generated here, hashed (never stored in plaintext), and
+          // returned exactly once in this response - after this, the server
+          // can only verify it, never show it again.
+          const recoveryPhrase = generateRecoveryPhrase()
+          const recoveryPhraseHash = await hashRecoveryPhrase(recoveryPhrase)
+
           const userId = generateId()
           await db.insert(users).values({
             id: userId,
@@ -67,6 +75,7 @@ export const Route = createFileRoute('/api/auth/register')({
             password_hash: passwordHash,
             kdf_salt: kdfSaltB64,
             kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
+            recovery_phrase_hash: recoveryPhraseHash,
           })
 
           // No orgs/projects are provisioned at signup - the onboarding wizard
@@ -95,7 +104,9 @@ export const Route = createFileRoute('/api/auth/register')({
           headers.set('Set-Cookie', createSessionCookieHeader(token, shouldSetSecureCookie(request)))
 
           // No token in the body: the web client rides the HttpOnly cookie.
-          return Response.json({ serverPubkey, orgKeys }, { status: 201, headers })
+          // recoveryPhrase appears HERE and nowhere else - the client must
+          // display it and discard it.
+          return Response.json({ serverPubkey, orgKeys, recoveryPhrase }, { status: 201, headers })
         } catch (err) {
           // Concurrent registrations can both pass the pre-insert email check;
           // the loser hits the unique constraint instead.

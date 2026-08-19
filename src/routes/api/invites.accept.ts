@@ -25,7 +25,7 @@ export const Route = createFileRoute('/api/invites/accept')({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const { user } = await requireAuth(request, { allowUnverified: true })
+          const { user } = await requireAuth(request, { allowUnverified: true, allowNoRecovery: true })
           const rateKey = `invite-accept:${user.id}`
           const rateLimit = isRateLimited(rateKey)
           if (rateLimit.limited) {

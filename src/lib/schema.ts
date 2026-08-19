@@ -13,6 +13,11 @@ export const users = pgTable('users', {
   password_hash: text().notNull(),
   kdf_salt: text().notNull(),
   kdf_params: text().notNull(),
+  // Argon2id-encoded hash of the 30-word recovery phrase (lib/recovery-phrase.ts).
+  // NULL for accounts created before phrases existed; those are gated into
+  // forced setup on their next authenticated request (see recovery-required
+  // checks). The phrase itself is never stored.
+  recovery_phrase_hash: text(),
   email_verified_at: timestamp('email_verified_at', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
   updated_at: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
@@ -300,6 +305,29 @@ export const sessions = pgTable('sessions', {
   index('idx_sessions_prev_token').on(t.prev_token_hash),
 ])
 
+// Trusted devices: a row is created after a successful recovery-phrase
+// challenge handshake, and its bearer token lets subsequent logins from that
+// machine skip the phrase. Trust decays with inactivity (90 days without the
+// token being presented => untrusted again), separate from the token's
+// absolute 1-year expiry. See lib/device-tokens.ts.
+export const deviceTokens = pgTable('device_tokens', {
+  id: text().primaryKey(),
+  user_id: text().notNull().references(() => users.id),
+  token_hash: text().notNull().unique(),
+  // Client-generated P-256 public key (base64 raw), purely a device label for
+  // the user to recognize/audit - possession of the token is the auth factor,
+  // not the key.
+  device_pubkey: text().notNull(),
+  label: text(),
+  created_at: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  last_used_at: timestamp('last_used_at', { withTimezone: true }).notNull().default(sql`now()`),
+  expires_at: timestamp('expires_at', { withTimezone: true }).notNull(),
+  revoked_at: timestamp('revoked_at', { withTimezone: true }),
+}, (t) => [
+  index('idx_device_tokens_user').on(t.user_id),
+  index('idx_device_tokens_expires').on(t.expires_at),
+])
+
 export const userLastOrg = pgTable('user_last_org', {
   user_id: text().primaryKey().references(() => users.id),
   org_id: text().notNull().references(() => orgs.id),
@@ -367,6 +395,7 @@ export type TeamMember = typeof teamMembers.$inferSelect
 export type TeamEnvPermission = typeof teamEnvPermissions.$inferSelect
 export type TeamProjectPermission = typeof teamProjectPermissions.$inferSelect
 export type Session = typeof sessions.$inferSelect
+export type DeviceToken = typeof deviceTokens.$inferSelect
 export type Feedback = typeof feedback.$inferSelect
 export type AuditLog = typeof auditLog.$inferSelect
 export type UserLastOrg = typeof userLastOrg.$inferSelect

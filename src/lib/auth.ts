@@ -49,7 +49,7 @@ export function extractSessionToken(request: Request): string | null {
 
 export async function requireAuth(
   request: Request,
-  opts: { allowUnverified?: boolean } = {}
+  opts: { allowUnverified?: boolean; allowNoRecovery?: boolean } = {}
 ): Promise<AuthContext> {
   const token = extractSessionToken(request)
   if (!token) {
@@ -115,6 +115,14 @@ export async function requireAuth(
   // that must stay reachable while unverified (me, logout, resend) opt out.
   if (!opts.allowUnverified && user.email_verified_at === null) {
     throw jsonError('Email not verified. Check your inbox for a verification link.', 403)
+  }
+
+  // Legacy accounts (created before recovery phrases) must generate one before
+  // they can do anything else. The phrase is created while authenticated, so
+  // "only a logged-in person can regenerate" holds from the very first phrase.
+  // Endpoints needed to perform the setup itself opt out.
+  if (!opts.allowNoRecovery && user.recovery_phrase_hash === null) {
+    throw jsonError('Recovery phrase setup required.', 403)
   }
 
   return { user, session }

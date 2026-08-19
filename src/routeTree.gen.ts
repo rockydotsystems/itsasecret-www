@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as SetupRecoveryRouteImport } from './routes/setup-recovery'
 import { Route as SelfHostingRouteImport } from './routes/self-hosting'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PricingRouteImport } from './routes/pricing'
@@ -37,10 +38,12 @@ import { Route as ApiInvitesAcceptRouteImport } from './routes/api/invites.accep
 import { Route as ApiEnvsEnvIdRouteImport } from './routes/api/envs/$envId'
 import { Route as ApiDlTargetRouteImport } from './routes/api/dl.$target'
 import { Route as ApiBillingWebhookRouteImport } from './routes/api/billing/webhook'
+import { Route as ApiAuthVerifyRecoveryRouteImport } from './routes/api/auth/verify-recovery'
 import { Route as ApiAuthVerifyPasswordRouteImport } from './routes/api/auth/verify-password'
 import { Route as ApiAuthVerifyEmailRouteImport } from './routes/api/auth/verify-email'
 import { Route as ApiAuthResendVerificationRouteImport } from './routes/api/auth/resend-verification'
 import { Route as ApiAuthRegisterRouteImport } from './routes/api/auth/register'
+import { Route as ApiAuthRegenerateRecoveryRouteImport } from './routes/api/auth/regenerate-recovery'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthLogoutRouteImport } from './routes/api/auth/logout'
 import { Route as ApiAuthLoginRouteImport } from './routes/api/auth/login'
@@ -84,6 +87,11 @@ import { Route as ApiOrgsOrgIdTeamsTeamIdMembersUserIdRouteImport } from './rout
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRecoveryRoute = SetupRecoveryRouteImport.update({
+  id: '/setup-recovery',
+  path: '/setup-recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SelfHostingRoute = SelfHostingRouteImport.update({
@@ -221,6 +229,11 @@ const ApiBillingWebhookRoute = ApiBillingWebhookRouteImport.update({
   path: '/api/billing/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthVerifyRecoveryRoute = ApiAuthVerifyRecoveryRouteImport.update({
+  id: '/api/auth/verify-recovery',
+  path: '/api/auth/verify-recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthVerifyPasswordRoute = ApiAuthVerifyPasswordRouteImport.update({
   id: '/api/auth/verify-password',
   path: '/api/auth/verify-password',
@@ -242,6 +255,12 @@ const ApiAuthRegisterRoute = ApiAuthRegisterRouteImport.update({
   path: '/api/auth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthRegenerateRecoveryRoute =
+  ApiAuthRegenerateRecoveryRouteImport.update({
+    id: '/api/auth/regenerate-recovery',
+    path: '/api/auth/regenerate-recovery',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   id: '/api/auth/me',
   path: '/api/auth/me',
@@ -471,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/self-hosting': typeof SelfHostingRoute
+  '/setup-recovery': typeof SetupRecoveryRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
@@ -483,10 +503,12 @@ export interface FileRoutesByFullPath {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/regenerate-recovery': typeof ApiAuthRegenerateRecoveryRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
+  '/api/auth/verify-recovery': typeof ApiAuthVerifyRecoveryRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -544,6 +566,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/self-hosting': typeof SelfHostingRoute
+  '/setup-recovery': typeof SetupRecoveryRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
@@ -556,10 +579,12 @@ export interface FileRoutesByTo {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/regenerate-recovery': typeof ApiAuthRegenerateRecoveryRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
+  '/api/auth/verify-recovery': typeof ApiAuthVerifyRecoveryRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -618,6 +643,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/register': typeof RegisterRoute
   '/self-hosting': typeof SelfHostingRoute
+  '/setup-recovery': typeof SetupRecoveryRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/health': typeof ApiHealthRoute
@@ -630,10 +656,12 @@ export interface FileRoutesById {
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/auth/regenerate-recovery': typeof ApiAuthRegenerateRecoveryRoute
   '/api/auth/register': typeof ApiAuthRegisterRoute
   '/api/auth/resend-verification': typeof ApiAuthResendVerificationRoute
   '/api/auth/verify-email': typeof ApiAuthVerifyEmailRoute
   '/api/auth/verify-password': typeof ApiAuthVerifyPasswordRoute
+  '/api/auth/verify-recovery': typeof ApiAuthVerifyRecoveryRoute
   '/api/billing/webhook': typeof ApiBillingWebhookRoute
   '/api/dl/$target': typeof ApiDlTargetRoute
   '/api/envs/$envId': typeof ApiEnvsEnvIdRouteWithChildren
@@ -693,6 +721,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/self-hosting'
+    | '/setup-recovery'
     | '/verify-email'
     | '/api/feedback'
     | '/api/health'
@@ -705,10 +734,12 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/auth/regenerate-recovery'
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
     | '/api/auth/verify-password'
+    | '/api/auth/verify-recovery'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -766,6 +797,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/self-hosting'
+    | '/setup-recovery'
     | '/verify-email'
     | '/api/feedback'
     | '/api/health'
@@ -778,10 +810,12 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/auth/regenerate-recovery'
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
     | '/api/auth/verify-password'
+    | '/api/auth/verify-recovery'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -839,6 +873,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/register'
     | '/self-hosting'
+    | '/setup-recovery'
     | '/verify-email'
     | '/api/feedback'
     | '/api/health'
@@ -851,10 +886,12 @@ export interface FileRouteTypes {
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
+    | '/api/auth/regenerate-recovery'
     | '/api/auth/register'
     | '/api/auth/resend-verification'
     | '/api/auth/verify-email'
     | '/api/auth/verify-password'
+    | '/api/auth/verify-recovery'
     | '/api/billing/webhook'
     | '/api/dl/$target'
     | '/api/envs/$envId'
@@ -913,6 +950,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   RegisterRoute: typeof RegisterRoute
   SelfHostingRoute: typeof SelfHostingRoute
+  SetupRecoveryRoute: typeof SetupRecoveryRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiHealthRoute: typeof ApiHealthRoute
@@ -925,10 +963,12 @@ export interface RootRouteChildren {
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiAuthRegenerateRecoveryRoute: typeof ApiAuthRegenerateRecoveryRoute
   ApiAuthRegisterRoute: typeof ApiAuthRegisterRoute
   ApiAuthResendVerificationRoute: typeof ApiAuthResendVerificationRoute
   ApiAuthVerifyEmailRoute: typeof ApiAuthVerifyEmailRoute
   ApiAuthVerifyPasswordRoute: typeof ApiAuthVerifyPasswordRoute
+  ApiAuthVerifyRecoveryRoute: typeof ApiAuthVerifyRecoveryRoute
   ApiBillingWebhookRoute: typeof ApiBillingWebhookRoute
   ApiDlTargetRoute: typeof ApiDlTargetRoute
   ApiEnvsEnvIdRoute: typeof ApiEnvsEnvIdRouteWithChildren
@@ -949,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup-recovery': {
+      id: '/setup-recovery'
+      path: '/setup-recovery'
+      fullPath: '/setup-recovery'
+      preLoaderRoute: typeof SetupRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/self-hosting': {
@@ -1140,6 +1187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBillingWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/verify-recovery': {
+      id: '/api/auth/verify-recovery'
+      path: '/api/auth/verify-recovery'
+      fullPath: '/api/auth/verify-recovery'
+      preLoaderRoute: typeof ApiAuthVerifyRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/verify-password': {
       id: '/api/auth/verify-password'
       path: '/api/auth/verify-password'
@@ -1166,6 +1220,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/register'
       fullPath: '/api/auth/register'
       preLoaderRoute: typeof ApiAuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/regenerate-recovery': {
+      id: '/api/auth/regenerate-recovery'
+      path: '/api/auth/regenerate-recovery'
+      fullPath: '/api/auth/regenerate-recovery'
+      preLoaderRoute: typeof ApiAuthRegenerateRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/me': {
@@ -1708,6 +1769,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   RegisterRoute: RegisterRoute,
   SelfHostingRoute: SelfHostingRoute,
+  SetupRecoveryRoute: SetupRecoveryRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiHealthRoute: ApiHealthRoute,
@@ -1720,10 +1782,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiAuthRegenerateRecoveryRoute: ApiAuthRegenerateRecoveryRoute,
   ApiAuthRegisterRoute: ApiAuthRegisterRoute,
   ApiAuthResendVerificationRoute: ApiAuthResendVerificationRoute,
   ApiAuthVerifyEmailRoute: ApiAuthVerifyEmailRoute,
   ApiAuthVerifyPasswordRoute: ApiAuthVerifyPasswordRoute,
+  ApiAuthVerifyRecoveryRoute: ApiAuthVerifyRecoveryRoute,
   ApiBillingWebhookRoute: ApiBillingWebhookRoute,
   ApiDlTargetRoute: ApiDlTargetRoute,
   ApiEnvsEnvIdRoute: ApiEnvsEnvIdRouteWithChildren,

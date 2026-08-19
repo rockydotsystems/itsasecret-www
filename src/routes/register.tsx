@@ -8,6 +8,7 @@ import { LoadingDots } from '~/components/loadingdots'
 import { IconUser } from 'nucleo-pixel-essential'
 import { submitAuthForm, getRedirectPath } from '~/lib/auth-form'
 import { requireGuestBeforeLoad } from '~/lib/route-guards'
+import { RecoveryPhraseDisplay } from '~/components/recoveryphrase'
 
 const registerSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -26,6 +27,8 @@ function RegisterPage() {
   const { redirect, email: emailPrefill } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [recoveryPhrase, setRecoveryPhrase] = useState<string | null>(null)
+  const [confirmedSaved, setConfirmedSaved] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -42,13 +45,53 @@ function RegisterPage() {
     const password = (form.elements.namedItem('password') as HTMLInputElement).value
 
     try {
-      await submitAuthForm('/api/auth/register', email, password)
-      window.location.href = getRedirectPath(redirect, window.location.origin)
+      const result = await submitAuthForm('/api/auth/register', email, password)
+      if (result.recoveryPhrase) {
+        // Show the custody screen before continuing - this is the only time
+        // the phrase is ever visible.
+        setRecoveryPhrase(result.recoveryPhrase)
+      } else {
+        window.location.href = getRedirectPath(redirect, window.location.origin)
+      }
     } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
     } finally {
       setLoading(false)
     }
+  }
+
+  function finishSignup() {
+    setRecoveryPhrase(null)
+    window.location.href = getRedirectPath(redirect, window.location.origin)
+  }
+
+  if (recoveryPhrase) {
+    return (
+      <div className="auth-page">
+        <div className="card auth-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
+            <LogoMark size={28} />
+            <span style={{ font: '600 var(--text-xl)/var(--leading-snug) var(--font-family-display)', color: 'var(--text-primary)' }}>
+              itsasecret
+            </span>
+          </div>
+          <h1 className="auth-title">Save your recovery phrase</h1>
+          <p className="auth-subtitle">
+            These 30 words are shown once and never stored anywhere readable. You will need them the
+            first time you sign in on a new device. If you lose them, you can generate a new set while
+            you are still logged in.
+          </p>
+          <RecoveryPhraseDisplay phrase={recoveryPhrase} />
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', margin: '20px 0', font: '400 var(--text-sm)/1.5 var(--font-family-sans)', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <input type="checkbox" checked={confirmedSaved} onChange={(e) => setConfirmedSaved(e.target.checked)} style={{ marginTop: '3px' }} />
+            I have written these words down somewhere safe
+          </label>
+          <Button type="button" size="lg" disabled={!confirmedSaved} onClick={finishSignup}>
+            Continue
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -41,6 +41,8 @@ describe.runIf(dbUp)('PATCH /api/auth/me name validation (db)', () => {
       password_hash: await hashPassword('name-test-password'),
       kdf_salt: base64Encode(crypto.getRandomValues(new Uint8Array(16))),
       kdf_params: JSON.stringify(DEFAULT_KDF_PARAMS),
+      // Presence satisfies the recovery gate; the phrase itself is never used.
+      recovery_phrase_hash: 'test',
       email_verified_at: new Date(),
     })
 

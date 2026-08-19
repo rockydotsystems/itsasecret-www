@@ -18,6 +18,12 @@ export async function requireAuthBeforeLoad({ location }: { location: { href: st
   if (!user.email_verified) {
     throw redirect({ to: '/verify-email' })
   }
+  // Legacy accounts without a recovery phrase are forced through setup. The
+  // phrase can only be created while authenticated, so this page is the one
+  // place a logged-in-but-phraseless user can exist.
+  if (user.has_recovery_phrase === false) {
+    throw redirect({ to: '/setup-recovery' })
+  }
   // Verified but no org yet: the onboarding wizard creates the personal org,
   // first project, and first environment before the app is usable.
   if (!user.has_orgs) {
@@ -41,6 +47,9 @@ export async function requireOnboardingBeforeLoad() {
   if (!user.email_verified) {
     throw redirect({ to: '/verify-email' })
   }
+  if (user.has_recovery_phrase === false) {
+    throw redirect({ to: '/setup-recovery' })
+  }
   if (user.has_orgs) {
     throw redirect({ to: '/dashboard' })
   }
@@ -60,6 +69,28 @@ export async function requireUnverifiedBeforeLoad() {
     throw redirect({ to: '/login', search: {} })
   }
   if (user.email_verified) {
+    throw redirect({ to: '/dashboard' })
+  }
+  return { user }
+}
+
+// Guard for /setup-recovery: logged in, verified, but no recovery phrase yet.
+// Anyone already holding a phrase (or a verified invite-accept flow that
+// created one) goes straight to the dashboard; logged-out users go to login.
+export async function requireRecoverySetupBeforeLoad() {
+  let user: Awaited<ReturnType<typeof getCurrentUserFn>> | null = null
+  try {
+    user = await getCurrentUserFn()
+  } catch {
+    // Treat auth-check failures as unauthenticated
+  }
+  if (!user) {
+    throw redirect({ to: '/login', search: {} })
+  }
+  if (!user.email_verified) {
+    throw redirect({ to: '/verify-email' })
+  }
+  if (user.has_recovery_phrase !== false) {
     throw redirect({ to: '/dashboard' })
   }
   return { user }

@@ -6,7 +6,7 @@ import { Input } from '~/components/input'
 import { LogoMark } from '~/components/logo'
 import { LoadingDots } from '~/components/loadingdots'
 import { IconUser } from 'nucleo-pixel-essential'
-import { submitAuthForm, getRedirectPath } from '~/lib/auth-form'
+import { submitAuthForm, getRedirectPath, enrollDevice, RecoveryRequiredError } from '~/lib/auth-form'
 import { requireGuestBeforeLoad } from '~/lib/route-guards'
 
 const loginSearchSchema = z.object({
@@ -29,6 +29,8 @@ function LoginPage() {
   const { redirect, email: emailPrefill, verified } = Route.useSearch()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [needsRecovery, setNeedsRecovery] = useState(false)
+  const [pendingCreds, setPendingCreds] = useState<{ email: string; password: string } | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -48,10 +50,76 @@ function LoginPage() {
       await submitAuthForm('/api/auth/login', email, password)
       window.location.href = getRedirectPath(redirect, window.location.origin)
     } catch (err) {
+      if (err instanceof RecoveryRequiredError) {
+        // This machine has no live device token. Show the phrase step; the
+        // credentials stay in component state so after enrollment the retry
+        // happens without re-typing the master password.
+        setPendingCreds({ email, password })
+        setNeedsRecovery(true)
+        setError('')
+      } else {
+        setError('Error: ' + ((err as Error).message || 'unknown'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleRecoverySubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!pendingCreds) return
+    setLoading(true)
+    setError('')
+    const form = e.currentTarget
+    const phrase = (form.elements.namedItem('recoveryPhrase') as HTMLInputElement).value
+    try {
+      await enrollDevice(pendingCreds.email, phrase)
+      // Device is now trusted: retry the original login silently.
+      await submitAuthForm('/api/auth/login', pendingCreds.email, pendingCreds.password)
+      setPendingCreds(null)
+      window.location.href = getRedirectPath(redirect, window.location.origin)
+    } catch (err) {
       setError('Error: ' + ((err as Error).message || 'unknown'))
     } finally {
       setLoading(false)
     }
+  }
+
+  if (needsRecovery) {
+    return (
+      <div className="auth-page">
+        <div className="card auth-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '32px' }}>
+            <LogoMark size={28} />
+            <span style={{ font: '600 var(--text-xl)/var(--leading-snug) var(--font-family-display)', color: 'var(--text-primary)' }}>
+              itsasecret
+            </span>
+          </div>
+          <h1 className="auth-title">New device</h1>
+          <p className="auth-subtitle">
+            This machine has not signed in to your account before, or it has been a while. Enter the
+            30-word recovery phrase you saved when you created your account.
+          </p>
+          <form onSubmit={handleRecoverySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <Input
+              name="recoveryPhrase"
+              type="text"
+              label="Recovery phrase"
+              placeholder="word word word … (30 words)"
+              helperText="Words can be separated by spaces or new lines; capitalization does not matter."
+              required
+            />
+            <span data-auth-form-error className="input-error">{error}</span>
+            <Button type="submit" size="lg" disabled={loading}>
+              {loading ? <LoadingDots /> : 'Verify and sign in'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => { setNeedsRecovery(false); setPendingCreds(null); setError('') }}>
+              Back
+            </Button>
+          </form>
+        </div>
+      </div>
+    )
   }
 
   return (
