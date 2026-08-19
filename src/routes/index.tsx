@@ -38,7 +38,7 @@ const FEATURES: {
   },
   {
     title: 'Environment-aware',
-    body: 'production, staging, preview-pr-42. Each environment is its own keychain.',
+    body: 'production, staging, preview-pr-42. Fork any environment and it diverges freely.',
     icon: IconLayers,
   },
   {
@@ -48,7 +48,7 @@ const FEATURES: {
   },
   {
     title: 'Built for teams',
-    body: 'Invite people, scope roles, approve what reaches production.',
+    body: 'Invite people by email, give them read or write per environment. Remove them and their wrapped key dies with them.',
     icon: IconUsers2,
   },
 ]
@@ -254,7 +254,7 @@ function LandingPage() {
         <div className="hero-inner hero-split">
           <div className="hero-copy">
             <h1 className="hero-title">
-              Secrets made simple securely<span className="hero-title-flare">.</span>
+              Secrets, sealed before they leave your machine<span className="hero-title-flare">.</span>
             </h1>
             <p className="hero-subtitle">
               One encrypted source of truth for every env var, on every machine, in every environment your team ships to
@@ -280,7 +280,7 @@ function LandingPage() {
           </h2>
           <p className="section-lede">
             Every value is encrypted on your machine before it syncs, with a key derived from your master password.
-            Our database only has ciphertext we cannot open - the keys exist in exactly one place: with you
+            Our database only has ciphertext we cannot open. The keys exist in exactly one place: with you
             and the teammates you invite.
           </p>
           <ZeroKnowledgeDiagram />

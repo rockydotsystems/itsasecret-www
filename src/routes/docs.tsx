@@ -47,8 +47,8 @@ function DocsPage() {
           <h2 className="docs-h2">One line, any machine</h2>
           <p>
             Installs the <code>itsasecret</code> binary (and its <code>shh</code> alias) to{' '}
-            <code>~/.local/bin</code> - linux and macOS, amd64 and arm64. The script verifies a
-            sha256 checksum before installing - but feel free to view the checksums anyway:
+            <code>~/.local/bin</code>, covering linux and macOS on amd64 and arm64. The script
+            verifies a sha256 checksum before anything lands on disk. Current checksums:
           </p>
           {checksums && checksums.length > 0 ? (
             <ul className="docs-checksums">
@@ -61,7 +61,7 @@ function DocsPage() {
             </ul>
           ) : (
             <p className="docs-checksums-empty">
-              Checksums are published with every release - they&rsquo;ll appear here once this
+              Checksums are published with every release. They&rsquo;ll appear here once this
               server has a build to serve.
             </p>
           )}
@@ -103,8 +103,8 @@ function DocsPage() {
           <p>
             Your master password derives your key (argon2id) and unwraps your orgs&rsquo; keys.
             Sessions roll: every command refreshes them, and after ~30 idle minutes the next
-            command simply asks for your master password again. For more information, visit{' '}
-            <a href="/how-it-works">how it works</a>.
+            command asks for your master password again. <a href="/how-it-works">How it works</a>{' '}
+            has the full session model.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh login</span>{'\n'}
@@ -112,13 +112,13 @@ function DocsPage() {
             Logged in.
           </CodeBlock>
           <p>
-            By default the CLI talks to itsasecret.dev - self-hosting or developing locally, point
+            By default the CLI talks to itsasecret.dev. Self-hosting or developing locally? Point
             it at your server first with <code>shh config</code>.
           </p>
           <p>
             Headless machine (CI runner, server, container)? Skip the password entirely: create a
             long-lived access token under <strong>Tokens</strong> in the dashboard, then
-            authenticate with it. Token sessions don&rsquo;t roll or idle out - they last until the
+            authenticate with it. Token sessions don&rsquo;t roll or idle out. They last until the
             expiry you picked (30 days up to 2 years, or never) or until you revoke them.
           </p>
           <CodeBlock>
@@ -132,7 +132,7 @@ function DocsPage() {
           <h2 className="docs-h2">Pin a directory to a project</h2>
           <p>
             Run <code>shh link</code> bare while logged in and pick your org, project, and
-            environment from a menu - no IDs to copy around.
+            environment from a menu. No IDs to copy around.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh link</span>{'\n'}
@@ -168,8 +168,8 @@ function DocsPage() {
           <div className="docs-label">03  set values</div>
           <h2 className="docs-h2">Secrets encrypt, vars don&rsquo;t</h2>
           <p>
-            Values are set one at a time - there is deliberately no bulk push. Secrets encrypt on
-            your machine before they sync; plaintext config goes through <code>var</code>.
+            Values are set one at a time; there is deliberately no bulk push. Secrets encrypt on
+            your machine before they sync, and plaintext config goes through <code>var</code>.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh secret set</span> STRIPE_SECRET_KEY=sk_live_4eC39…{'\n'}
@@ -186,7 +186,8 @@ function DocsPage() {
             <code>shh pull</code> writes sourceable <code>export</code> lines to{' '}
             <code>.env</code> (or <code>--out &lt;path&gt;</code>). With <code>--shell</code>,
             wrapping it in <code>eval</code> loads the values straight into your current shell
-            instead - perfect for direnv, no file written.
+            instead. That&rsquo;s the direnv path: drop it in <code>.envrc</code> and no file is
+            written.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh pull</span>{'\n'}
@@ -206,10 +207,10 @@ function DocsPage() {
           </p>
           <p>
             Rather not type <code>eval</code> every time? Enable the shell integration once, then
-            just run <code>shh load</code> - it pulls and evaluates the values into your current
-            shell for you, and prints a clear notice that live secret values are now in this
-            shell&rsquo;s environment. A subprocess can&rsquo;t change its parent shell on its own,
-            so this is a one-time function you source from your startup file.
+            run <code>shh load</code>. It pulls and evaluates the values into your current shell,
+            and prints a clear notice that live secret values are now in this shell&rsquo;s
+            environment. A subprocess can&rsquo;t change its parent shell on its own, so this is a
+            one-time function you source from your startup file.
           </p>
           <CodeBlock>
             <span className="term-dim"># one-time setup, in your shell startup file</span>{'\n'}
@@ -226,7 +227,7 @@ function DocsPage() {
           <div className="docs-label">05  reload</div>
           <h2 className="docs-h2">Pull again, the same way</h2>
           <p>
-            After the environment changes - a teammate rotated a key, a new var landed - you
+            After the environment changes (a teammate rotated a key, a new var landed) you
             don&rsquo;t need to remember how this repo consumes its values.{' '}
             <code>shh reload</code> pulls the linked project and environment again and delivers
             them exactly the way the last pull here did: rewriting the same file, or re-emitting
@@ -242,9 +243,9 @@ function DocsPage() {
           <p>
             The delivery is recorded in <code>.shh.project</code> (<code>pull = shell</code> or{' '}
             <code>pull = file:&lt;path&gt;</code>, relative to that file), so reload writes to the
-            same place from anywhere in the tree. It always targets the linked scope - the project
+            same place from anywhere in the tree. It always targets the linked scope: the project
             from <code>.shh.project</code> and the environment your last <code>shh link</code>{' '}
-            pinned in <code>.shh.env</code> - and one-off <code>--project</code>/<code>--env</code>{' '}
+            pinned in <code>.shh.env</code>. One-off <code>--project</code>/<code>--env</code>{' '}
             pulls don&rsquo;t change what it repeats.
           </p>
         </section>
@@ -254,7 +255,7 @@ function DocsPage() {
           <h2 className="docs-h2">Branch an environment</h2>
           <p>
             Fork <code>production</code> into <code>staging</code>, or staging into a per-developer
-            environment - vars and secrets are copied, then diverge freely.
+            environment. Vars and secrets are copied, then diverge freely.
           </p>
           <CodeBlock>
             <span className="term-prompt">$ </span><span className="term-cmd">shh fork</span> --name staging{'\n'}
@@ -267,7 +268,7 @@ function DocsPage() {
           <h2 className="docs-h2">Point the CLI at your server</h2>
           <p>
             Nothing to do if you use itsasecret.dev. Self-hosting, or running the server locally?
-            Set the URL once per machine - bare <code>shh config</code> opens an interactive menu,
+            Set the URL once per machine. Bare <code>shh config</code> opens an interactive menu,
             or set it directly:
           </p>
           <CodeBlock>
@@ -286,9 +287,9 @@ function DocsPage() {
             config, and <code>shh config get url</code> tells you which one is in effect.
           </p>
           <p>
-            Sessions are stored per server - logging in to your self-hosted instance doesn&rsquo;t
-            log you out of itsasecret.dev, and switching between repos just works. Running the
-            server yourself is covered in the <a href="/self-hosting">self-hosting guide</a>.
+            Sessions are stored per server, so logging in to your self-hosted instance doesn&rsquo;t
+            log you out of itsasecret.dev, and switching between repos just works. The{' '}
+            <a href="/self-hosting">self-hosting guide</a> covers running the server yourself.
           </p>
         </section>
       </main>

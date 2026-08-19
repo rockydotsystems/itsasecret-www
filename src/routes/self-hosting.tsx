@@ -31,8 +31,8 @@ function SelfHostingPage() {
             Self-hosting<span className="hero-title-flare">.</span>
           </h1>
           <p className="docs-lede">
-            Run the same web dashboard and HTTP API as itsasecret.dev on your own machines. Secrets
-            stay end-to-end encrypted - this stack only ever stores ciphertext.
+              Run the same web dashboard and HTTP API as itsasecret.dev on your own machines. Secrets
+              stay end-to-end encrypted; this stack only ever stores ciphertext.
           </p>
         </header>
 
@@ -100,27 +100,27 @@ docker compose logs -f web`}
           </p>
           <h3 className="docs-h3">Required</h3>
           <p>
-            <code>POSTGRES_PASSWORD</code> - the bundled database. The port is not published, so
+            <code>POSTGRES_PASSWORD</code>: the bundled database. The port is not published, so
             this only guards the compose network.
           </p>
           <p>
             <code>SERVER_WRAP_SECRET</code> - encrypts the few values the server has to wrap
             itself: pending invite org keys, and env-var history. Minimum 32 characters. Rotate it
-            and everything wrapped under the old value is unrecoverable - keep it next to the
+            and everything wrapped under the old value is unrecoverable. Keep it next to the
             database backups.
           </p>
           <h3 className="docs-h3">Recommended</h3>
           <p>
-            <code>APP_URL</code> - public origin, used in verification and invite emails. Falls
+            <code>APP_URL</code>: public origin, used in verification and invite emails. Falls
             back to the request <code>Host</code> when unset; set it explicitly behind a reverse
             proxy (<code>https://shh.example.com</code>).
           </p>
           <p>
-            <code>HTTP_PORT</code> - host port published to the container&rsquo;s 3000 (default
+            <code>HTTP_PORT</code>: host port published to the container&rsquo;s 3000 (default
             3000).
           </p>
           <p>
-            <code>TRUSTED_PROXY_COUNT</code> - how many proxy hops sit in front, so per-IP rate
+            <code>TRUSTED_PROXY_COUNT</code>: how many proxy hops sit in front, so per-IP rate
             limiting reads the right address from <code>X-Forwarded-For</code> (default 1).
           </p>
           <h3 className="docs-h3">Email - pick one</h3>
@@ -129,27 +129,27 @@ docker compose logs -f web`}
             cannot get past the email-verification gate.
           </p>
           <p>
-            <strong>Resend:</strong> set <code>RESEND_API_KEY</code> and optionally{' '}
+            <strong>Resend.</strong> Set <code>RESEND_API_KEY</code> and optionally{' '}
             <code>EMAIL_FROM</code> (default <code>itsasecret &lt;onboarding@resend.dev&gt;</code>
             ). Verification, org invites, team add/remove, and billing-failure mail go to inboxes.{' '}
             <code>FEEDBACK_EMAIL</code> forwards the in-app feedback form (Resend only).
           </p>
           <p>
-            <strong>Log delivery:</strong> set <code>EMAIL_DELIVERY=log</code> and read links from{' '}
+            <strong>Log delivery.</strong> Set <code>EMAIL_DELIVERY=log</code> and read links from{' '}
             <code>docker compose logs -f web</code>. Hand them to users yourself. Never turn this
-            on where logs are aggregated somewhere you do not control - the lines include
+            on where logs are aggregated somewhere you do not control: the lines include
             single-use tokens.
           </p>
           <h3 className="docs-h3">Optional</h3>
           <p>
-            <strong>Stripe</strong> - <code>STRIPE_SECRET_KEY</code>,{' '}
+            <strong>Stripe.</strong> <code>STRIPE_SECRET_KEY</code>,{' '}
             <code>STRIPE_TEAM_PRICE_ID</code>, <code>STRIPE_WEBHOOK_SECRET</code>. Without the
             secret key, billing endpoints return 503 and every org stays on free-plan limits: 20
             projects, no inviting members, no creating teams. Existing members (if you later
             downgrade) keep working. Personal orgs are single-member either way.
           </p>
           <p>
-            <strong>CLI downloads</strong> - <code>BUCKET_ENDPOINT</code>, <code>BUCKET_NAME</code>,{' '}
+            <strong>CLI downloads.</strong> <code>BUCKET_ENDPOINT</code>, <code>BUCKET_NAME</code>,{' '}
             <code>BUCKET_ACCESS_KEY_ID</code>, <code>BUCKET_SECRET_ACCESS_KEY</code>, optional{' '}
             <code>BUCKET_REGION</code> (default <code>auto</code>). These serve{' '}
             <code>/install.sh</code> and <code>/api/dl/*</code> from an S3-compatible bucket.

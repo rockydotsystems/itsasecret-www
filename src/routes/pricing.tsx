@@ -52,7 +52,7 @@ const TIERS: Tier[] = [
     features: [
       'Up to 50 projects',
       'Unlimited secrets, env vars & environments',
-      'Team collaboration - roles & approvals',
+      'Team collaboration - per-env roles and project grants',
       'Everything in Personal',
     ],
     note: 'Includes 1 free super-user to act as the team head - an admin plus 2 developers counts as just 2 seats.',

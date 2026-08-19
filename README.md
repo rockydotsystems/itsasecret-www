@@ -49,7 +49,7 @@ The app runs out of the box against the local database with no extra config. A f
 
 ## Self-hosting
 
-The app ships as the [`itsasecret/web`](https://hub.docker.com/r/itsasecret/web) image on Docker Hub - multi-arch (amd64/arm64), built and pushed from `main` by CI. `deploy/` contains a turnkey compose bundle (app + Postgres 17, DB migrations run at every boot):
+The app ships as the [`itsasecret/web`](https://hub.docker.com/r/itsasecret/web) image on Docker Hub: multi-arch (amd64/arm64), built and pushed from `main` by CI. `deploy/` contains a turnkey compose bundle (app + Postgres 17, DB migrations run at every boot):
 
 ```sh
 mkdir itsasecret && cd itsasecret
